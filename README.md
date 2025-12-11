@@ -1,2 +1,95 @@
-# plasma-theme-master
-A Simple, unified tool for managing KDE Plasma themes and Kvantum day/night cycles.
+# Plasma Theme Master
+
+A powerful, unified tool for managing KDE Plasma themes and Kvantum day/night cycles.
+
+## Features
+
+### 🌙 Kvantum Day/Night Scheduler
+- **Solar Scheduling**: Automatically calculates sunrise and sunset times based on your latitude and longitude.
+- **Custom Scheduling**: Set your own specific times for day and night modes.
+- **Auto-Switching**: Automatically switches your Kvantum theme and Global Theme preference (Day/Night) in the background.
+
+### 🎨 Advanced Global Theme Editor
+- **Theme Cloning**: Easily clone existing or system-wide Global Themes to your user directory for customization.
+- **User-Friendly Editor**: 
+    - Customize individual components: **Colors, Cursors, Icons, Plasma Styles, and Application Styles**.
+    - Lists all installed sub-themes in convenient dropdowns.
+    - **Window Decorations**: Robust support for **Aurorae** themes, with automatic handling of engine prefixes (e.g., `__aurorae__svg__`).
+      > **Warning**: Ensure the **Window Decoration Engine** matches the chosen theme (e.g., use `org.kde.kwin.aurorae` for Aurorae themes). Mismatches may cause display issues.
+- **Raw Editor**: Full access to the `contents/defaults` INI file for power users.
+
+## Requirements
+
+- **Python 3.6+**
+- **PySide6**: `pip install PySide6`
+- **Kvantum**: The `kvantummanager` tool must be installed and in your PATH.
+- **KDE Plasma**: Tested on Plasma 6.
+
+## Installation
+
+### System-Wide Install (Recommended)
+This will install the application to `/opt/plasma-theme-master` and create a desktop entry for tailored integration with KDE Plasma.
+
+1. Clone or download this repository.
+2. Run the install script:
+   ```bash
+   sudo ./install.sh
+   ```
+3. Launch "Plasma Theme Master" from your application menu or run `plasma-theme-master` from the terminal.
+
+### User Install (Manual)
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Run from source:
+   ```bash
+   python3 src/main.py
+   ```
+
+## Usage
+
+### GUI
+- Launch the application.
+- **Scheduler Tab**:
+    - Enter your Latitude and Longitude (e.g., `40.7128`, `-74.0060`).
+    - Select your preferred Day and Night Kvantum themes.
+    - Click "Refresh & Apply Now" to test.
+    - Settings are saved automatically.
+- **Global Theme Editor Tab**:
+    - Select a theme from the list.
+    - Click **Clone** to create a mutable copy (appends `-U` by default).
+    - Use the **Easy Editor** to change specific theme elements like Colors or Window Decorations.
+    - Click **Save Changes** to apply.
+
+### CLI
+The CLI is perfect for scripting or cron jobs.
+- **Set Configuration**:
+  ```bash
+  plasma-theme-master scheduler --lat 40.7128 --lon -74.0060 --day-theme Graphite --night-theme GraphiteDark
+  ```
+- **Apply Current State** (Run this in cron/autostart):
+  ```bash
+  plasma-theme-master scheduler --apply
+  ```
+- **List Themes**:
+  ```bash
+  plasma-theme-master theme list
+  ```
+
+## Uninstallation
+To remove the application from your system:
+```bash
+sudo ./uninstall.sh
+```
+
+## Configuration
+Settings are stored in `~/.config/plasma-theme-master/config.json`.
+
+## Troubleshooting
+
+### Window Decorations Not Displaying Correctly
+If your window decorations look broken or revert to default:
+- Check that the **Window Decoration Engine** matches the theme you selected.
+- For most downloaded themes (Graphite, Catppuccin, etc.), the engine should be `org.kde.kwin.aurorae`.
+- For standard themes (Breeze, Oxygen), use their respective engines (e.g., `org.kde.breeze`).
