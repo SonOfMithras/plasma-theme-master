@@ -1,0 +1,11 @@
+[Unit]
+Description=Plasma Theme Master Background Service
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/local/bin/plasma-theme-master daemon
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

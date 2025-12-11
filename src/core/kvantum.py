@@ -19,9 +19,27 @@ class KvantumManager:
 
     @staticmethod
     def get_current_theme():
-        # TODO: Parse current theme from config file if no CLI output available
-        # checking ~/.config/Kvantum/kvantum.kvconfig
-        pass
+        """
+        Retrieves the currently active Kvantum theme by reading ~/.config/Kvantum/kvantum.kvconfig.
+        """
+        import configparser
+        from pathlib import Path
+        
+        config_path = Path.home() / ".config/Kvantum/kvantum.kvconfig"
+        if not config_path.exists():
+            return None
+            
+        try:
+            # kvantum.kvconfig is an INI file
+            # ConfigParser is strict, Kvantum config should be compliant
+            parser = configparser.ConfigParser()
+            parser.read(config_path)
+            if "General" in parser and "theme" in parser["General"]:
+                return parser["General"]["theme"]
+        except Exception as e:
+            print(f"Error reading Kvantum config: {e}")
+            
+        return None
 
     @staticmethod
     def list_themes():

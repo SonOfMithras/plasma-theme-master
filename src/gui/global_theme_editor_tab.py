@@ -71,7 +71,15 @@ class GlobalThemeEditorTab(QWidget):
         # Save Button for Easy Mode
         self.save_easy_btn = QPushButton("Save Changes")
         self.save_easy_btn.clicked.connect(self.save_easy_defaults)
-        easy_layout.addRow(self.save_easy_btn)
+        self.save_easy_btn.clicked.connect(self.save_easy_defaults)
+        
+        self.restore_btn = QPushButton("Restore Original Defaults")
+        self.restore_btn.clicked.connect(self.restore_defaults)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addWidget(self.save_easy_btn)
+        btn_layout.addWidget(self.restore_btn)
+        easy_layout.addRow(btn_layout)
         
         self.easy_edit_widget.setLayout(easy_layout)
         
@@ -210,6 +218,27 @@ class GlobalThemeEditorTab(QWidget):
             
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save: {e}")
+
+    def restore_defaults(self):
+        item = self.theme_list.currentItem()
+        if not item: return
+        
+        theme_name = item.text().replace(" (System)", "")
+        res = QMessageBox.warning(
+            self, 
+            "Confirm Restore",
+            "Are you sure you want to restore the defaults file to its original state? Current changes will be lost.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if res == QMessageBox.Yes:
+            content = PlasmaThemeManager.restore_defaults(theme_name)
+            if content:
+                self.editor.setPlainText(content)
+                self.parse_defaults_to_ui(content)
+                QMessageBox.information(self, "Restored", "Defaults restored from backup.")
+            else:
+                 QMessageBox.warning(self, "Failed", "Could not restore defaults (Backup might not exist).")
 
     def save_raw_defaults(self):
         item = self.theme_list.currentItem()

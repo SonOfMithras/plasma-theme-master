@@ -1,14 +1,16 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
     QPushButton, QFormLayout, QGroupBox, QComboBox, QRadioButton,
-    QTimeEdit, QButtonGroup
+    QTimeEdit, QButtonGroup, QSlider, QMessageBox, QScrollArea, QGridLayout
 )
 from PySide6.QtCore import Qt, QTimer, QTime
 import datetime
-
 from core.config import config
 from core.solar import get_solar_times
 from core.kvantum import KvantumManager
+from core.plasma import PlasmaThemeManager
+from core.logger import log_activity, log_error
+
 
 class SchedulerTab(QWidget):
     def __init__(self):
@@ -24,10 +26,77 @@ class SchedulerTab(QWidget):
         self.update_status()
 
     def init_ui(self):
+        # Main wrapper layout with ScrollArea
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        # Remove border from scroll area to blend in
+        scroll.setStyleSheet("QScrollArea { border: none; }")
+        content_widget = QWidget()
         layout = QVBoxLayout()
-                
-        # Schedule Mode Group
-        mode_group = QGroupBox("Schedule Mode")
+        # Add side padding for safe scrolling (Left, Top, Right, Bottom)
+        layout.setContentsMargins(50, 10, 50, 10)
+        
+        # Status Group (Grid Layout) - MOVED TO TOP
+        status_group = QGroupBox("Current Status")
+        status_layout = QVBoxLayout()
+        
+        # Info Header
+        self.lbl_info = QLabel("Calculating...")
+        self.lbl_info.setAlignment(Qt.AlignCenter)
+        self.lbl_info.setStyleSheet("font-weight: bold; font-size: 11pt;")
+        status_layout.addWidget(self.lbl_info)
+        
+        # Grid for Themes
+        grid = QGridLayout()
+        grid.addWidget(QLabel("<b>Kvantum Theme</b>"), 0, 0)
+        grid.addWidget(QLabel("<b>Global Theme</b>"), 0, 1)
+        
+        self.lbl_kv_target = QLabel("Target: ...")
+        self.lbl_kv_active = QLabel("Active: ...")
+        self.lbl_gl_target = QLabel("Target: ...")
+        self.lbl_gl_active = QLabel("Active: ...")
+        
+        grid.addWidget(self.lbl_kv_target, 1, 0)
+        grid.addWidget(self.lbl_kv_active, 2, 0)
+        
+        grid.addWidget(self.lbl_gl_target, 1, 1)
+        grid.addWidget(self.lbl_gl_active, 2, 1)
+        
+        status_layout.addLayout(grid)
+        
+        btn_layout = QHBoxLayout() # Horizontal layout for buttons
+        
+        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn.clicked.connect(self.manual_refresh)
+        
+        self.apply_btn = QPushButton("Apply Now")
+        self.apply_btn.clicked.connect(self.manual_apply)
+        
+        btn_layout.addWidget(self.refresh_btn)
+        btn_layout.addWidget(self.apply_btn)
+        
+        status_layout.addLayout(btn_layout)
+        status_group.setLayout(status_layout)
+        layout.addWidget(status_group)
+        
+        # Theme Mode Group
+        mode_select_group = QGroupBox("Theme Mode")
+        mode_select_layout = QVBoxLayout()
+        
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Auto (Follow Schedule)", "Static Light", "Static Dark"])
+        self.mode_combo.currentIndexChanged.connect(self.on_mode_change)
+        
+        mode_select_layout.addWidget(self.mode_combo)
+        mode_select_group.setLayout(mode_select_layout)
+        layout.addWidget(mode_select_group)
+
+        # Schedule Calculation Group
+        mode_group = QGroupBox("Schedule Calculation")
         mode_layout = QVBoxLayout()
         
         self.mode_btn_group = QButtonGroup()
@@ -39,7 +108,44 @@ class SchedulerTab(QWidget):
         mode_layout.addWidget(self.solar_radio)
         mode_layout.addWidget(self.custom_radio)
         
-        # Custom Time Inputs
+        # Location Group (Nested under Solar)
+        self.loc_widget = QWidget()
+        loc_layout = QFormLayout()
+        
+        self.location_label = QLabel("Location: Not Set")
+        loc_layout.addRow(self.location_label)
+
+        self.lat_input = QLineEdit()
+        self.lon_input = QLineEdit()
+        self.lat_input.setPlaceholderText("e.g. 40.7127")
+        self.lon_input.setPlaceholderText("e.g. -74.0060")
+        
+        loc_layout.addRow("Latitude:", self.lat_input)
+        loc_layout.addRow("Longitude:", self.lon_input)
+        
+        update_loc_btn = QPushButton("Update Location")
+        update_loc_btn.clicked.connect(self.update_location)
+        loc_layout.addRow(update_loc_btn)
+        
+        # Solar Offset Slider
+        self.offset_label = QLabel("Daytime Offset: 0 mins")
+        self.offset_slider = QSlider(Qt.Horizontal)
+        self.offset_slider.setRange(-60, 60)
+        self.offset_slider.setValue(0)
+        self.offset_slider.setTickPosition(QSlider.TicksBelow)
+        self.offset_slider.setTickInterval(15)
+        self.offset_slider.setSingleStep(5)
+        
+        # Connect slider
+        self.offset_slider.valueChanged.connect(self.update_offset_label)
+        self.offset_slider.sliderReleased.connect(self.update_location) # Save on release
+        
+        loc_layout.addRow(self.offset_label, self.offset_slider)
+        
+        self.loc_widget.setLayout(loc_layout)
+        mode_layout.addWidget(self.loc_widget)
+
+        # Custom Time Inputs (Nested under Custom)
         self.time_layout = QHBoxLayout()
         self.sunrise_edit = QTimeEdit()
         self.sunset_edit = QTimeEdit()
@@ -53,32 +159,13 @@ class SchedulerTab(QWidget):
         
         self.custom_time_widget = QWidget()
         self.custom_time_widget.setLayout(self.time_layout)
+        mode_layout.addWidget(self.custom_time_widget)
         
         # Toggle visibility
-        self.solar_radio.toggled.connect(self.toggle_time_inputs)
+        self.solar_radio.toggled.connect(self.toggle_mode_inputs)
         
-        mode_layout.addWidget(self.custom_time_widget)
         mode_group.setLayout(mode_layout)
         layout.addWidget(mode_group)
-
-        # Location Group
-        loc_group = QGroupBox("Location Settings")
-        loc_layout = QFormLayout()
-        
-        self.lat_input = QLineEdit()
-        self.lon_input = QLineEdit()
-        self.lat_input.setPlaceholderText("e.g. 40.7127")
-        self.lon_input.setPlaceholderText("e.g. -74.0060")
-        
-        loc_layout.addRow("Latitude:", self.lat_input)
-        loc_layout.addRow("Longitude:", self.lon_input)
-        
-        save_loc_btn = QPushButton("Save Location")
-        save_loc_btn.clicked.connect(self.save_location)
-        loc_layout.addRow(save_loc_btn)
-        
-        loc_group.setLayout(loc_layout)
-        layout.addWidget(loc_group)
 
         # Theme Group
         theme_group = QGroupBox("Kvantum Theme Settings")
@@ -109,50 +196,92 @@ class SchedulerTab(QWidget):
         
         theme_group.setLayout(theme_layout)
         layout.addWidget(theme_group)
+        
+        # Global Theme Group
+        global_group = QGroupBox("Global Theme Settings (Native)")
+        global_layout = QFormLayout()
+        
+        self.day_global_combo = QComboBox()
+        self.night_global_combo = QComboBox()
+        self.day_global_combo.setEditable(False) # Native themes shouldn't be arbitrary text
+        self.night_global_combo.setEditable(False)
+        
+        # Populate Global Themes
+        global_themes = PlasmaThemeManager.list_installed_themes()
+        global_theme_names = [t['name'] for t in global_themes]
+        
+        self.day_global_combo.addItems(global_theme_names)
+        self.night_global_combo.addItems(global_theme_names)
+        
+        global_layout.addRow("Day Global Theme:", self.day_global_combo)
+        global_layout.addRow("Night Global Theme:", self.night_global_combo)
+        
+        global_explainer = QLabel("These settings control Plasma's native auto-switch behavior.")
+        global_explainer.setStyleSheet("color: gray; font-size: 10px;")
+        global_layout.addRow(global_explainer)
+        
+        # Connect signals
+        self.day_global_combo.currentTextChanged.connect(self.save_global_themes)
+        self.night_global_combo.currentTextChanged.connect(self.save_global_themes)
 
-        # Status Group
-        status_group = QGroupBox("Current Status")
-        status_layout = QVBoxLayout()
-        
-        self.status_label = QLabel("Calculating...")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setContentsMargins(10, 10, 10, 10)  # Add margins
-        font = self.status_label.font()
-        font.setPointSize(12)  # Smaller font
-        self.status_label.setFont(font)
-        
-        btn_layout = QHBoxLayout() # Horizontal layout for buttons
-        
-        self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.clicked.connect(self.manual_refresh)
-        
-        self.apply_btn = QPushButton("Apply Now")
-        self.apply_btn.clicked.connect(self.manual_apply)
-        
-        btn_layout.addWidget(self.refresh_btn)
-        btn_layout.addWidget(self.apply_btn)
-        
-        status_layout.addWidget(self.status_label)
-        status_layout.addLayout(btn_layout)
-        status_group.setLayout(status_layout)
-        layout.addWidget(status_group)
+        global_group.setLayout(global_layout)
+        layout.addWidget(global_group)
         
         layout.addStretch()
-        self.setLayout(layout)
+        content_widget.setLayout(layout)
+        scroll.setWidget(content_widget)
+        
+        main_layout.addWidget(scroll)
+        self.setLayout(main_layout)
 
-    def save_location(self):
+    def update_location(self):
         try:
             lat = float(self.lat_input.text())
             lon = float(self.lon_input.text())
             config.set('latitude', lat)
             config.set('longitude', lon)
+            config.set('solar_padding', self.offset_slider.value())
+            
+            # Update formatted label
+            lat_dir = "N" if lat >= 0 else "S"
+            lon_dir = "E" if lon >= 0 else "W"
+            self.location_label.setText(f"Location: {abs(lat):.1f}° {lat_dir}, {abs(lon):.1f}° {lon_dir}")
+            
             self.update_status()
         except ValueError:
-            self.status_label.setText("Invalid Latitude/Longitude!")
+            self.lbl_info.setText("Invalid Latitude/Longitude!")
 
     def load_config(self):
+        # Load Application Mode
+        is_auto = PlasmaThemeManager.is_auto_enabled()
+        self.mode_combo.blockSignals(True)
+        if is_auto:
+            self.mode_combo.setCurrentIndex(0) # Auto
+        else:
+             # If static, guess based on current Kvantum or just default to something?
+             # Probably better to leave as is or default to what?
+             # Ideally we'd store "last static mode" or check current theme?
+             # For now, let's just default to Auto if unknown, but if false, maybe check themes?
+             # User didn't specify persistence for static choice, just current state.
+             # We'll leave it at 0 (Auto) if unsure, or maybe we should default to "Static Light" or "Static Dark" if we can detect?
+             # Checking config.get('theme_mode') for hint?
+             pass 
+             # Actually, if is_auto is False, we don't know if it's Light or Dark static.
+             # We can check global themes.
+             # current_global = PlasmaThemeManager.get_current_theme()
+             # native_day, native_night = PlasmaThemeManager.get_native_prefs()
+             # if current_global == native_night: set "Static Dark"
+             # elif current_global == native_day: set "Static Light"
+             pass
+             
+        self.mode_combo.blockSignals(False)
+
         self.lat_input.setText(str(config.get('latitude', 0.0)))
         self.lon_input.setText(str(config.get('longitude', 0.0)))
+        
+        padding = config.get('solar_padding', 0)
+        self.offset_slider.setValue(int(padding))
+        self.update_offset_label(int(padding))
         
         # Load switch mode
         mode = config.get('schedule_mode', 'solar')
@@ -173,10 +302,26 @@ class SchedulerTab(QWidget):
         self.day_theme_combo.setCurrentText(day_theme)
         self.night_theme_combo.setCurrentText(night_theme)
         
-        self.toggle_time_inputs()
+        self.day_theme_combo.setCurrentText(day_theme)
+        self.night_theme_combo.setCurrentText(night_theme)
         
-    def toggle_time_inputs(self):
-        self.custom_time_widget.setVisible(self.custom_radio.isChecked())
+        # Load Global Themes (Native)
+        native_day, native_night = PlasmaThemeManager.get_native_prefs()
+        if native_day: self.day_global_combo.setCurrentText(native_day)
+        if native_night: self.night_global_combo.setCurrentText(native_night)
+
+        # Init location label
+        self.update_location()
+        
+        self.toggle_mode_inputs()
+    
+    def update_offset_label(self, value):
+        self.offset_label.setText(f"Daytime Offset: {value} mins")
+        
+    def toggle_mode_inputs(self):
+        is_custom = self.custom_radio.isChecked()
+        self.custom_time_widget.setVisible(is_custom)
+        self.loc_widget.setVisible(not is_custom)
         
     def save_mode(self):
         mode = "custom" if self.custom_radio.isChecked() else "solar"
@@ -189,6 +334,48 @@ class SchedulerTab(QWidget):
         config.set('day_theme', self.day_theme_combo.currentText())
         config.set('night_theme', self.night_theme_combo.currentText())
         self.update_status()
+
+    def save_global_themes(self):
+        day = self.day_global_combo.currentText()
+        night = self.night_global_combo.currentText()
+        if day and night:
+            # Avoid writing blank if loading
+            PlasmaThemeManager.set_native_prefs(day, night)
+
+    def on_mode_change(self, index):
+        try:
+            native_day, native_night = PlasmaThemeManager.get_native_prefs()
+            day_kv = self.day_theme_combo.currentText()
+            night_kv = self.night_theme_combo.currentText()
+            day_global = self.day_global_combo.currentText() or native_day
+            night_global = self.night_global_combo.currentText() or native_night
+            
+            if index == 0: # Auto
+                log_activity("Switching to Auto Mode...")
+                # Apply current scheduled themes first?
+                # "apply desired kvantum and global themes"
+                # We need to recalculate status to know what is "desired" right now.
+                self.update_status(apply=True)
+                # Then enable Auto
+                PlasmaThemeManager.set_auto_enabled(True)
+                log_activity("Auto Mode Enabled.")
+                
+            elif index == 1: # Static Light
+                log_activity("Switching to Static Light Mode...")
+                PlasmaThemeManager.set_auto_enabled(False)
+                if day_kv: KvantumManager.set_theme(day_kv)
+                if day_global: PlasmaThemeManager.apply_theme(day_global)
+                
+            elif index == 2: # Static Dark
+                log_activity("Switching to Static Dark Mode...")
+                PlasmaThemeManager.set_auto_enabled(False)
+                if night_kv: KvantumManager.set_theme(night_kv)
+                if night_global: PlasmaThemeManager.apply_theme(night_global)
+                
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            log_error(f"Mode Change Failed: {e}")
+            QMessageBox.critical(self, "Mode Change Failed", f"An error occurred while switching modes:\n{e}")
 
     def manual_refresh(self):
         self.update_status(apply=False)
@@ -204,23 +391,30 @@ class SchedulerTab(QWidget):
         sunrise_dt = None
         sunset_dt = None
         
+        # Calculate Sun/Time state
         if mode_setting == 'solar':
             lat = float(config.get('latitude', 0.0))
             lon = float(config.get('longitude', 0.0))
             
             if lat == 0.0 and lon == 0.0:
-                self.status_label.setText("Location not set.")
+                self.lbl_info.setText("Location not set.")
                 return
 
             today_utc = datetime.datetime.now(datetime.timezone.utc).date()
             times = get_solar_times(today_utc, lat, lon)
             
             if not times:
-                self.status_label.setText("Solar calc unavailable.")
+                self.lbl_info.setText("Solar calc unavailable.")
                 return
                 
             sunrise_dt = times['sunrise'].astimezone()
             sunset_dt = times['sunset'].astimezone()
+            
+            padding = float(config.get('solar_padding', 0))
+            shift = datetime.timedelta(minutes=padding / 2)
+            sunrise_dt = sunrise_dt - shift
+            sunset_dt = sunset_dt + shift
+            
             is_day = sunrise_dt <= now < sunset_dt
             
         else: # Custom
@@ -231,29 +425,61 @@ class SchedulerTab(QWidget):
             t_rise = datetime.datetime.strptime(sunrise_str, "%H:%M").time()
             t_set = datetime.datetime.strptime(sunset_str, "%H:%M").time()
             
-            # Simple comparison for same day interval
             if t_rise < t_set:
                 is_day = t_rise <= t_now < t_set
             else:
-                # Night crossover (e.g. 20:00 to 06:00)
                 is_day = not (t_set <= t_now < t_rise)
                 
-            sunrise_dt = now.replace(hour=t_rise.hour, minute=t_rise.minute) # approx for display
+            sunrise_dt = now.replace(hour=t_rise.hour, minute=t_rise.minute)
             sunset_dt = now.replace(hour=t_set.hour, minute=t_set.minute)
 
         mode_text = "Day" if is_day else "Night"
-        target_theme = config.get('day_theme') if is_day else config.get('night_theme')
         
+        # Determine Targets
+        target_kv = config.get('day_theme') if is_day else config.get('night_theme')
+        
+        # For Global Target, we trust what's in the UI specific combos for Day/Night calculation
+        # But we must be careful: UI might update config later.
+        # Let's read from combos if possible, or config/native prefs as fallback?
+        # Ideally, Kvantum target uses config. Global target uses Native Prefs.
+        native_day, native_night = PlasmaThemeManager.get_native_prefs()
+        target_gl = native_day if is_day else native_night
+        
+        # Get Active States
+        active_kv = KvantumManager.get_current_theme() or "Unknown"
+        active_gl = PlasmaThemeManager.get_current_theme() or "Unknown"
+
         rise_s = sunrise_dt.strftime('%H:%M') if sunrise_dt else "N/A"
         set_s = sunset_dt.strftime('%H:%M') if sunset_dt else "N/A"
         
-        status_text = (
-            f"Current: {now.strftime('%H:%M')}\n"
-            f"Start: {rise_s} | End: {set_s}\n"
-            f"Mode: {mode_text}\n"
-            f"Active theme: {target_theme}"
+        # Update UI Labels
+        info_text = (
+            f"Current: {now.strftime('%H:%M')} | Mode: {mode_text}\n"
+            f"Start: {rise_s} | End: {set_s}"
         )
-        self.status_label.setText(status_text)
+        self.lbl_info.setText(info_text)
+        
+        self.lbl_kv_target.setText(f"Target: {target_kv}")
+        self.lbl_kv_active.setText(f"Active: {active_kv}")
+        
+        self.lbl_gl_target.setText(f"Target: {target_gl}")
+        self.lbl_gl_active.setText(f"Active: {active_gl}")
         
         if apply:
-             KvantumManager.set_theme(target_theme)
+             log_activity(f"Manual Apply: Switching to '{target_kv}' (Mode: {mode_text})")
+             try:
+                 # Apply Global first, as it might reset Kvantum
+                 if target_gl:
+                     PlasmaThemeManager.apply_theme(target_gl)
+                     log_activity(f"Applied Global: {target_gl}")
+                 else:
+                     log_error(f"Failed Global: {target_gl} (target not set)")
+                     
+                 # Then apply Kvantum
+                 if KvantumManager.set_theme(target_kv):
+                     log_activity(f"Applied Kvantum: {target_kv}")
+                 else:
+                     log_error(f"Failed Kvantum: {target_kv}")
+                     
+             except Exception as e:
+                 log_error(f"Error acting on manual apply: {e}")

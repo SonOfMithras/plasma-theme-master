@@ -5,6 +5,8 @@ from pathlib import Path
 
 PLASMA_THEMES_DIR = Path.home() / ".local/share/plasma/look-and-feel"
 
+from core.logger import log_activity, log_error
+
 class PlasmaThemeManager:
     @staticmethod
     def list_sub_themes(category):
@@ -180,6 +182,7 @@ class PlasmaThemeManager:
         # Update metadata.desktop or metadata.json in the new specific theme to reflect new name
         PlasmaThemeManager._update_metadata(dest, new_theme_name)
         
+        log_activity(f"Cloned theme '{source_theme_name}' to '{new_theme_name}'")
         return dest
 
     @staticmethod
@@ -268,7 +271,45 @@ class PlasmaThemeManager:
         """
         defaults_file = PlasmaThemeManager.get_defaults_path(theme_name)
         if defaults_file and defaults_file.exists():
+            # Backup logic: check if .bak exists, if not create it
+            backup_file = defaults_file.with_suffix(".bak")
+            if not backup_file.exists():
+                try:
+                   shutil.copy2(defaults_file, backup_file)
+                   log_activity(f"Created backup for defaults of theme '{theme_name}' at '{backup_file}'")
+                except PermissionError:
+                    # User friendly warning for system themes
+                    msg = f"Skipped backup for system theme '{theme_name}' (Read-Only). Clone this theme to edit."
+                    log_activity(msg) # Log as info/activity, not error
+                except Exception as e:
+                    log_error(f"Failed to create backup for defaults of theme '{theme_name}': {e}")
+                    print(f"Failed to create backup: {e}")
+
             return defaults_file.read_text()
+        log_error(f"Defaults file not found for theme '{theme_name}' at '{defaults_file}'")
+        return ""
+
+    @staticmethod
+    def restore_defaults(theme_name):
+        """
+        Restores contents/defaults from contents/defaults.bak if it exists.
+        Returns the content of the restored file (or empty string if failed/no backup).
+        """
+        defaults_file = PlasmaThemeManager.get_defaults_path(theme_name)
+        if not defaults_file:
+            return ""
+            
+        backup_file = defaults_file.with_suffix(".bak")
+        
+        if backup_file.exists():
+            try:
+                shutil.copy2(backup_file, defaults_file)
+                log_activity(f"Restored defaults for theme '{theme_name}'")
+                return defaults_file.read_text()
+            except Exception as e:
+                log_error(f"Failed to restore defaults for '{theme_name}': {e}")
+                print(f"Failed to restore defaults: {e}")
+                return ""
         return ""
 
     @staticmethod
@@ -284,3 +325,109 @@ class PlasmaThemeManager:
             
         defaults_file.parent.mkdir(parents=True, exist_ok=True)
         defaults_file.write_text(content)
+        log_activity(f"Updated defaults file for theme '{theme_name}'")
+
+    @staticmethod
+    def get_current_theme():
+        """
+        Returns the ID of the currently active Global Theme.
+        Uses kreadconfig6 to read from kdeglobals.
+        """
+        import subprocess
+        try:
+            # kreadconfig6 --group "KDE" --key "LookAndFeelPackage" --file kdeglobals
+            val = subprocess.check_output(
+                ["kreadconfig6", "--group", "KDE", "--key", "LookAndFeelPackage", "--file", "kdeglobals"],
+                text=True
+            ).strip()
+            return val
+        except Exception as e:
+            print(f"Failed to get current theme: {e}")
+            return None
+
+    @staticmethod
+    def apply_theme(theme_name):
+        """
+        Applies a GLOBAL plasma theme using plasma-apply-lookandfeel.
+        """
+        import subprocess
+        try:
+            subprocess.run(["plasma-apply-lookandfeel", "-a", theme_name], check=True)
+            log_activity(f"Applied Global Theme: {theme_name}")
+        except subprocess.CalledProcessError as e:
+            msg = f"Failed to apply theme '{theme_name}': {e}"
+            log_error(msg)
+            raise RuntimeError(msg)
+
+    @staticmethod
+    def get_native_prefs():
+        """
+        Reads the native Plasma Day/Night preferences from kdeglobals.
+        Returns (day_theme, night_theme) tuple.
+        """
+        import subprocess
+        day = ""
+        night = ""
+        try:
+            day = subprocess.check_output(
+                 ["kreadconfig6", "--group", "KDE", "--key", "DefaultLightLookAndFeel", "--file", "kdeglobals"],
+                 text=True
+            ).strip()
+        except: pass
+        
+        try:
+            night = subprocess.check_output(
+                 ["kreadconfig6", "--group", "KDE", "--key", "DefaultDarkLookAndFeel", "--file", "kdeglobals"],
+                 text=True
+            ).strip()
+        except: pass
+        
+        return day, night
+
+    @staticmethod
+    def set_native_prefs(day_theme, night_theme):
+        """
+        Writes the native Plasma Day/Night preferences to kdeglobals.
+        """
+        import subprocess
+        try:
+            if day_theme:
+                subprocess.run([
+                    "kwriteconfig6", "--file", "kdeglobals", "--group", "KDE", 
+                    "--key", "DefaultLightLookAndFeel", day_theme
+                ], check=True)
+            if night_theme:
+                subprocess.run([
+                    "kwriteconfig6", "--file", "kdeglobals", "--group", "KDE", 
+                    "--key", "DefaultDarkLookAndFeel", night_theme
+                ], check=True)
+            log_activity(f"Updated Native Plasma Day/Night Prefs: Day='{day_theme}', Night='{night_theme}'")
+        except Exception as e:
+            log_error(f"Failed to set native prefs: {e}")
+
+    @staticmethod
+    def is_auto_enabled():
+        """
+        Checks if AutomaticLookAndFeel is true in kdeglobals.
+        """
+        import subprocess
+        try:
+            val = subprocess.check_output(
+                 ["kreadconfig6", "--group", "KDE", "--key", "AutomaticLookAndFeel", "--file", "kdeglobals"],
+                 text=True
+            ).strip().lower()
+            return val == "true"
+        except:
+            return False
+
+    @staticmethod
+    def set_auto_enabled(enabled):
+        """
+        Sets AutomaticLookAndFeel in kdeglobals.
+        """
+        import subprocess
+        mode_str = "true" if enabled else "false"
+        subprocess.run([
+            "kwriteconfig6", "--file", "kdeglobals", "--group", "KDE", 
+            "--key", "AutomaticLookAndFeel", mode_str
+        ], check=True)

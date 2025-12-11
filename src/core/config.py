@@ -52,5 +52,9 @@ class ConfigManager:
         self._data[key] = value
         self.save()
 
+    def reset_defaults(self):
+        self._data = DEFAULT_CONFIG.copy()
+        self.save()
+
 # Global instance
 config = ConfigManager()
