@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-12-13
+
+### Added
+- **GTK Theme Support**:
+    - Manage legacy GTK-2/3/4 themes via `~/.config/gtk-3.0/settings.ini` and `~/.config/gtk-4.0/settings.ini`.
+    - Dedicated GTK theme dropdowns in Scheduler Tab.
+    - CLI support: `--day-gtk` and `--night-gtk` arguments.
+- **UI Refinements**:
+    - **Refresh Logic**: Reduced auto-refresh interval to 5 seconds for better responsiveness.
+    - **Immediate Feedback**: "Apply Static Theme" and "Set Mode" buttons now instantly update the "Active" status labels.
+    - **Status Box**: Improved visual hierarchy with larger headers and better padding.
+    - **Set Mode Button**: Explicit "Set Mode" button replaces dynamic dropdown updates to prevent settings conflicts.
+
+### Changed
+- Refined "Current Status" display to show System Mode (Auto/Static).
+
 ## [0.2.0] - 2025-12-11
 
 ### Added
@@ -12,7 +28,7 @@ All notable changes to this project will be documented in this file.
     - **Native App Identity**: Correctly identifies as "Plasma Theme Master" with the proper icon on Wayland/Task Managers.
     - **UI Polish**:
         - **Borderless Layout**: Optimized window margins and tab layout for a seamless, professional look.
-        - **Safe Scrolling**: Added padding to Scheduler tab to prevent accidental clicks on dropdowns while scrolling.
+        - **Safe Scrolling**: Added padding to Scheduler tab to prevent accidental changes to dropdowns while scrolling.
         - **Status Grid**: Improved "Current Status" display with clear Target vs Active theme indicators.
 - **Uninstall Feature**:
     - **GUI Uninstaller**: "Uninstall..." option in the Help menu with a clean-up confirmation dialog.
@@ -27,7 +43,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - **Scheduler Tab**:
-    - **Consolidated Controls**: "Theme Mode" (Auto/Static) is now directly in the Scheduler tab, removing the need for a toolbar toggle.
+    - **Consolidated Controls**: "Theme Mode" (Auto/Static) is now directly in the Scheduler tab.
     - **Real-Time Updates**: Status updates immediately upon configuration changes.
 - **Theme Management**:
     - Improved error messages for system theme backup permissions (prompts to Clone instead of crashing).

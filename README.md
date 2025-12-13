@@ -11,6 +11,10 @@ A powerful, unified tool for managing KDE Plasma themes and Kvantum day/night cy
 - **Custom Scheduling**: Set your own specific times for day and night modes.
 - **Auto-Switching**: Automatically switches your Kvantum theme and Global Theme preference (Day/Night) in the background.
 
+### 🖌️ GTK Theme Support (v0.2.1)
+- **Unified Styling**: Apply GTK-2/3/4 themes alongside your Plasma themes.
+- **Sync**: Automatically switches GTK themes based on your day/night schedule.
+
 ### 🎨 Advanced Global Theme Editor
 - **Theme Cloning**: Easily clone existing or system-wide Global Themes to your user directory for customization.
 - **User-Friendly Editor**: 
@@ -22,7 +26,7 @@ A powerful, unified tool for managing KDE Plasma themes and Kvantum day/night cy
 - **Restore Defaults**: Safely revert theme changes to their original state using automatic backups.
 
 ### 📊 Activity Logging
-- **New in v0.1.0**: Track all background actions and app changes.
+- **New in v0.2.0**: Track all background actions and app changes.
 - View logs via the GUI or CLI (`plasma-theme-master log`).
 
 ## Requirements

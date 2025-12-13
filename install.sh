@@ -3,12 +3,16 @@
 # Plasma Theme Master - Install Script
 # Installs to /opt/plasma-theme-master and integrates with KDE Plasma.
 
-INSTALL_DIR="/opt/plasma-theme-master"
-BIN_PATH="/usr/local/bin/plasma-theme-master"
-DESKTOP_PATH="/usr/share/applications/plasma-theme-master.desktop"
+# PKG_ROOT allows installing to a temporary directory for packaging (e.g. .deb creation)
+PKG_ROOT="${PKG_ROOT:-}"
+
+INSTALL_DIR="${PKG_ROOT}/opt/plasma-theme-master"
+BIN_PATH="${PKG_ROOT}/usr/local/bin/plasma-theme-master"
+DESKTOP_PATH="${PKG_ROOT}/usr/share/applications/plasma-theme-master.desktop"
 
 # Check for root
-if [ "$EUID" -ne 0 ]; then 
+# Check for root (unless we are packaging into a custom root)
+if [ -z "$PKG_ROOT" ] && [ "$EUID" -ne 0 ]; then 
   echo "Please run as root (sudo ./install.sh)"
   exit 1
 fi
@@ -57,10 +61,10 @@ Terminal=false
 EOF
 
 # 5. Install Systemd Service
-SERVICE_DEST="/usr/lib/systemd/user/plasma-theme-master.service"
+SERVICE_DEST="${PKG_ROOT}/usr/lib/systemd/user/plasma-theme-master.service"
 echo "Installing systemd service to $SERVICE_DEST..."
 # Ensure dir exists (it should on systemd distros)
-mkdir -p /usr/lib/systemd/user
+mkdir -p "${PKG_ROOT}/usr/lib/systemd/user"
 cp plasma-theme-master.service "$SERVICE_DEST"
 chmod 644 "$SERVICE_DEST"
 

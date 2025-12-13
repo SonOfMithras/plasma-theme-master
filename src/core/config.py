@@ -11,6 +11,8 @@ DEFAULT_CONFIG = {
     "longitude": 0.0,
     "day_theme": "Default",
     "night_theme": "DefaultDark",
+    "day_gtk_theme": "Breeze",
+    "night_gtk_theme": "Breeze",
     "schedule_mode": "solar", # "solar" or "custom"
     "custom_sunrise": "06:00",
     "custom_sunset": "18:00"

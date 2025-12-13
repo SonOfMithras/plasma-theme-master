@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QMainWindow, QTabWidget, QToolBar, QWidget, QSizePolicy, 
     QMenu, QToolButton, QMessageBox, QDialog, QTextEdit, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel
+    QLabel, QCheckBox
 )
 from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtCore import Qt
@@ -152,8 +152,6 @@ class MainWindow(QMainWindow):
         menu = QMenu(self)
         
         # Clear Config
-        
-        # Clear Config
         action_clear = QAction("Clear Config", self)
         action_clear.triggered.connect(self.clear_config)
         menu.addAction(action_clear)
@@ -212,7 +210,7 @@ class MainWindow(QMainWindow):
         <h3>Plasma Theme Master v{APP_VERSION}</h3>
         <p>A unified tool for Kvantum day/night scheduling and Plasma Global Theme editing.</p>
         <p><b>License:</b> GPLv3</p>
-        <p><b>Author Info:</b> <a href="mailto:ammar.alriyamy@gmail.com">Contact Author</a></p>
+        <p><b>Author Info:</b> Ammar Al-Riyamy <a href="mailto:ammar.alriyamy@gmail.com">Contact Author</a></p>
         <p><a href="https://github.com/SonOfMithras/plasma-theme-master">GitHub Repository</a></p>
         """
         QMessageBox.about(self, "About", text)

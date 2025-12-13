@@ -9,6 +9,7 @@ from core.config import config
 from core.solar import get_solar_times
 from core.kvantum import KvantumManager
 from core.plasma import PlasmaThemeManager
+from core.gtk import GtkManager
 from core.logger import log_activity, log_error
 
 
@@ -21,7 +22,7 @@ class SchedulerTab(QWidget):
         # Timer to update status periodically
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_status)
-        self.timer.start(60000) # Every minute
+        self.timer.start(5000) # Every 5 seconds
         
         self.update_status()
 
@@ -42,7 +43,23 @@ class SchedulerTab(QWidget):
         
         # Status Group (Grid Layout) - MOVED TO TOP
         status_group = QGroupBox("Current Status")
+        # Enhance Styling: Larger Header, More Spacing
+        status_group.setStyleSheet("""
+            QGroupBox::title { 
+                font-size: 15pt; 
+                font-weight: bold; 
+                padding: 5px;
+            }
+            QGroupBox { 
+                margin-top: 15px; 
+                font-size: 10pt;
+            }
+        """)
+        
         status_layout = QVBoxLayout()
+        # Add more padding inside the box (Left, Top, Right, Bottom)
+        status_layout.setContentsMargins(20, 30, 20, 20)
+        status_layout.setSpacing(15)
         
         # Info Header
         self.lbl_info = QLabel("Calculating...")
@@ -60,11 +77,19 @@ class SchedulerTab(QWidget):
         self.lbl_gl_target = QLabel("Target: ...")
         self.lbl_gl_active = QLabel("Active: ...")
         
+        # GTK Labels
+        grid.addWidget(QLabel("<b>GTK Theme</b>"), 0, 2)
+        self.lbl_gtk_target = QLabel("Target: ...")
+        self.lbl_gtk_active = QLabel("Active: ...")
+        
         grid.addWidget(self.lbl_kv_target, 1, 0)
         grid.addWidget(self.lbl_kv_active, 2, 0)
         
         grid.addWidget(self.lbl_gl_target, 1, 1)
         grid.addWidget(self.lbl_gl_active, 2, 1)
+        
+        grid.addWidget(self.lbl_gtk_target, 1, 2)
+        grid.addWidget(self.lbl_gtk_active, 2, 2)
         
         status_layout.addLayout(grid)
         
@@ -73,7 +98,7 @@ class SchedulerTab(QWidget):
         self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self.manual_refresh)
         
-        self.apply_btn = QPushButton("Apply Now")
+        self.apply_btn = QPushButton("Apply Static Theme")
         self.apply_btn.clicked.connect(self.manual_apply)
         
         btn_layout.addWidget(self.refresh_btn)
@@ -85,13 +110,19 @@ class SchedulerTab(QWidget):
         
         # Theme Mode Group
         mode_select_group = QGroupBox("Theme Mode")
-        mode_select_layout = QVBoxLayout()
+        mode_select_layout = QHBoxLayout() # Changed to Horizontal
         
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["Auto (Follow Schedule)", "Static Light", "Static Dark"])
-        self.mode_combo.currentIndexChanged.connect(self.on_mode_change)
+        # Removed automatic trigger on change to allow user to select first, then apply.
+        # self.mode_combo.currentIndexChanged.connect(self.on_mode_change)
+        
+        self.btn_set_mode = QPushButton("Set Mode")
+        self.btn_set_mode.clicked.connect(lambda: self.on_mode_change(self.mode_combo.currentIndex()))
         
         mode_select_layout.addWidget(self.mode_combo)
+        mode_select_layout.addWidget(self.btn_set_mode)
+        
         mode_select_group.setLayout(mode_select_layout)
         layout.addWidget(mode_select_group)
 
@@ -227,6 +258,27 @@ class SchedulerTab(QWidget):
         global_group.setLayout(global_layout)
         layout.addWidget(global_group)
         
+        # GTK Theme Group
+        gtk_group = QGroupBox("GTK Application Theme Settings")
+        gtk_layout = QFormLayout()
+        
+        self.day_gtk_combo = QComboBox()
+        self.night_gtk_combo = QComboBox()
+        
+        # Populate GTK Themes
+        gtk_themes = GtkManager.list_themes()
+        self.day_gtk_combo.addItems(gtk_themes)
+        self.night_gtk_combo.addItems(gtk_themes)
+        
+        gtk_layout.addRow("Day GTK Theme:", self.day_gtk_combo)
+        gtk_layout.addRow("Night GTK Theme:", self.night_gtk_combo)
+        
+        self.day_gtk_combo.currentTextChanged.connect(self.save_gtk_themes)
+        self.night_gtk_combo.currentTextChanged.connect(self.save_gtk_themes)
+        
+        gtk_group.setLayout(gtk_layout)
+        layout.addWidget(gtk_group)
+        
         layout.addStretch()
         content_widget.setLayout(layout)
         scroll.setWidget(content_widget)
@@ -258,22 +310,11 @@ class SchedulerTab(QWidget):
         if is_auto:
             self.mode_combo.setCurrentIndex(0) # Auto
         else:
-             # If static, guess based on current Kvantum or just default to something?
-             # Probably better to leave as is or default to what?
-             # Ideally we'd store "last static mode" or check current theme?
-             # For now, let's just default to Auto if unknown, but if false, maybe check themes?
-             # User didn't specify persistence for static choice, just current state.
-             # We'll leave it at 0 (Auto) if unsure, or maybe we should default to "Static Light" or "Static Dark" if we can detect?
-             # Checking config.get('theme_mode') for hint?
-             pass 
-             # Actually, if is_auto is False, we don't know if it's Light or Dark static.
-             # We can check global themes.
-             # current_global = PlasmaThemeManager.get_current_theme()
-             # native_day, native_night = PlasmaThemeManager.get_native_prefs()
-             # if current_global == native_night: set "Static Dark"
-             # elif current_global == native_day: set "Static Light"
-             pass
-             
+            # In static mode, we default to showing "Auto" as selected if we can't determine otherwise,
+            # or could implement logic to detect if we match "Static Light" or "Static Dark".
+            # For now, leaving as index 0 (Auto) is safe.
+            pass
+            
         self.mode_combo.blockSignals(False)
 
         self.lat_input.setText(str(config.get('latitude', 0.0)))
@@ -302,13 +343,16 @@ class SchedulerTab(QWidget):
         self.day_theme_combo.setCurrentText(day_theme)
         self.night_theme_combo.setCurrentText(night_theme)
         
-        self.day_theme_combo.setCurrentText(day_theme)
-        self.night_theme_combo.setCurrentText(night_theme)
-        
         # Load Global Themes (Native)
         native_day, native_night = PlasmaThemeManager.get_native_prefs()
         if native_day: self.day_global_combo.setCurrentText(native_day)
         if native_night: self.night_global_combo.setCurrentText(native_night)
+        
+        # Load GTK Themes
+        day_gtk = config.get('day_gtk_theme', 'Breeze')
+        night_gtk = config.get('night_gtk_theme', 'Breeze')
+        self.day_gtk_combo.setCurrentText(day_gtk)
+        self.night_gtk_combo.setCurrentText(night_gtk)
 
         # Init location label
         self.update_location()
@@ -342,6 +386,11 @@ class SchedulerTab(QWidget):
             # Avoid writing blank if loading
             PlasmaThemeManager.set_native_prefs(day, night)
 
+    def save_gtk_themes(self):
+        config.set('day_gtk_theme', self.day_gtk_combo.currentText())
+        config.set('night_gtk_theme', self.night_gtk_combo.currentText())
+        self.update_status()
+
     def on_mode_change(self, index):
         try:
             native_day, native_night = PlasmaThemeManager.get_native_prefs()
@@ -349,6 +398,9 @@ class SchedulerTab(QWidget):
             night_kv = self.night_theme_combo.currentText()
             day_global = self.day_global_combo.currentText() or native_day
             night_global = self.night_global_combo.currentText() or native_night
+            
+            day_gtk = self.day_gtk_combo.currentText()
+            night_gtk = self.night_gtk_combo.currentText()
             
             if index == 0: # Auto
                 log_activity("Switching to Auto Mode...")
@@ -365,23 +417,30 @@ class SchedulerTab(QWidget):
                 PlasmaThemeManager.set_auto_enabled(False)
                 if day_kv: KvantumManager.set_theme(day_kv)
                 if day_global: PlasmaThemeManager.apply_theme(day_global)
+                if day_gtk: GtkManager.set_theme(day_gtk)
                 
             elif index == 2: # Static Dark
                 log_activity("Switching to Static Dark Mode...")
                 PlasmaThemeManager.set_auto_enabled(False)
                 if night_kv: KvantumManager.set_theme(night_kv)
                 if night_global: PlasmaThemeManager.apply_theme(night_global)
+                if night_gtk: GtkManager.set_theme(night_gtk)
                 
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             log_error(f"Mode Change Failed: {e}")
             QMessageBox.critical(self, "Mode Change Failed", f"An error occurred while switching modes:\n{e}")
+        
+        # Always refresh status after mode change to show new Active state
+        self.update_status(apply=False)
 
     def manual_refresh(self):
         self.update_status(apply=False)
         
     def manual_apply(self):
         self.update_status(apply=True)
+        # Refresh again to update "Active" labels
+        self.update_status(apply=False)
 
     def update_status(self, apply=False):
         now = datetime.datetime.now().astimezone()
@@ -445,17 +504,26 @@ class SchedulerTab(QWidget):
         native_day, native_night = PlasmaThemeManager.get_native_prefs()
         target_gl = native_day if is_day else native_night
         
+        target_gtk = config.get('day_gtk_theme') if is_day else config.get('night_gtk_theme')
+        
         # Get Active States
         active_kv = KvantumManager.get_current_theme() or "Unknown"
         active_gl = PlasmaThemeManager.get_current_theme() or "Unknown"
+        active_gtk = GtkManager.get_current_theme() or "Unknown"
 
         rise_s = sunrise_dt.strftime('%H:%M') if sunrise_dt else "N/A"
         set_s = sunset_dt.strftime('%H:%M') if sunset_dt else "N/A"
         
         # Update UI Labels
+        # Native Auto Status
+        is_native_auto = PlasmaThemeManager.is_auto_enabled()
+        native_status_str = "Auto (Scheduled)" if is_native_auto else "Static (Manual)"
+
+        # Update UI Labels
         info_text = (
-            f"Current: {now.strftime('%H:%M')} | Mode: {mode_text}\n"
-            f"Start: {rise_s} | End: {set_s}"
+            f"Current: {now.strftime('%H:%M')} | Cycle: {mode_text}\n"
+            f"Start: {rise_s} | End: {set_s}\n"
+            f"System Mode: {native_status_str}"
         )
         self.lbl_info.setText(info_text)
         
@@ -464,6 +532,9 @@ class SchedulerTab(QWidget):
         
         self.lbl_gl_target.setText(f"Target: {target_gl}")
         self.lbl_gl_active.setText(f"Active: {active_gl}")
+        
+        self.lbl_gtk_target.setText(f"Target: {target_gtk}")
+        self.lbl_gtk_active.setText(f"Active: {active_gtk}")
         
         if apply:
              log_activity(f"Manual Apply: Switching to '{target_kv}' (Mode: {mode_text})")
@@ -480,6 +551,13 @@ class SchedulerTab(QWidget):
                      log_activity(f"Applied Kvantum: {target_kv}")
                  else:
                      log_error(f"Failed Kvantum: {target_kv}")
+                      
+                 # Apply GTK
+                 if target_gtk:
+                     if GtkManager.set_theme(target_gtk):
+                         log_activity(f"Applied GTK: {target_gtk}")
+                     else:
+                         log_error(f"Failed GTK: {target_gtk}")
                      
              except Exception as e:
                  log_error(f"Error acting on manual apply: {e}")

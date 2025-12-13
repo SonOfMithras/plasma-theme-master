@@ -11,6 +11,7 @@ from core.config import config
 from core import kvantum, plasma
 from core.logger import setup_logger, log_activity, log_error
 from core.plasma import PlasmaThemeManager
+from core.gtk import GtkManager
 
 def check_and_apply(apply=True):
     """
@@ -21,6 +22,8 @@ def check_and_apply(apply=True):
     lon = config.get('longitude')
     day_theme = config.get('day_theme')
     night_theme = config.get('night_theme')
+    day_gtk = config.get('day_gtk_theme')
+    night_gtk = config.get('night_gtk_theme')
     
     # Check for valid config
     if lat == 0.0 and lon == 0.0:
@@ -75,6 +78,7 @@ def check_and_apply(apply=True):
             is_day = not (t_set <= t_now < t_rise)
 
     target_theme = day_theme if is_day else night_theme
+    target_gtk = day_gtk if is_day else night_gtk
     
     # If apply is requested or daemon mode (which sets apply=True)
     if apply:
@@ -95,6 +99,13 @@ def check_and_apply(apply=True):
                 except Exception as e:
                     log_error(f"Failed to apply Kvantum theme '{target_kv}': {e}")
                     print(f"Error applying Kvantum theme: {e}")
+                    
+        if target_gtk:
+            try:
+                GtkManager.set_theme(target_gtk)
+                log_activity(f"Applied GTK Theme: {target_gtk}")
+            except Exception as e:
+                log_error(f"Failed to apply GTK theme '{target_gtk}': {e}")
 
 def cmd_daemon(args):
     import time
@@ -132,6 +143,12 @@ def cmd_scheduler(args):
     if args.night_theme:
         config.set('night_theme', args.night_theme)
         print(f"Night theme updated to {args.night_theme}")
+    if args.day_gtk:
+        config.set('day_gtk_theme', args.day_gtk)
+        print(f"Day GTK theme updated to {args.day_gtk}")
+    if args.night_gtk:
+        config.set('night_gtk_theme', args.night_gtk)
+        print(f"Night GTK theme updated to {args.night_gtk}")
 
     # 2. Run logic using the helper
     # We can't reuse check_and_apply easily for *printing* status without applying
@@ -185,11 +202,17 @@ def cmd_scheduler(args):
             is_day = not (t_set <= t_now < t_rise)
 
     target_theme = day_theme if is_day else night_theme
+    target_gtk = day_gtk if is_day else night_gtk
+    
     print(f"Current Status: {'Day' if is_day else 'Night'}")
-    print(f"Target Theme: {target_theme}")
+    print(f"Target Kvantum: {target_theme}")
+    print(f"Target GTK:     {target_gtk}")
 
     if args.apply:
         kvantum.KvantumManager.set_theme(target_theme)
+        if target_gtk:
+            GtkManager.set_theme(target_gtk)
+            print(f"Applied GTK Theme: {target_gtk}")
     else:
         print("Dry run. Use --apply to actually switch.")
 
@@ -267,6 +290,8 @@ Examples:
     parser_sched.add_argument('--lon', type=float, help='Set Longitude (e.g., -74.0)')
     parser_sched.add_argument('--day-theme', type=str, help='Set Day Kvantum Theme name')
     parser_sched.add_argument('--night-theme', type=str, help='Set Night Kvantum Theme name')
+    parser_sched.add_argument('--day-gtk', type=str, help='Set Day GTK Theme name')
+    parser_sched.add_argument('--night-gtk', type=str, help='Set Night GTK Theme name')
     parser_sched.add_argument('--apply', action='store_true', help='Apply the calculated theme immediately based on current time')
     parser_sched.set_defaults(func=cmd_scheduler)
     

@@ -1,6 +1,5 @@
 import os
 import shutil
-import glob
 from pathlib import Path
 
 PLASMA_THEMES_DIR = Path.home() / ".local/share/plasma/look-and-feel"
