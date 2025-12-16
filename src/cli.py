@@ -113,6 +113,8 @@ def cmd_scheduler(args):
     if args.lon: config.set('longitude', args.lon)
     if args.day_theme: config.set('day_theme', args.day_theme)
     if args.night_theme: config.set('night_theme', args.night_theme)
+    if args.day_global: config.set('day_global_theme', args.day_global)
+    if args.night_global: config.set('night_global_theme', args.night_global)
     if args.day_gtk: config.set('day_gtk_theme', args.day_gtk)
     if args.night_gtk: config.set('night_gtk_theme', args.night_gtk)
     
@@ -168,16 +170,18 @@ def main():
     parser = argparse.ArgumentParser(description="Plasma Theme Master CLI")
     subparsers = parser.add_subparsers(dest='command')
 
-    # Scheduler
-    p_sched = subparsers.add_parser('scheduler')
-    p_sched.add_argument('--lat', type=float)
-    p_sched.add_argument('--lon', type=float)
-    p_sched.add_argument('--day-theme', type=str)
-    p_sched.add_argument('--night-theme', type=str)
-    p_sched.add_argument('--day-gtk', type=str)
-    p_sched.add_argument('--night-gtk', type=str)
-    p_sched.add_argument('--apply', action='store_true')
-    p_sched.set_defaults(func=cmd_scheduler)
+    # Scheduler Command
+    parser_sched = subparsers.add_parser('scheduler', help='Manage Day/Night cycle configuration and manual checks')
+    parser_sched.add_argument('--lat', type=float, help='Set Latitude (e.g., 40.7)')
+    parser_sched.add_argument('--lon', type=float, help='Set Longitude (e.g., -74.0)')
+    parser_sched.add_argument('--day-theme', type=str, help='Set Day Kvantum Theme name')
+    parser_sched.add_argument('--night-theme', type=str, help='Set Night Kvantum Theme name')
+    parser_sched.add_argument('--day-global', type=str, help='Set Day Global Theme (Look and Feel) name')
+    parser_sched.add_argument('--night-global', type=str, help='Set Night Global Theme (Look and Feel) name')
+    parser_sched.add_argument('--day-gtk', type=str, help='Set Day GTK Theme name')
+    parser_sched.add_argument('--night-gtk', type=str, help='Set Night GTK Theme name')
+    parser_sched.add_argument('--apply', action='store_true', help='Apply the calculated theme immediately based on current time')
+    parser_sched.set_defaults(func=cmd_scheduler)
     
     # Daemon
     p_daemon = subparsers.add_parser('daemon')

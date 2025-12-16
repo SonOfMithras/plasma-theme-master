@@ -1,19 +1,23 @@
 # Plasma Theme Master
 
-A powerful, unified tool for managing KDE Plasma themes and Kvantum day/night cycles.
+A powerful, unified tool for managing KDE Plasma themes, Global Themes (Look and Feel), and Kvantum day/night cycles.
 
 [View Changelog](CHANGELOG.md)
 
 ## Features
 
-### 🌙 Kvantum Day/Night Scheduler
+### 🌙 Robust Day/Night Scheduler
+- **Integrated Control**: Manages **Kvantum**, **Global Themes (Plasma)**, and **GTK** themes simultaneously.
 - **Solar Scheduling**: Automatically calculates sunrise and sunset times based on your latitude and longitude.
-- **Custom Scheduling**: Set your own specific times for day and night modes.
-- **Auto-Switching**: Automatically switches your Kvantum theme and Global Theme preference (Day/Night) in the background.
+- **Reliable Sync**: The background daemon actively monitors and enforces your chosen themes, correcting any drifts or Plasma sync failures automatically.
+- **Smart Auto Mode**: Seamlessly integrates with Plasma's native "Auto" coloring mode while ensuring themes apply instantly upon transition.
 
-### 🖌️ GTK Theme Support (v0.2.1)
-- **Unified Styling**: Apply GTK-2/3/4 themes alongside your Plasma themes.
-- **Sync**: Automatically switches GTK themes based on your day/night schedule.
+### 🖌️ Unified Styling
+- **GTK Support**: Syncs your GTK-2/3/4 themes with your Plasma schedule for a cohesive desktop look.
+- **Global Theme Editor**: 
+    - Clone system themes to create custom variants.
+    - Edit specific components: **Colors, Cursors, Icons, Plasma Styles, and Application Styles**.
+    - Safely revert changes with built-in backups.
 
 ### 🎨 Advanced Global Theme Editor
 - **Theme Cloning**: Easily clone existing or system-wide Global Themes to your user directory for customization.
@@ -23,30 +27,41 @@ A powerful, unified tool for managing KDE Plasma themes and Kvantum day/night cy
     - **Window Decorations**: Robust support for **Aurorae** themes, with automatic handling of engine prefixes (e.g., `__aurorae__svg__`).
       > **Warning**: Ensure the **Window Decoration Engine** matches the chosen theme (e.g., use `org.kde.kwin.aurorae` for Aurorae themes). Mismatches may cause display issues.
 - **Raw Editor**: Full access to the `contents/defaults` INI file for power users.
-- **Restore Defaults**: Safely revert theme changes to their original state using automatic backups.
 
 ### 📊 Activity Logging
-- **New in v0.2.0**: Track all background actions and app changes.
-- View logs via the GUI or CLI (`plasma-theme-master log`).
+- Logs all theme transitions and daemon activities.
+- View logs directly in the GUI or via the CLI.
 
 ## Requirements
 
 - **Python 3.6+**
 - **PySide6**: `pip install PySide6`
-- **Kvantum**: The `kvantummanager` tool must be installed and in your PATH.
-- **KDE Plasma**: Tested on Plasma 6.
+- **Kvantum**: The `kvantummanager` tool must be installed.
+- **KDE Plasma 6.5**
 
 ## Installation
 
-### System-Wide Install (Recommended)
-This will install the application to `/opt/plasma-theme-master` and create a desktop entry for tailored integration with KDE Plasma.
+### Option 1: From Release Archive (Recommended)
+If you downloaded the `plasma-theme-master-v[version].tar.gz` release:
 
-1. Clone or download this repository.
-2. Run the install script:
+1. Extract the archive:
+   ```bash
+   tar -xzf plasma-theme-master-v[version].tar.gz
+   cd plasma-theme-master
+   ```
+2. Run the installer:
    ```bash
    sudo ./install.sh
    ```
-3. Launch "Plasma Theme Master" from your application menu or run `plasma-theme-master` from the terminal.
+3. Follow the prompts to enable the background service.
+
+### Option 2: From Source
+1. Clone this repository.
+2. Run the installer:
+   ```bash
+   sudo ./install.sh
+   ```
+3. Follow the prompts to enable the background service.
 
 ### User Install (Manual)
 1. Install dependencies:
@@ -61,66 +76,54 @@ This will install the application to `/opt/plasma-theme-master` and create a des
 ## Usage
 
 ### GUI
-- Launch the application.
+Launch **Plasma Theme Master** from your application menu.
+
 - **Scheduler Tab**:
-    - Enter your Latitude and Longitude (e.g., `40.7128`, `-74.0060`).
-    - **Daytime Offset**: Adjusts the sensitivity of the day/night switch.
-        > **Note**: To match Plasma's default native delay, set this slider all the way to the right.
-    - **Theme Mode**: Choose between **Auto (Follow Schedule)** or **Static Mode** (Light/Dark).
-        - **Auto**: Follows the calculated schedule using Plasma's native Day/Night transition.
-        - **Static**: Enforces a specific theme regardless of time.
-    - Select your preferred Day and Night Kvantum/Global themes.
-    - Click "Refresh & Apply Now" to test immediately.
-    - Settings are saved automatically.
+    - **Configuration**: Set your Latitude/Longitude for solar calculations or define custom times.
+    - **Mode**: Switch between **Auto (Scheduled)**, **Static Light**, or **Static Dark**.
+    - **Status**: View current cycle state (Day/Night) and target themes.
+    - **Themes**: Select your preferred pairings for Day and Night. 
+    - **Refresh**: Click the ⟳ icon to force a status check.
 - **Global Theme Editor Tab**:
-    - Select a theme from the list.
-    - Click **Clone** to create a mutable copy (appends `-U` by default).
-    - Use the **Easy Editor** to change specific theme elements like Colors or Window Decorations.
-    - Click **Save Changes** to apply.
-    
-### GUI Layout & Menus
-- **Files Menu**: Quickly open your `~/.local/share/plasma/look-and-feel/` or config folder.
-- **Help Menu**: View the Activity Log (in reverse chronological order), see About info, or run the **Uninstaller**.
-- **Hamburger (☰)**:
-    - **Clear Config**: Reset application settings to defaults.
+    - **Clone**: Create editable copies of current themes.
+    - **Edit**: Customize theme components (Colors, Window Decorations, etc.).
+    - **Save**: Apply your changes immediately.
 
 ### CLI
-The CLI is perfect for scripting or cron jobs.
-- **Set Configuration**:
+The CLI has been streamlined for efficiency and scripting.
+
+- **Configure & Schedule**:
   ```bash
-  plasma-theme-master scheduler --lat 40.7128 --lon -74.0060 --day-theme Graphite --night-theme GraphiteDark
+  plasma-theme-master scheduler --lat 40.7 --lon -74.0 --day-theme Graphite --night-theme GraphiteDark
   ```
-- **Apply Current State** (Run this in cron/autostart):
+- **Force Check & Apply**:
   ```bash
   plasma-theme-master scheduler --apply
   ```
-- **List Themes**:
+- **Run Daemon** (Foreground):
+  ```bash
+  plasma-theme-master daemon
+  ```
+- **List/Clone Themes**:
   ```bash
   plasma-theme-master theme list
+  plasma-theme-master theme clone --source "Breeze" --dest "MyBreeze-U"
   ```
-- **View Log**:
+- **View Logs**:
   ```bash
   plasma-theme-master log
   ```
 
 ## Automation
 
-### Option 1: Systemd Service (Recommended)
-This method runs a lightweight background daemon that checks the schedule every minute.
-1. Enable the user service (installed automatically):
-   ```bash
-   systemctl --user enable --now plasma-theme-master.service
-   ```
-2. Check status:
-   ```bash
-   systemctl --user status plasma-theme-master.service
-   ```
-3. View logs:
-   ```bash
-   journalctl --user -u plasma-theme-master.service -f
-   ```
+### Systemd Service (Default)
+The installer sets up a user-level systemd service that checks the schedule every minute.
 
-### Option 2: Cron Job
+- **Status**: `systemctl --user status plasma-theme-master.service`
+- **Logs**: `journalctl --user -u plasma-theme-master.service -f`
+- **Restart**: `systemctl --user restart plasma-theme-master.service`
+
+### Option 2: Cron Job (Periodic Check)
 If you prefer not to run a daemon, you can use cron to check periodically.
 1. Open crontab:
    ```bash
@@ -131,11 +134,32 @@ If you prefer not to run a daemon, you can use cron to check periodically.
    * * * * * /usr/local/bin/plasma-theme-master scheduler --apply
    ```
 
-## Uninstallation
-To remove the application from your system:
+### Advanced Scheduling (Weekend Mode)
+You can use cron to change **what themes are used** on specific days, while letting the daemon (or the periodic check above) handle the actual day/night switching.
+
+**Command breakdown:**
+- `--day-theme / --night-theme`: Sets the **Kvantum** (Application Style) theme.
+- `--day-global / --night-global`: Sets the **Global Theme** (Look and Feel).
+
+**Example: Weekend vs. Work Week**
+Add these lines to your crontab to switch to a relaxed theme on Friday evening and back to a professional theme on Sunday night:
+
 ```bash
-sudo ./uninstall.sh
+# Friday 5:00 PM: Switch to "Nordic" for the weekend
+0 17 * * 5 /usr/local/bin/plasma-theme-master scheduler --day-theme "Nordic" --night-theme "Nordic-Dark" --day-global "Nordic" --night-global "Nordic"
+
+# Sunday 8:00 PM: Revert to "Graphite" for the work week
+0 20 * * 0 /usr/local/bin/plasma-theme-master scheduler --day-theme "Graphite" --night-theme "GraphiteDark" --day-global "Graphite" --night-global "Graphite-dark"
 ```
+
+## Uninstallation
+
+To remove the application and service, you can:
+1. Open the **Help** menu in the GUI and select **Uninstall**.
+2. Or run the removal script from the terminal:
+   ```bash
+   sudo ./uninstall.sh
+   ```
 
 ## Configuration
 Settings are stored in `~/.config/plasma-theme-master/config.json`.

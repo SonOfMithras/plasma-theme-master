@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
     - Fixed a logic error where enabling "Auto Mode" would inadvertently block Plasma's native scheduler by forcing a manual theme application.
     - The application now delegates Global Theme switching to Plasma when Auto Mode is active.
     
+- **Packaging**:
+    - Removed Debian packaging support and artifacts (`package.env`) to focus on direct installation.
+- **CLI Enhancements**:
+    - Added `--day-global` and `--night-global` arguments to the `scheduler` command, allowing fully scripted control over Global Theme preferences via cron.
 - **GTK Logging**:
     - Fixed duplicate logging for GTK theme application.
     - Prevented the daemon from repeatedly applying/logging the GTK theme when it is already active.
