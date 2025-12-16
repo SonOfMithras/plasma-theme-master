@@ -25,8 +25,6 @@ All notable changes to this project will be documented in this file.
     - Refactored the CLI and Daemon logic for better readability and performance.
 - **Installer Improvements**:
     - The `install.sh` script now automatically stops any running instances of the daemon before installation to ensure the new version is loaded correctly.
-- **Packaging**:
-    - Removed Debian packaging support and artifacts (`package.env`) to focus on direct installation.
 
 ## [0.2.1] - 2025-12-13
 
