@@ -1,6 +1,32 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.2.2] - 2025-12-15
+
+### Fixed
+- **Kvantum Service Crash**:
+    - Resolved an issue where `kvantummanager` would crash (core dump) when run by the background service due to missing display access.
+    - Implemented a robust fallback that writes directly to `kvantum.kvconfig` if the graphical tool fails.
+**Plasma Auto Mode Interference**:
+    - Fixed a logic error where enabling "Auto Mode" would inadvertently block Plasma's native scheduler by forcing a manual theme application.
+    - The application now delegates Global Theme switching to Plasma when Auto Mode is active.
+    
+- **GTK Logging**:
+    - Fixed duplicate logging for GTK theme application.
+    - Prevented the daemon from repeatedly applying/logging the GTK theme when it is already active.
+- **Auto Mode Sync**:
+    - Improved transition to "Auto Mode" by forcing an immediate theme sync if the current theme is incorrect, ensuring Plasma updates visuals instantly while keeping the native scheduler active.
+- **UI Refinements**:
+    - Simplifed the Scheduler interface by removing the redundant "Apply Static Theme" button and moving the "Refresh" action to a compact icon in the status header.
+- **Robust Scheduler**:
+    - Fixed a flaw where the background daemon would ignore Global Theme updates.
+    - The daemon now actively syncs the Global Theme if needed and re-enables the native scheduler to maintain state.
+- **Code Cleanup**:
+    - Refactored the CLI and Daemon logic for better readability and performance.
+- **Installer Improvements**:
+    - The `install.sh` script now automatically stops any running instances of the daemon before installation to ensure the new version is loaded correctly.
+- **Packaging**:
+    - Removed Debian packaging support and artifacts (`package.env`) to focus on direct installation.
 
 ## [0.2.1] - 2025-12-13
 

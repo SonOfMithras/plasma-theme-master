@@ -3,21 +3,37 @@
 # Plasma Theme Master - Install Script
 # Installs to /opt/plasma-theme-master and integrates with KDE Plasma.
 
-# PKG_ROOT allows installing to a temporary directory for packaging (e.g. .deb creation)
-PKG_ROOT="${PKG_ROOT:-}"
-
-INSTALL_DIR="${PKG_ROOT}/opt/plasma-theme-master"
-BIN_PATH="${PKG_ROOT}/usr/local/bin/plasma-theme-master"
-DESKTOP_PATH="${PKG_ROOT}/usr/share/applications/plasma-theme-master.desktop"
+INSTALL_DIR="/opt/plasma-theme-master"
+BIN_PATH="/usr/local/bin/plasma-theme-master"
+DESKTOP_PATH="/usr/share/applications/plasma-theme-master.desktop"
 
 # Check for root
-# Check for root (unless we are packaging into a custom root)
-if [ -z "$PKG_ROOT" ] && [ "$EUID" -ne 0 ]; then 
+if [ "$EUID" -ne 0 ]; then 
   echo "Please run as root (sudo ./install.sh)"
   exit 1
 fi
 
 echo "Installing Plasma Theme Master..."
+
+# 0. Pre-Install Cleanup (Stop existing service)
+if [ -n "$SUDO_USER" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_ID=$(id -u "$REAL_USER")
+    echo "Checking for existing service..."
+    
+    # Try to stop the service if it's running
+    if systemctl --user --machine="${REAL_USER}@.host" is-active --quiet plasma-theme-master.service 2>/dev/null; then
+         echo "Stopping existing service..."
+         systemctl --user --machine="${REAL_USER}@.host" stop plasma-theme-master.service
+    elif sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/$USER_ID" systemctl --user is-active --quiet plasma-theme-master.service 2>/dev/null; then
+         echo "Stopping existing service (fallback)..."
+         sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/$USER_ID" systemctl --user stop plasma-theme-master.service
+    fi
+    
+    # Reload daemon to clear cached unit files if we are about to overwrite them
+    # (Actually we do this after install usually, but stopping ensures no lock on files if that matters)
+fi
+
 
 # 1. Create Directory and Copy Files
 # Clean up potential leftovers from previous installs to ensure a clean update
@@ -61,10 +77,10 @@ Terminal=false
 EOF
 
 # 5. Install Systemd Service
-SERVICE_DEST="${PKG_ROOT}/usr/lib/systemd/user/plasma-theme-master.service"
+SERVICE_DEST="/usr/lib/systemd/user/plasma-theme-master.service"
 echo "Installing systemd service to $SERVICE_DEST..."
 # Ensure dir exists (it should on systemd distros)
-mkdir -p "${PKG_ROOT}/usr/lib/systemd/user"
+mkdir -p "/usr/lib/systemd/user"
 cp plasma-theme-master.service "$SERVICE_DEST"
 chmod 644 "$SERVICE_DEST"
 

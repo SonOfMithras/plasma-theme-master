@@ -1,315 +1,199 @@
 import argparse
 import sys
 import datetime
+import time
 from pathlib import Path
 
-# Add src to path to import core modules
+# Add src to path
 sys.path.append(str(Path(__file__).parent))
 
 from core.solar import get_solar_times
 from core.config import config
-from core import kvantum, plasma
-from core.logger import setup_logger, log_activity, log_error
+from core import kvantum
 from core.plasma import PlasmaThemeManager
 from core.gtk import GtkManager
+from core.logger import setup_logger, log_activity, log_error
 
-def check_and_apply(apply=True):
-    """
-    Core logic to check time and apply theme.
-    Returns True if theme was set, False otherwise.
-    """
+def is_daytime():
+    """Calculates if it is currently daytime based on config."""
     lat = config.get('latitude')
     lon = config.get('longitude')
-    day_theme = config.get('day_theme')
-    night_theme = config.get('night_theme')
-    day_gtk = config.get('day_gtk_theme')
-    night_gtk = config.get('night_gtk_theme')
-    
-    # Check for valid config
-    if lat == 0.0 and lon == 0.0:
-        return
-
-    # Check native Plasma Auto Mode
-    # If False, we adhere to Static Mode and do NOT interfere.
-    try:
-        from core.plasma import PlasmaThemeManager
-        is_auto = PlasmaThemeManager.is_auto_enabled()
-        if not is_auto and apply:
-            # log_activity("Daemon skipping check: Plasma Auto Mode is disabled (Static Mode active).")
-            return
-    except Exception as e:
-        log_error(f"Daemon failed to check Auto Mode: {e}")
-        
     now = datetime.datetime.now().astimezone()
     
-    # Determine proper mode
-    is_day = False
-    mode_setting = config.get('schedule_mode', 'solar')
-    
-    if mode_setting == 'solar':
+    if config.get('schedule_mode', 'solar') == 'solar':
+        if lat == 0.0 and lon == 0.0: return False
+        
         today_utc = datetime.datetime.now(datetime.timezone.utc).date()
         times = get_solar_times(today_utc, lat, lon)
-        if times:
-            sunrise = times['sunrise'].astimezone()
-            sunset = times['sunset'].astimezone()
-            
-            # Apply padding logic
-            # Padding -30 (Shorten day): Start +15, End -15
-            # Shift = -15 mins
-            # Sunrise - (-15) = +15. Sunset + (-15) = -15.
-            padding = float(config.get('solar_padding', 0))
-            shift = datetime.timedelta(minutes=padding / 2)
-            
-            sunrise = sunrise - shift
-            sunset = sunset + shift
-            
-            is_day = sunrise <= now < sunset
+        if not times: return False
+        
+        s_rise = times['sunrise'].astimezone()
+        s_set = times['sunset'].astimezone()
+        
+        # Apply padding
+        shift = datetime.timedelta(minutes=float(config.get('solar_padding', 0)) / 2)
+        return (s_rise - shift) <= now < (s_set + shift)
     else:
-        # Custom
-        sunrise_str = config.get('custom_sunrise', '06:00')
-        sunset_str = config.get('custom_sunset', '18:00')
-        t_now = now.time()
-        t_rise = datetime.datetime.strptime(sunrise_str, "%H:%M").time()
-        t_set = datetime.datetime.strptime(sunset_str, "%H:%M").time()
-        
-        if t_rise < t_set:
-            is_day = t_rise <= t_now < t_set
-        else:
-            is_day = not (t_set <= t_now < t_rise)
+        # Custom Times
+        try:
+            t_now = now.time()
+            t_rise = datetime.datetime.strptime(config.get('custom_sunrise', '06:00'), "%H:%M").time()
+            t_set = datetime.datetime.strptime(config.get('custom_sunset', '18:00'), "%H:%M").time()
+            return t_rise <= t_now < t_set if t_rise < t_set else not (t_set <= t_now < t_rise)
+        except ValueError:
+            return False
 
-    target_theme = day_theme if is_day else night_theme
-    target_gtk = day_gtk if is_day else night_gtk
+def check_and_apply(apply=True):
+    """Checks requirements and applies themes if needed."""
+    # 1. Verify Auto Mode is Enabled
+    try:
+        if not PlasmaThemeManager.is_auto_enabled() and apply:
+            return # Static mode active, do not interfere
+    except Exception as e:
+        log_error(f"Auto-Check Failed: {e}")
+        return
+
+    # 2. Determine State
+    day_mode = is_daytime()
     
-    # If apply is requested or daemon mode (which sets apply=True)
-    if apply:
-        # Determine target theme
-        target_kv = config.get("day_theme") if is_day else config.get("night_theme")
-        
-        if target_kv:
-            # Check if we are already on this theme
-            current_kv = kvantum.KvantumManager.get_current_theme()
-            log_activity(f"Scheduler Check: Day={is_day}. Target Theme={target_kv}. Current Theme={current_kv}")
+    # 3. Get Targets
+    target_kv = config.get("day_theme") if day_mode else config.get("night_theme")
+    target_gtk = config.get("day_gtk_theme") if day_mode else config.get('night_gtk_theme')
+    
+    # Global Theme Targets (Best effort from Native Prefs as fallback, or UI config if we had it?)
+    # The UI saves specific day/night Global Themes to Plasma's native prefs.
+    # We should read those back to know what to apply.
+    native_day, native_night = PlasmaThemeManager.get_native_prefs()
+    target_gl = native_day if day_mode else native_night
 
-            if current_kv == target_kv:
-                log_activity("Nothing to do correct theme set")
-            else:
-                try:
-                    kvantum.KvantumManager.set_theme(target_kv)
-                    log_activity(f"Applied Kvantum Theme: {target_kv}")
-                except Exception as e:
-                    log_error(f"Failed to apply Kvantum theme '{target_kv}': {e}")
-                    print(f"Error applying Kvantum theme: {e}")
-                    
-        if target_gtk:
-            try:
-                GtkManager.set_theme(target_gtk)
-                log_activity(f"Applied GTK Theme: {target_gtk}")
-            except Exception as e:
-                log_error(f"Failed to apply GTK theme '{target_gtk}': {e}")
+    if not apply:
+        return # Just checking, logic ends here for dry-run if we were using it that way
+
+    # 4. Apply Global Theme
+    if target_gl:
+        curr_gl = PlasmaThemeManager.get_current_theme()
+        if curr_gl != target_gl:
+            log_activity(f"Scheduler: Switching Global Theme to {target_gl} (Day={day_mode})")
+            if PlasmaThemeManager.apply_theme(target_gl):
+                # Critical: Applying manually disables Auto. Re-enable it to keep daemon alive.
+                PlasmaThemeManager.set_auto_enabled(True)
+    
+    # 5. Apply Kvantum
+    if target_kv:
+        if kvantum.KvantumManager.get_current_theme() != target_kv:
+            log_activity(f"Scheduler: Switching Kvantum to {target_kv}")
+            kvantum.KvantumManager.set_theme(target_kv)
+
+    # 6. Apply GTK
+    if target_gtk:
+        if GtkManager.get_current_theme() != target_gtk:
+            # GtkManager logs internally, but we can log context if needed
+            GtkManager.set_theme(target_gtk)
 
 def cmd_daemon(args):
-    import time
-    print("Starting Plasma Theme Master Daemon...")
+    print("Starting Plasma Theme Master Daemon... (Ctrl+C to stop)")
     log_activity("Daemon started.")
-    print("Press Ctrl+C to stop.")
     
     while True:
         try:
-            # Reload config each iteration to pick up GUI changes
             config.load()
             check_and_apply(apply=True)
-            time.sleep(60) # Check every minute
+            time.sleep(60)
         except KeyboardInterrupt:
-            print("Stopping daemon.")
+            print("\nStopping daemon.")
             log_activity("Daemon stopped by user.")
             break
         except Exception as e:
-            msg = f"Daemon error: {e}"
-            print(msg)
-            log_error(msg)
+            log_error(f"Daemon error: {e}")
             time.sleep(60)
 
 def cmd_scheduler(args):
-    # 1. Update config if args provided
-    if args.lat is not None:
-        config.set('latitude', args.lat)
-        print(f"Latitude updated to {args.lat}")
-    if args.lon is not None:
-        config.set('longitude', args.lon)
-        print(f"Longitude updated to {args.lon}")
-    if args.day_theme:
-        config.set('day_theme', args.day_theme)
-        print(f"Day theme updated to {args.day_theme}")
-    if args.night_theme:
-        config.set('night_theme', args.night_theme)
-        print(f"Night theme updated to {args.night_theme}")
-    if args.day_gtk:
-        config.set('day_gtk_theme', args.day_gtk)
-        print(f"Day GTK theme updated to {args.day_gtk}")
-    if args.night_gtk:
-        config.set('night_gtk_theme', args.night_gtk)
-        print(f"Night GTK theme updated to {args.night_gtk}")
-
-    # 2. Run logic using the helper
-    # We can't reuse check_and_apply easily for *printing* status without applying
-    # unless we refactor more. But cmd_scheduler is verbose for human CLI usage.
-    # The Daemon logic is silent.
-    # Let's keep cmd_scheduler mostly as is but fix the logic to match the new custom mode support.
+    # CLI Config Update
+    if args.lat: config.set('latitude', args.lat)
+    if args.lon: config.set('longitude', args.lon)
+    if args.day_theme: config.set('day_theme', args.day_theme)
+    if args.night_theme: config.set('night_theme', args.night_theme)
+    if args.day_gtk: config.set('day_gtk_theme', args.day_gtk)
+    if args.night_gtk: config.set('night_gtk_theme', args.night_gtk)
     
-    # ... (Actually, cmd_scheduler logic in file was missing custom mode support!)
-    # Let's fix cmd_scheduler to duplicate the robust logic or reuse it.
+    # Status Report
+    is_auto = PlasmaThemeManager.is_auto_enabled()
+    day_mode = is_daytime()
+    print(f"System Mode: {'Auto' if is_auto else 'Static'}")
+    print(f"Cycle State: {'Day' if day_mode else 'Night'}")
     
-    # Reuse check_and_apply logic? It doesn't print status.
-    # Let's just fix cmd_scheduler to be robust first.
-    
-    lat = config.get('latitude')
-    lon = config.get('longitude')
-    day_theme = config.get('day_theme')
-    night_theme = config.get('night_theme')
-    mode = config.get('schedule_mode', 'solar')
-    
-    now = datetime.datetime.now().astimezone()
-    is_day = False
-    
-    # Check Native Mode status for reporting
-    try:
-        from core.plasma import PlasmaThemeManager
-        is_native_auto = PlasmaThemeManager.is_auto_enabled()
-        print(f"Plasma Auto Mode: {'Enabled' if is_native_auto else 'Disabled (Static)'}")
-    except:
-        print("Plasma Auto Mode: Unknown")
-    
-    if mode == 'solar':
-        today_utc = datetime.datetime.now(datetime.timezone.utc).date()
-        times = get_solar_times(today_utc, lat, lon)
-        if times:
-            sunrise = times['sunrise'].astimezone()
-            sunset = times['sunset'].astimezone()
-            print(f"Solar Mode: Rise {sunrise.strftime('%H:%M')} | Set {sunset.strftime('%H:%M')}")
-            is_day = sunrise <= now < sunset
-        else:
-            print("Solar calc failed.")
-    else:
-        sunrise_str = config.get('custom_sunrise', '06:00')
-        sunset_str = config.get('custom_sunset', '18:00')
-        print(f"Custom Mode: Day {sunrise_str} | Night {sunset_str}")
-        t_now = now.time()
-        t_rise = datetime.datetime.strptime(sunrise_str, "%H:%M").time()
-        t_set = datetime.datetime.strptime(sunset_str, "%H:%M").time()
-        if t_rise < t_set:
-            is_day = t_rise <= t_now < t_set
-        else:
-            is_day = not (t_set <= t_now < t_rise)
-
-    target_theme = day_theme if is_day else night_theme
-    target_gtk = day_gtk if is_day else night_gtk
-    
-    print(f"Current Status: {'Day' if is_day else 'Night'}")
-    print(f"Target Kvantum: {target_theme}")
-    print(f"Target GTK:     {target_gtk}")
-
     if args.apply:
-        kvantum.KvantumManager.set_theme(target_theme)
-        if target_gtk:
-            GtkManager.set_theme(target_gtk)
-            print(f"Applied GTK Theme: {target_gtk}")
+        # Force apply regardless of Auto mode? No, respect logic usually.
+        # But CLI user might want to force. 
+        # Let's reuse check_and_apply but maybe override the auto-check if desired?
+        # For now, stick to standard logic.
+        print("Applying themes...")
+        check_and_apply(apply=True)
     else:
-        print("Dry run. Use --apply to actually switch.")
+        print("Use --apply to enforce settings now.")
 
 def cmd_theme(args):
     if args.action == 'list':
         print("Installed Global Themes:")
-        themes = PlasmaThemeManager.list_installed_themes()
-        for t in themes:
-            path_info = f" ({t['type']})"
-            print(f"- {t['name']}{path_info}")
+        for t in PlasmaThemeManager.list_installed_themes():
+            print(f"- {t['name']} ({t['type']})")
             
     elif args.action == 'clone':
         if not args.source or not args.dest:
-            print("Error: --source and --dest are required for clone action.")
+            print("Error: --source and --dest required.")
             return
-            
         try:
             PlasmaThemeManager.clone_theme(args.source, args.dest)
-            print(f"Successfully cloned '{args.source}' to '{args.dest}'")
+            print(f"Cloned '{args.source}' -> '{args.dest}'")
         except Exception as e:
-            print(f"Error cloning theme: {e}")
+            print(f"Error: {e}")
 
 def cmd_log(args):
     from core.logger import LOG_FILE
     if not LOG_FILE.exists():
-        print("No activity log found.")
+        print("No log found.")
         return
-
-    lines_to_show = 50 if args.verbose else 20
-    print(f"--- Last {lines_to_show} lines of Activity Log ---")
     
+    limit = 50 if args.verbose else 20
+    print(f"--- Last {limit} lines ---")
     try:
-        # Read all lines and take last N
-        # For huge logs we might want seek, but rotation keeps it small (<1MB)
-        content = LOG_FILE.read_text().splitlines()
-        for line in content[-lines_to_show:]:
-            print(line)
+        lines = LOG_FILE.read_text(encoding='utf-8').splitlines()
+        for line in lines[-limit:]: print(line)
     except Exception as e:
-        print(f"Error reading log: {e}")
+        print(f"Read error: {e}")
 
 def main():
     setup_logger()
-    examples = """
-Examples:
-
-  1. Configure location and themes for the Scheduler:
-     plasma-theme-master scheduler --lat 40.7 --lon -74.0 --day-theme Kennedy --night-theme KvDark
-
-  2. Manually trigger a check and apply the correct theme now:
-     plasma-theme-master scheduler --apply
-
-  3. Run as a background daemon (checking every minute):
-     plasma-theme-master daemon
-
-  4. List all installed Global Themes:
-     plasma-theme-master theme list
-
-  5. Clone a Global Theme to create a custom version:
-     plasma-theme-master theme clone --source "Breeze" --dest "MyBreeze-U"
-
-  6. Enable the systemd service for background automation:
-     systemctl --user enable --now plasma-theme-master.service
-"""
-
-    parser = argparse.ArgumentParser(
-        description="Plasma Theme Master CLI - Unified Kvantum & Plasma Theme Manager",
-        epilog=examples,
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    subparsers = parser.add_subparsers(dest='command', help='Sub-commands')
-
-    # Scheduler Command
-    parser_sched = subparsers.add_parser('scheduler', help='Manage Day/Night cycle configuration and manual checks')
-    parser_sched.add_argument('--lat', type=float, help='Set Latitude (e.g., 40.7)')
-    parser_sched.add_argument('--lon', type=float, help='Set Longitude (e.g., -74.0)')
-    parser_sched.add_argument('--day-theme', type=str, help='Set Day Kvantum Theme name')
-    parser_sched.add_argument('--night-theme', type=str, help='Set Night Kvantum Theme name')
-    parser_sched.add_argument('--day-gtk', type=str, help='Set Day GTK Theme name')
-    parser_sched.add_argument('--night-gtk', type=str, help='Set Night GTK Theme name')
-    parser_sched.add_argument('--apply', action='store_true', help='Apply the calculated theme immediately based on current time')
-    parser_sched.set_defaults(func=cmd_scheduler)
     
-    # Daemon Command
-    parser_daemon = subparsers.add_parser('daemon', help='Run the background service loop (blocks indefinitely)')
-    parser_daemon.set_defaults(func=cmd_daemon)
+    parser = argparse.ArgumentParser(description="Plasma Theme Master CLI")
+    subparsers = parser.add_subparsers(dest='command')
 
-    # Theme Command
-    parser_theme = subparsers.add_parser('theme', help='List or Clone installed Plasma Global Themes')
-    parser_theme.add_argument('action', choices=['list', 'clone'], help='Action: list installed themes or clone one')
-    parser_theme.add_argument('--source', type=str, help='Name of the theme to clone (for clone action)')
-    parser_theme.add_argument('--dest', type=str, help='New name for the cloned theme (for clone action)')
-    parser_theme.set_defaults(func=cmd_theme)
+    # Scheduler
+    p_sched = subparsers.add_parser('scheduler')
+    p_sched.add_argument('--lat', type=float)
+    p_sched.add_argument('--lon', type=float)
+    p_sched.add_argument('--day-theme', type=str)
+    p_sched.add_argument('--night-theme', type=str)
+    p_sched.add_argument('--day-gtk', type=str)
+    p_sched.add_argument('--night-gtk', type=str)
+    p_sched.add_argument('--apply', action='store_true')
+    p_sched.set_defaults(func=cmd_scheduler)
+    
+    # Daemon
+    p_daemon = subparsers.add_parser('daemon')
+    p_daemon.set_defaults(func=cmd_daemon)
 
-    # Log Command
-    parser_log = subparsers.add_parser('log', help='View recent activity logs')
-    parser_log.add_argument('-v', '--verbose', action='store_true', help='Show more lines (50 instead of 20)')
-    parser_log.set_defaults(func=cmd_log)
+    # Theme
+    p_theme = subparsers.add_parser('theme')
+    p_theme.add_argument('action', choices=['list', 'clone'])
+    p_theme.add_argument('--source', type=str)
+    p_theme.add_argument('--dest', type=str)
+    p_theme.set_defaults(func=cmd_theme)
+
+    # Log
+    p_log = subparsers.add_parser('log')
+    p_log.add_argument('-v', '--verbose', action='store_true')
+    p_log.set_defaults(func=cmd_log)
 
     args = parser.parse_args()
     if hasattr(args, 'func'):

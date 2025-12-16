@@ -61,11 +61,26 @@ class SchedulerTab(QWidget):
         status_layout.setContentsMargins(20, 30, 20, 20)
         status_layout.setSpacing(15)
         
-        # Info Header
+        # Top Row: Info + Refresh
+        top_row_layout = QHBoxLayout()
+        
         self.lbl_info = QLabel("Calculating...")
         self.lbl_info.setAlignment(Qt.AlignCenter)
         self.lbl_info.setStyleSheet("font-weight: bold; font-size: 11pt;")
-        status_layout.addWidget(self.lbl_info)
+        
+        # Small Refresh Button
+        self.refresh_btn = QPushButton("⟳") 
+        self.refresh_btn.setFixedSize(30, 30)
+        self.refresh_btn.setToolTip("Refresh Status")
+        self.refresh_btn.clicked.connect(self.manual_refresh)
+        
+        # Layout: Stretch - Info - Stretch - Refresh
+        top_row_layout.addStretch()
+        top_row_layout.addWidget(self.lbl_info)
+        top_row_layout.addStretch()
+        top_row_layout.addWidget(self.refresh_btn)
+        
+        status_layout.addLayout(top_row_layout)
         
         # Grid for Themes
         grid = QGridLayout()
@@ -93,18 +108,7 @@ class SchedulerTab(QWidget):
         
         status_layout.addLayout(grid)
         
-        btn_layout = QHBoxLayout() # Horizontal layout for buttons
-        
-        self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.clicked.connect(self.manual_refresh)
-        
-        self.apply_btn = QPushButton("Apply Static Theme")
-        self.apply_btn.clicked.connect(self.manual_apply)
-        
-        btn_layout.addWidget(self.refresh_btn)
-        btn_layout.addWidget(self.apply_btn)
-        
-        status_layout.addLayout(btn_layout)
+        # Buttons removed as requested (Refresh moved to top right, Apply is redundant)
         status_group.setLayout(status_layout)
         layout.addWidget(status_group)
         
@@ -338,21 +342,33 @@ class SchedulerTab(QWidget):
         self.sunset_edit.setTime(QTime.fromString(sunset_str, "HH:mm"))
 
         # Load Themes
+        self.day_theme_combo.blockSignals(True)
+        self.night_theme_combo.blockSignals(True)
         day_theme = config.get('day_theme', '')
         night_theme = config.get('night_theme', '')
         self.day_theme_combo.setCurrentText(day_theme)
         self.night_theme_combo.setCurrentText(night_theme)
+        self.day_theme_combo.blockSignals(False)
+        self.night_theme_combo.blockSignals(False)
         
         # Load Global Themes (Native)
+        self.day_global_combo.blockSignals(True)
+        self.night_global_combo.blockSignals(True)
         native_day, native_night = PlasmaThemeManager.get_native_prefs()
         if native_day: self.day_global_combo.setCurrentText(native_day)
         if native_night: self.night_global_combo.setCurrentText(native_night)
+        self.day_global_combo.blockSignals(False)
+        self.night_global_combo.blockSignals(False)
         
         # Load GTK Themes
+        self.day_gtk_combo.blockSignals(True)
+        self.night_gtk_combo.blockSignals(True)
         day_gtk = config.get('day_gtk_theme', 'Breeze')
         night_gtk = config.get('night_gtk_theme', 'Breeze')
         self.day_gtk_combo.setCurrentText(day_gtk)
         self.night_gtk_combo.setCurrentText(night_gtk)
+        self.day_gtk_combo.blockSignals(False)
+        self.night_gtk_combo.blockSignals(False)
 
         # Init location label
         self.update_location()
@@ -404,13 +420,91 @@ class SchedulerTab(QWidget):
             
             if index == 0: # Auto
                 log_activity("Switching to Auto Mode...")
-                # Apply current scheduled themes first?
-                # "apply desired kvantum and global themes"
-                # We need to recalculate status to know what is "desired" right now.
-                self.update_status(apply=True)
-                # Then enable Auto
+                
+                # 1. Determine which Global Theme SHOULD be active right now
+                # We need to reuse the time calculation logic from update_status, 
+                # or just call update_status logic locally.
+                # To be safe/clean, let's fetch the native prefs and check against current time.
+                
+                # We can trigger a manual update *before* enabling auto, 
+                # but we must ensure we re-enable auto after.
+                
+                # Let's rely on update_status(apply=True) BUT we must temporarily DISABLE the guard!
+                # Actually, simpler: Manually apply here, then Enable Auto.
+                
+                # Re-calculate is_day to know which theme to apply
+                # Copying simplified time logic for safety:
+                now = datetime.datetime.now().astimezone()
+                is_day_temp = False
+                mode = config.get('schedule_mode', 'solar')
+                
+                # Quick re-calc (we trust config is loaded)
+                if mode == 'solar':
+                     lat = float(config.get('latitude', 0.0))
+                     lon = float(config.get('longitude', 0.0))
+                     today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+                     # If invalid loc, we can't guess, so skip manual apply
+                     if lat != 0.0 or lon != 0.0:
+                         times = get_solar_times(today_utc, lat, lon)
+                         if times:
+                             s_rise = times['sunrise'].astimezone()
+                             s_set = times['sunset'].astimezone()
+                             pad = float(config.get('solar_padding', 0))
+                             shift = datetime.timedelta(minutes=pad/2)
+                             if s_rise <= now < s_set: is_day_temp = True
+                else:
+                    # Custom
+                    s_rise = config.get('custom_sunrise', '06:00')
+                    s_set = config.get('custom_sunset', '18:00')
+                    # ... simple string compare if needed, or just let update_status handle it?
+                    # Let's reuse the update_status logic by calling it with specific flag?
+                    # No, update_status is too monolithic.
+                    pass 
+                    # If simplified logic is too complex to duplicate, let's just 
+                    # FORCE APPLY the one we think is right.
+                
+                # Actually, easiest way: 
+                # 1. Force the correct theme (by forcing auto=False temporarily implicitly)
+                # 2. Then set Auto=True.
+                
+                # Let's call update_status with a special "force_manual" override? No.
+                # Let's just run the full update_status logic but FORCE auto=false temporarily just for the apply
+                
+                # Correct approach:
+                # 1. Set Auto = True (Config is right).
+                # 2. Check if current Global Theme matches Target.
+                # 3. If NO, manually apply Target (which sets Auto=False).
+                # 4. If we manually applied, Set Auto = True AGAIN.
+                
                 PlasmaThemeManager.set_auto_enabled(True)
-                log_activity("Auto Mode Enabled.")
+                
+                # We need to know what the target is to check alignment.
+                self.update_status(apply=False) # Refreshes labels and internal state calculation? 
+                # update_status doesn't return target.
+                
+                # Let's modify logic to just blindly apply status once with Native Auto check disabled?
+                # No, that modifies code elsewhere.
+                
+                # Let's just do it manually here.
+                nav_day, nav_night = PlasmaThemeManager.get_native_prefs()
+                # We need to know is_day. 
+                # Let's force a "refresh" of the UI state which calculates is_day
+                self.update_status(apply=False) 
+                
+                # Now read the *labels* we just updated? (A bit hacky but works for GUI)
+                target_gl = self.lbl_gl_target.text().replace("Target: ", "")
+                active_gl = self.lbl_gl_active.text().replace("Active: ", "")
+                
+                if target_gl and target_gl != "..." and target_gl != active_gl:
+                    log_activity(f"Auto Mode Transition: Manually sycing theme to {target_gl}...")
+                    PlasmaThemeManager.apply_theme(target_gl) # This sets Auto=False usually
+                    # Re-enable Auto
+                    PlasmaThemeManager.set_auto_enabled(True)
+                
+                # Also apply Kvantum/GTK
+                self.update_status(apply=True) # This will skip Global (since Auto=True) but apply Kvantum/GTK
+                
+                log_activity("Auto Mode Enabled & Synced.")
                 
             elif index == 1: # Static Light
                 log_activity("Switching to Static Light Mode...")
@@ -431,15 +525,11 @@ class SchedulerTab(QWidget):
             log_error(f"Mode Change Failed: {e}")
             QMessageBox.critical(self, "Mode Change Failed", f"An error occurred while switching modes:\n{e}")
         
-        # Always refresh status after mode change to show new Active state
-        self.update_status(apply=False)
+        # specific update_status(apply=False) is already done inside Auto block or redundant
+        if index != 0:
+             self.update_status(apply=False)
 
     def manual_refresh(self):
-        self.update_status(apply=False)
-        
-    def manual_apply(self):
-        self.update_status(apply=True)
-        # Refresh again to update "Active" labels
         self.update_status(apply=False)
 
     def update_status(self, apply=False):
@@ -541,8 +631,13 @@ class SchedulerTab(QWidget):
              try:
                  # Apply Global first, as it might reset Kvantum
                  if target_gl:
-                     PlasmaThemeManager.apply_theme(target_gl)
-                     log_activity(f"Applied Global: {target_gl}")
+                     # CRITICAL FIX: Do not manually apply global theme if Native Auto is ON.
+                     # Manually applying a theme usually disables the native auto-scheduler.
+                     if not PlasmaThemeManager.is_auto_enabled():
+                         PlasmaThemeManager.apply_theme(target_gl)
+                         log_activity(f"Applied Global: {target_gl}")
+                     else:
+                         log_activity(f"Skipping manual Global Theme apply for '{target_gl}' (Native Auto Mode is Active)")
                  else:
                      log_error(f"Failed Global: {target_gl} (target not set)")
                      
