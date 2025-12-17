@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Plasma Theme Master
+Comment=Automatic theme switcher for KDE Plasma based on solar position
+Exec=plasma-theme-master
+Icon=preferences-desktop-theme
+Type=Application
+Categories=Utility;Settings;Qt;KDE;
+Terminal=false

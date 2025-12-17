@@ -1,0 +1,11 @@
+[Unit]
+Description=Plasma Theme Master Daemon
+After=plasma-workspace.service
+
+[Service]
+ExecStart=/usr/bin/plasma-theme-master daemon
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=default.target
