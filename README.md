@@ -1,6 +1,7 @@
 # Plasma Theme Master
 
 **Version 1.0.5**
+
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single simple application, a simple and functional gui with a cli backend supporting it. The included daemon runs in the background to perform the scheduled changes in an unobtusive manor.
 
 KDE Plasma recently introduced users to a native Day/Night cycle that automatically switches your desktop theme between Day and Night modes. This application allows you to set custom kvantum themes for day or night mode as well as custom gtk themes for day or night mode so that you can maintain a cohesive aesthetic across your system. It also features a robust Global Theme Editor for customizing and backing up global themes in case you like some parts of a global theme but not others. (example: I want the Breeze Global theme but I would like it to always use the tela icon theme and the breeze dark window decorations, the Global Theme Editor can make those edits seem easy and intuitive).
