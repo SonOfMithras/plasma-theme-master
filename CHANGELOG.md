@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **Command Help**: Improved help output organization.
 
-## [2.0.0] - 2025-12-17
+## [1.0.0] - 2025-12-17
 
 **Major Rewrite**: This release marks the transition from the legacy Python codebase to a native C++ implementation using Qt6 and KDE Frameworks 6.
 
