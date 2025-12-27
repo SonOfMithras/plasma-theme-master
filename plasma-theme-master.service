@@ -1,0 +1,12 @@
+[Unit]
+Description=Plasma Theme Master Daemon
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/plasma-theme-master daemon
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=graphical-session.target

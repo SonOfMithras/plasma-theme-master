@@ -1,0 +1,38 @@
+# Build and bac directories
+build/
+bin/
+cmake-build-*/
+.backup/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+CMakeUserPresets.json
+install_manifest.txt
+Makefile
+
+# Qt / IDEs
+*.user
+*.user.*
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Compiled Object files
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+# Executable (if built in-source)
+plasma-theme-master
+
+# Logs
+*.log
