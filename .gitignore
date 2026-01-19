@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 test_optimization.py
+package.sh
+
+# Build/Release Artifacts
+releases/
