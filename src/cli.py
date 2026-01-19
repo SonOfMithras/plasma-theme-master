@@ -1,3 +1,4 @@
+import os
 import argparse
 import sys
 import datetime
@@ -14,6 +15,12 @@ from core.plasma import PlasmaThemeManager
 from core.gtk import GtkManager
 from core.logger import setup_logger, log_activity, log_error
 
+# Cache for solar times to avoid re-calculating every call
+_solar_cache = {
+    'date': None,
+    'times': None
+}
+
 def is_daytime():
     """Calculates if it is currently daytime based on config."""
     lat = config.get('latitude')
@@ -24,7 +31,16 @@ def is_daytime():
         if lat == 0.0 and lon == 0.0: return False
         
         today_utc = datetime.datetime.now(datetime.timezone.utc).date()
-        times = get_solar_times(today_utc, lat, lon)
+        
+        # Check cache
+        if _solar_cache['date'] != today_utc:
+            # Refresh cache
+            times = get_solar_times(today_utc, lat, lon)
+            if times:
+                _solar_cache['date'] = today_utc
+                _solar_cache['times'] = times
+        
+        times = _solar_cache['times']
         if not times: return False
         
         s_rise = times['sunrise'].astimezone()
@@ -94,11 +110,31 @@ def cmd_daemon(args):
     print("Starting Plasma Theme Master Daemon... (Ctrl+C to stop)")
     log_activity("Daemon started.")
     
+    from core.config import CONFIG_FILE
+    last_config_mtime = 0
+    
     while True:
         try:
-            config.load()
+            # 1. Smart Config Reload
+            if CONFIG_FILE.exists():
+                mtime = os.path.getmtime(CONFIG_FILE)
+                if mtime > last_config_mtime:
+                    config.load()
+                    last_config_mtime = mtime
+                    check_and_apply(apply=True)
+            
+            # 2. Check and Apply (Time based)
+            # We run this every loop to trigger time-based transitions
             check_and_apply(apply=True)
+            
+            # 3. Smart Sleep
+            # Calculate time to next event to sleep efficiently?
+            # For now, let's keep it simple but efficient:
+            # - If we stick to 60s, it's fine because we cached the solar calculation 
+            #   and we optimized the system checks in plasma.py.
+            # - So 60s sleep is now very cheap CPU-wise.
             time.sleep(60)
+            
         except KeyboardInterrupt:
             print("\nStopping daemon.")
             log_activity("Daemon stopped by user.")

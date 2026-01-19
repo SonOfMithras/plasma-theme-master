@@ -5,6 +5,7 @@ from pathlib import Path
 PLASMA_THEMES_DIR = Path.home() / ".local/share/plasma/look-and-feel"
 
 from core.logger import log_activity, log_error
+from core.utils import KdeConfigParser
 
 class PlasmaThemeManager:
     @staticmethod
@@ -330,19 +331,9 @@ class PlasmaThemeManager:
     def get_current_theme():
         """
         Returns the ID of the currently active Global Theme.
-        Uses kreadconfig6 to read from kdeglobals.
+        Uses KdeConfigParser to read from kdeglobals.
         """
-        import subprocess
-        try:
-            # kreadconfig6 --group "KDE" --key "LookAndFeelPackage" --file kdeglobals
-            val = subprocess.check_output(
-                ["kreadconfig6", "--group", "KDE", "--key", "LookAndFeelPackage", "--file", "kdeglobals"],
-                text=True
-            ).strip()
-            return val
-        except Exception as e:
-            print(f"Failed to get current theme: {e}")
-            return None
+        return KdeConfigParser.read_kdeglobals_value("KDE", "LookAndFeelPackage")
 
     @staticmethod
     def apply_theme(theme_name):
@@ -364,23 +355,8 @@ class PlasmaThemeManager:
         Reads the native Plasma Day/Night preferences from kdeglobals.
         Returns (day_theme, night_theme) tuple.
         """
-        import subprocess
-        day = ""
-        night = ""
-        try:
-            day = subprocess.check_output(
-                 ["kreadconfig6", "--group", "KDE", "--key", "DefaultLightLookAndFeel", "--file", "kdeglobals"],
-                 text=True
-            ).strip()
-        except: pass
-        
-        try:
-            night = subprocess.check_output(
-                 ["kreadconfig6", "--group", "KDE", "--key", "DefaultDarkLookAndFeel", "--file", "kdeglobals"],
-                 text=True
-            ).strip()
-        except: pass
-        
+        day = KdeConfigParser.read_kdeglobals_value("KDE", "DefaultLightLookAndFeel", default="")
+        night = KdeConfigParser.read_kdeglobals_value("KDE", "DefaultDarkLookAndFeel", default="")
         return day, night
 
     @staticmethod
@@ -409,15 +385,8 @@ class PlasmaThemeManager:
         """
         Checks if AutomaticLookAndFeel is true in kdeglobals.
         """
-        import subprocess
-        try:
-            val = subprocess.check_output(
-                 ["kreadconfig6", "--group", "KDE", "--key", "AutomaticLookAndFeel", "--file", "kdeglobals"],
-                 text=True
-            ).strip().lower()
-            return val == "true"
-        except:
-            return False
+        val = KdeConfigParser.read_kdeglobals_value("KDE", "AutomaticLookAndFeel", default="false")
+        return str(val).lower() == "true"
 
     @staticmethod
     def set_auto_enabled(enabled):

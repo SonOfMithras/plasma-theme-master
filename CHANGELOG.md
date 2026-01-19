@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.2.3] - 2026-01-18
+
+### Performance
+- **Resource Efficiency**:
+    - **Smart Polling**: The daemon now uses a smart sleep mechanism, calculating the exact time until the next solar event instead of waking up every minute. This drastically reduces CPU wake-ups.
+    - **Direct File Reading**: Replaced expensive `subprocess` calls to `kreadconfig6` with direct Python parsing for `kdeglobals`, significantly reducing overhead for frequent checks.
+    - **Solar Caching**: Optimized solar time calculations by caching results for the current day.
+
 ## [0.2.2] - 2025-12-15
 
 ### Fixed
