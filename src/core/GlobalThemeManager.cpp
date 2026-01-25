@@ -188,6 +188,12 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
         QDir dir(path);
         QStringList entries = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
         for (const QString &e : entries) {
+             // Filter for cursors
+            if (category == "cursors") {
+                 QDir themeDir(dir.absoluteFilePath(e));
+                 if (!themeDir.exists("cursors")) continue;
+            }
+            
             if (!results.contains(e)) results.append(e);
         }
         // For color schemes, they are files ending in .colors

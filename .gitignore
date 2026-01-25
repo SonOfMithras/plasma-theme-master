@@ -21,6 +21,7 @@ Makefile
 *.swp
 *~
 .DS_Store
+.directory
 
 # Compiled Object files
 *.o
