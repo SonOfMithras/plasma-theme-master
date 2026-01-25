@@ -178,3 +178,24 @@ QString ThemeReader::nightGtkTheme() {
     KConfigGroup group = config.group(QStringLiteral("General"));
     return group.readEntry(QStringLiteral("NightGtkTheme"), QString());
 }
+
+QString ThemeReader::dayFlatpakTheme() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry("DayFlatpakTheme", QString());
+}
+
+QString ThemeReader::nightFlatpakTheme() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry("NightFlatpakTheme", QString());
+}
+
+bool ThemeReader::flatpakFollowsGtk() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry("FlatpakFollowsGtk", false);
+}

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-01-25
+
+### Added
+- **Flatpak Integration**:
+  - Full support for managing Flatpak GTK themes via `flatpak override`.
+  - Checking and setting up environment permissions automatically.
+  - Independent configuration for Flatpak Day/Night themes.
+  - Option to sync Flatpak theme with System GTK theme.
+- **CLI Commands**:
+  - `flatpak-status`, `flatpak-setup`
+  - `set-flatpak`, `set-flatpak-day`, `set-flatpak-night`, `set-flatpak-follow`
+- **GUI Features**:
+  - New "Flatpak Settings" dialog in Help menu.
+
+### Changed
+- **About Dialog**: Updated version information and features list.
+
 ## [1.0.5] - 2025-12-27
 
 ### Fixed

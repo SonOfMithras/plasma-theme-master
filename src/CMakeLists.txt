@@ -7,6 +7,7 @@ add_executable(plasma-theme-master
     core/Logger.cpp
     core/CLIHandler.cpp
     core/GlobalThemeManager.cpp
+    core/FlatpakManager.cpp
     gui/MainWindow.cpp
     gui/GlobalThemeEditor.cpp
 )

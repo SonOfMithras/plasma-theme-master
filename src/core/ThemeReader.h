@@ -6,30 +6,35 @@
 
 class ThemeReader {
 public:
-    static QString currentGlobalTheme();
-    static QString currentKvantumTheme();
-    static QString currentGtkTheme();
-    static bool isAutoLookAndFeel();
-    
-    // Native Day-Night Location
-    static double nativeLatitude();
-    static double nativeLongitude();
+  static QString currentGlobalTheme();
+  static QString currentKvantumTheme();
+  static QString currentGtkTheme();
+  static bool isAutoLookAndFeel();
 
-    // Listings
-    static QStringList listKvantumThemes();
-    static QStringList listGlobalThemes();
-    static QStringList listGtkThemes();    
-    
-    // Configured Defaults
-    static QString defaultDarkTheme();
-    static QString defaultLightTheme();
-    
-    // App Config (plasma-theme-masterrc)
-    static int solarPadding();
-    static QString dayKvantumTheme();
-    static QString nightKvantumTheme();
-    static QString dayGtkTheme();
-    static QString nightGtkTheme();
+  // Native Day-Night Location
+  static double nativeLatitude();
+  static double nativeLongitude();
+
+  // Listings
+  static QStringList listKvantumThemes();
+  static QStringList listGlobalThemes();
+  static QStringList listGtkThemes();
+
+  // Configured Defaults
+  static QString defaultDarkTheme();
+  static QString defaultLightTheme();
+
+  // App Config (plasma-theme-masterrc)
+  static int solarPadding();
+  static QString dayKvantumTheme();
+  static QString nightKvantumTheme();
+  static QString dayGtkTheme();
+  static QString nightGtkTheme();
+
+  // Flatpak Config
+  static QString dayFlatpakTheme();
+  static QString nightFlatpakTheme();
+  static bool flatpakFollowsGtk();
 };
 
 #endif // THEME_READER_H
