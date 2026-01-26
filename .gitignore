@@ -3,6 +3,7 @@ build/
 bin/
 cmake-build-*/
 .backup/
+package_release.sh
 
 # CMake
 CMakeCache.txt
