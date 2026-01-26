@@ -161,10 +161,17 @@ void MainWindow::setupMenuBar() {
 void MainWindow::showAbout() {
   QString version = QString::fromLatin1(TOSTRING(PROJECT_VERSION));
   QString repoUrl = "https://github.com/SonOfMithras/plasma-theme-master/releases";
-  
-  QMessageBox aboutBox(this);
-  aboutBox.setWindowTitle(tr("About Plasma Theme Master"));
-  aboutBox.setText(
+  QString supportUrl = "https://ko-fi.com/sonofmithras";
+
+  QDialog aboutDialog(this);
+  aboutDialog.setWindowTitle(tr("About Plasma Theme Master"));
+  aboutDialog.resize(400, 300);
+  QVBoxLayout *mainLayout = new QVBoxLayout(&aboutDialog);
+  QLabel *infoLabel = new QLabel(&aboutDialog);
+  infoLabel->setTextFormat(Qt::RichText);
+  infoLabel->setWordWrap(true);
+  infoLabel->setAlignment(Qt::AlignCenter);
+  infoLabel->setText(
       tr("<h3>Plasma Theme Master</h3>"
          "<p>Version %1</p>"
          "<p>Automatic Day/Night Theme Switcher for KDE Plasma.</p>"
@@ -181,16 +188,42 @@ void MainWindow::showAbout() {
          "</ul>"
          "<p>Redesigned in C++ for efficiency.</p>")
           .arg(version));
-  aboutBox.setTextFormat(Qt::RichText);
+  // Open links in external browser
+  infoLabel->setOpenExternalLinks(true); 
+
+  mainLayout->addWidget(infoLabel);
+
+  // spacer
+  mainLayout->addSpacing(10);
+
+  // Custom Action Buttons
+  QHBoxLayout *actionLayout = new QHBoxLayout();
+  QPushButton *updateBtn = new QPushButton(tr("Check for Updates"), &aboutDialog);
+  QPushButton *supportBtn = new QPushButton(tr("Support the Dev!"), &aboutDialog);
   
-  QPushButton *updateBtn = aboutBox.addButton(tr("Check for Updates"), QMessageBox::ActionRole);
-  aboutBox.addButton(QMessageBox::Ok);
+  actionLayout->addStretch();
+  actionLayout->addWidget(updateBtn);
+  actionLayout->addWidget(supportBtn);
+  actionLayout->addStretch();
+
+  mainLayout->addLayout(actionLayout);
+
+  // Standard Button Box (OK)
+  QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok, &aboutDialog);
+  buttonBox->setCenterButtons(true);
+  connect(buttonBox, &QDialogButtonBox::accepted, &aboutDialog, &QDialog::accept);
   
-  aboutBox.exec();
-  
-  if (aboutBox.clickedButton() == updateBtn) {
+  // Connect actions
+  connect(updateBtn, &QPushButton::clicked, [repoUrl]() {
       QDesktopServices::openUrl(QUrl(repoUrl));
-  }
+  });
+  connect(supportBtn, &QPushButton::clicked, [supportUrl]() {
+      QDesktopServices::openUrl(QUrl(supportUrl));
+  });
+
+  mainLayout->addWidget(buttonBox);
+
+  aboutDialog.exec();
 }
 
 void MainWindow::setupDashboardTab() {

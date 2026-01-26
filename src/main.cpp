@@ -12,10 +12,13 @@
 // ... (Top includes remain same, adding QDateTime/QTimeZone if needed, but they are in Solar.h)
 
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 int main(int argc, char *argv[])
 {
     QCoreApplication::setApplicationName("plasma-theme-master");
-    QCoreApplication::setApplicationVersion("1.0.5");
+    QCoreApplication::setApplicationVersion(QString::fromLatin1(TOSTRING(PROJECT_VERSION)));
 
     // Manual check for GUI vs CLI mode
     bool guiMode = true;
@@ -32,7 +35,7 @@ int main(int argc, char *argv[])
     }
 
     app->setApplicationName("plasma-theme-master");
-    app->setApplicationVersion("1.0.5");
+    app->setApplicationVersion(QString::fromLatin1(TOSTRING(PROJECT_VERSION)));
 
     QCommandLineParser parser;
     parser.setApplicationDescription("KDE Plasma Theme Master");
