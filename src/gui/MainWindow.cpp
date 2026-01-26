@@ -81,7 +81,7 @@ void MainWindow::setupUi() {
   setupMenuBar();
 
   setWindowTitle(tr("Plasma Theme Master"));
-  resize(550, 650);
+  resize(650, 650);
 }
 
 void MainWindow::setupMenuBar() {
@@ -172,13 +172,13 @@ void MainWindow::showAbout() {
   infoLabel->setWordWrap(true);
   infoLabel->setAlignment(Qt::AlignCenter);
   infoLabel->setText(
-      tr("<h3>Plasma Theme Master</h3>"
-         "<p>Version %1</p>"
+      tr("<h2>Plasma Theme Master</h2>"
+         "<h3>Version %1</h3>"
+         "<p><b>Author:</b> Ammar Al-Riyamy</p>"
+         "<p><a href='https://github.com/SonOfMithras/plasma-theme-master'>GitHub Repo</a></p>"
+         "<br>"
          "<p>Automatic Day/Night Theme Switcher for KDE Plasma.</p>"
-         "<p><b>Author:</b> Ammar Al-Riyamy<br>"
-         "<b>GitHub:</b> <a "
-         "href='https://github.com/SonOfMithras/plasma-theme-master'>https://"
-         "github.com/SonOfMithras/plasma-theme-master</a></p>"
+         "<br>"
          "<p>Features:</p>"
          "<ul>"
          "<li>Solar calculation to sync themes</li>"
