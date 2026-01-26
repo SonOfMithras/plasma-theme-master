@@ -61,6 +61,7 @@ plasma-theme-master
 - **Dashboard**: View system status, sun times, and manually override themes.
 - **Global Theme Editor**: Select a global theme, edit its components, and save changes.
 - **Flatpak Settings**: Manage Flatpak theme integration (Help -> Flatpak Settings...).
+- **Check for Updates**: Check for new releases directly from the Help -> About dialog.
 - **Logs**: View application logs for debugging.
 
 ### CLI Commands

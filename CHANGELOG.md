@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
   - `set-flatpak`, `set-flatpak-day`, `set-flatpak-night`, `set-flatpak-follow`
 - **GUI Features**:
   - New "Flatpak Settings" dialog in Help menu.
+  - "Check for Updates" button integrated into the About dialog.
 
 ### Changed
 - **About Dialog**: Updated version information and features list.

@@ -155,15 +155,22 @@ void MainWindow::setupMenuBar() {
   helpMenu->addAction(aboutAction);
 }
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 void MainWindow::showAbout() {
-  QMessageBox::about(
-      this, tr("About Plasma Theme Master"),
+  QString version = QString::fromLatin1(TOSTRING(PROJECT_VERSION));
+  QString repoUrl = "https://github.com/SonOfMithras/plasma-theme-master/releases";
+  
+  QMessageBox aboutBox(this);
+  aboutBox.setWindowTitle(tr("About Plasma Theme Master"));
+  aboutBox.setText(
       tr("<h3>Plasma Theme Master</h3>"
-         "<p>Version 1.0.5 (C++ Edition)</p>"
+         "<p>Version %1</p>"
          "<p>Automatic Day/Night Theme Switcher for KDE Plasma.</p>"
          "<p><b>Author:</b> Ammar Al-Riyamy<br>"
          "<b>GitHub:</b> <a "
-         "href='github.com/SonOfMithras/plasma-theme-master'>https://"
+         "href='https://github.com/SonOfMithras/plasma-theme-master'>https://"
          "github.com/SonOfMithras/plasma-theme-master</a></p>"
          "<p>Features:</p>"
          "<ul>"
@@ -172,7 +179,18 @@ void MainWindow::showAbout() {
          "<li>Kvantum, GTK & Flatpak Settings & Sync</li>"
          "<li>Global Theme Editor, Backup & Restore</li>"
          "</ul>"
-         "<p>Redesigned in C++ for efficiency.</p>"));
+         "<p>Redesigned in C++ for efficiency.</p>")
+          .arg(version));
+  aboutBox.setTextFormat(Qt::RichText);
+  
+  QPushButton *updateBtn = aboutBox.addButton(tr("Check for Updates"), QMessageBox::ActionRole);
+  aboutBox.addButton(QMessageBox::Ok);
+  
+  aboutBox.exec();
+  
+  if (aboutBox.clickedButton() == updateBtn) {
+      QDesktopServices::openUrl(QUrl(repoUrl));
+  }
 }
 
 void MainWindow::setupDashboardTab() {
