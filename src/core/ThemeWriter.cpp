@@ -152,6 +152,23 @@ bool ThemeWriter::setGtkTheme(const QString &themeName) {
   QSettings gtk4Settings(gtk4Path, QSettings::IniFormat);
   gtk4Settings.setValue(QStringLiteral("Settings/gtk-theme-name"), themeName);
 
+  // Path 3: GSettings (for running apps)
+  QString gsettingsExe = QStandardPaths::findExecutable(QStringLiteral("gsettings"));
+  if (!gsettingsExe.isEmpty()) {
+      QProcess process;
+      process.start(gsettingsExe, QStringList() 
+          << QStringLiteral("set") 
+          << QStringLiteral("org.gnome.desktop.interface") 
+          << QStringLiteral("gtk-theme") 
+          << themeName);
+      process.waitForFinished();
+      if (process.exitCode() == 0) {
+           Logger::log("Applied GTK theme via gsettings: \"" + themeName + "\"", Logger::Info);
+      } else {
+           Logger::log("Failed to set gsettings GTK theme.", Logger::Warning);
+      }
+  }
+
   Logger::log("Applied GTK theme: \"" + themeName + "\"", Logger::Info);
 
   // Auto-Sync Flatpak if enabled

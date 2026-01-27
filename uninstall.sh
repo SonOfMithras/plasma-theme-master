@@ -49,6 +49,6 @@ else
 fi
 
 echo "=== Uninstallation Complete ==="
- add service files and desktop entries here later
+
 
 echo "Uninstalled."
