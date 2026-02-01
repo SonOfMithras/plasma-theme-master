@@ -37,6 +37,15 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 - KConfig, KCoreAddons
 - Flatpak (optional, for Flatpak support)
 
+### NixOS Support (Experimental)
+
+A `flake.nix` is provided for experimental support on NixOS. You can try it with:
+```bash
+nix run github:SonOfMithras/plasma-theme-master
+```
+> [!WARNING]
+> NixOS support is currently **incomplete and experimental**. It is not yet recommended for daily use as some paths or integrations (like systemd user services) might behave differently than expected.
+
 ### Building from Source
 
 1. Clone the repository:
@@ -102,7 +111,7 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 
 ## Troubleshooting Build Issues
 
-If you encounter errors during the build process on Debian/Ubuntu-based systems (e.g., `CMake Error`, `missing header` files), you may be missing development dependencies.
+If you encounter errors during the build process on Debian/Ubuntu-based systems (e.g., `CMake Error`, `missing header` files), you may be missing dependencies.
 
 1. Install the required packages:
    ```bash
