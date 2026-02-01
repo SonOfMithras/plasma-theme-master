@@ -43,14 +43,14 @@
               pkgs.kdePackages.kxmlgui
               pkgs.kdePackages.kwindowsystem
               # Kvantum for Qt6
-              pkgs.kvantum
+              pkgs.qt6Packages.kvantum
             ];
 
             # Ensure lookandfeeltool and kvantummanager are in the PATH of the wrapper
             qtWrapperArgs = [
               "--prefix PATH : ${pkgs.lib.makeBinPath [ 
                   pkgs.kdePackages.plasma-workspace 
-                  pkgs.kvantum 
+                  pkgs.qt6Packages.kvantum 
               ]}"
             ];
 
