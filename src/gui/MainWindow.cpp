@@ -39,29 +39,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setupUi();
   populateThemes();
   loadSettings();
+  
+  checkDaemonStatus(); 
   refreshStatus();
 
-  // Check initial Flatpak status (optional, maybe just for logs)
   if (FlatpakManager::isFlatpakInstalled()) {
     Logger::log("Flatpak status: " + FlatpakManager::flatpakStatus(),
                 Logger::Info);
   }
 
-  // Initial log update
   updateLogs();
 
-  // Timer for logs (every 2 seconds)
   m_logTimer = new QTimer(this);
   connect(m_logTimer, &QTimer::timeout, this, &MainWindow::updateLogs);
-  m_logTimer->start(2000);
+  m_logTimer->start(5000);
 }
 
 MainWindow::~MainWindow() {}
 
 void MainWindow::setupUi() {
-  // QWidget *centralWidget = new QWidget(this); // Unused
-
-  // The main tab widget will be the central widget
   m_mainTabs = new QTabWidget(this);
   setCentralWidget(m_mainTabs);
 
@@ -130,6 +126,11 @@ void MainWindow::setupMenuBar() {
           &MainWindow::showFlatpakSettings);
   helpMenu->addAction(flatpakAction);
 
+  m_daemonAction = new QAction(tr("Enable Background Service"), this);
+  m_daemonAction->setCheckable(true);
+  connect(m_daemonAction, &QAction::toggled, this, &MainWindow::toggleDaemon);
+  helpMenu->addAction(m_daemonAction);
+
   helpMenu->addSeparator();
 
   QAction *clearLogAction = new QAction(tr("Clear &Log"), this);
@@ -140,6 +141,13 @@ void MainWindow::setupMenuBar() {
   connect(clearConfigAction, &QAction::triggered, this,
           &MainWindow::clearConfig);
   helpMenu->addAction(clearConfigAction);
+
+  helpMenu->addSeparator();
+
+  QAction *refreshPlasmaAction = new QAction(tr("Restart &Plasma Shell"), this);
+  connect(refreshPlasmaAction, &QAction::triggered, this,
+          &MainWindow::refreshPlasma);
+  helpMenu->addAction(refreshPlasmaAction);
 
   helpMenu->addSeparator();
 
@@ -188,12 +196,9 @@ void MainWindow::showAbout() {
          "</ul>"
          "<p>Redesigned in C++ for efficiency.</p>")
           .arg(version));
-  // Open links in external browser
   infoLabel->setOpenExternalLinks(true); 
 
   mainLayout->addWidget(infoLabel);
-
-  // spacer
   mainLayout->addSpacing(10);
 
   // Custom Action Buttons
@@ -208,12 +213,10 @@ void MainWindow::showAbout() {
 
   mainLayout->addLayout(actionLayout);
 
-  // Standard Button Box (OK)
   QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok, &aboutDialog);
   buttonBox->setCenterButtons(true);
   connect(buttonBox, &QDialogButtonBox::accepted, &aboutDialog, &QDialog::accept);
   
-  // Connect actions
   connect(updateBtn, &QPushButton::clicked, [repoUrl]() {
       QDesktopServices::openUrl(QUrl(repoUrl));
   });
@@ -239,7 +242,6 @@ void MainWindow::setupDashboardTab() {
   QVBoxLayout *layout = new QVBoxLayout(dashboardContent);
   layout->setSpacing(20);
   layout->setContentsMargins(20, 20, 20, 20);
-
   scrollArea->setWidget(dashboardContent);
   tabLayout->addWidget(scrollArea);
 
@@ -281,7 +283,6 @@ void MainWindow::setupDashboardTab() {
 
   layout->addWidget(solarGroup);
 
-  // --- Theme Configuration ---
   // --- Theme Configuration ---
   QGroupBox *configGroup = new QGroupBox(tr("Theme Defaults"), this);
   QVBoxLayout *configLayout = new QVBoxLayout(configGroup);
@@ -338,9 +339,12 @@ void MainWindow::setupDashboardTab() {
   m_autoCheck = new QCheckBox(tr("Enable Auto-Switch"), this);
   connect(m_autoCheck, &QCheckBox::toggled, this, &MainWindow::toggleAuto);
 
-  m_refreshButton = new QPushButton(tr("Refresh Status"), this);
-  connect(m_refreshButton, &QPushButton::clicked, this,
-          &MainWindow::refreshStatus);
+  m_refreshButton = new QPushButton(tr("Refresh"), this);
+  connect(m_refreshButton, &QPushButton::clicked, this, [this]() {
+      populateThemes();
+      loadSettings();
+      refreshStatus();
+  });
 
   autoLayout->addWidget(m_autoCheck);
   autoLayout->addStretch();
@@ -358,7 +362,11 @@ void MainWindow::setupDashboardTab() {
   connect(m_applyNightBtn, &QPushButton::clicked, this,
           &MainWindow::applyStaticNight);
 
+  m_applyTargetBtn = new QPushButton(tr("Apply Target"), this);
+  connect(m_applyTargetBtn, &QPushButton::clicked, this, &MainWindow::applyCurrentTarget);
+
   manualLayout->addWidget(m_applyDayBtn);
+  manualLayout->addWidget(m_applyTargetBtn);
   manualLayout->addWidget(m_applyNightBtn);
   layout->addWidget(manualGroup);
 
@@ -386,16 +394,14 @@ void MainWindow::setupLogsTab() {
 
 void MainWindow::updateLogs() {
   if (m_mainTabs->currentWidget() != m_logsTab)
-    return; // Only update if visible
+    return; 
 
   QStringList logs = Logger::readLogs(200, false);
-  // Reverse order: Newest at top
   QString reversedContent;
   for (int i = logs.size() - 1; i >= 0; --i) {
     reversedContent += logs[i] + "\n";
   }
 
-  // Only update if changed to avoid flicker/scroll jump
   if (m_logViewer->toPlainText() != reversedContent) {
     m_logViewer->setPlainText(reversedContent);
   }
@@ -410,6 +416,13 @@ void MainWindow::populateThemes() {
   QStringList globalThemes = ThemeReader::listGlobalThemes();
   QStringList kvantumThemes = ThemeReader::listKvantumThemes();
 
+  m_globalDayCombo->clear();
+  m_globalNightCombo->clear();
+  m_kvantumDayCombo->clear();
+  m_kvantumNightCombo->clear();
+  m_gtkDayCombo->clear();
+  m_gtkNightCombo->clear();
+
   m_globalDayCombo->addItems(globalThemes);
   m_globalNightCombo->addItems(globalThemes);
   m_kvantumDayCombo->addItems(kvantumThemes);
@@ -421,10 +434,8 @@ void MainWindow::populateThemes() {
 }
 
 void MainWindow::loadSettings() {
-  // Block signals to prevent auto-save during load
   bool blocked = blockSignals(true);
 
-  // Global Defaults
   m_globalDayCombo->setCurrentText(ThemeReader::defaultLightTheme());
   m_globalNightCombo->setCurrentText(ThemeReader::defaultDarkTheme());
 
@@ -495,7 +506,6 @@ void MainWindow::toggleAuto(bool checked) {
     if (!gtk.isEmpty())
       ThemeWriter::setGtkTheme(gtk);
 
-    // Ensure this is set LAST, as applyGlobalTheme might have reset it
     ThemeWriter::setAutoLookAndFeel(true);
   } else {
     ThemeWriter::setAutoLookAndFeel(false);
@@ -517,6 +527,33 @@ void MainWindow::applyStaticNight() {
   ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
   ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
   refreshStatus();
+}
+
+void MainWindow::applyCurrentTarget() {
+    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
+
+    double lat = ThemeReader::nativeLatitude();
+    double lon = ThemeReader::nativeLongitude();
+    int offset = m_offsetSlider->value();
+    bool isDay = Solar::isDaytime(lat, lon, offset);
+    
+    // Apply target themes
+    if (isDay) {
+        ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
+        ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
+        ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText()); 
+    } else {
+        ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
+        ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
+        ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+    }
+
+    // Restore auto state if it was enabled (as applyGlobalTheme might have disabled it)
+    if (wasAuto) {
+        ThemeWriter::setAutoLookAndFeel(true);
+    }
+
+    refreshStatus();
 }
 
 void MainWindow::onOffsetChanged(int value) {
@@ -617,7 +654,8 @@ void MainWindow::openGtkThemesFolder() {
 void MainWindow::openAppConfigFolder() {
   // Open the folder containing the config file.
   QString path =
-      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-master";
+  QDir().mkpath(path); // Ensure it exists
   QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
@@ -679,6 +717,45 @@ void MainWindow::triggerUninstall() {
 }
 
 
+
+
+void MainWindow::refreshPlasma() {
+  QMessageBox::StandardButton res = QMessageBox::warning(
+      this, tr("Restart Plasma Shell"),
+      tr("This will restart the Plasma Shell (taskbar, wallpaper, etc.).\n"
+         "Your open applications will NOT be closed.\n"
+         "Refer to this if you see visual glitches.\n\n"
+         "Continue?"),
+      QMessageBox::Yes | QMessageBox::No);
+
+  if (res == QMessageBox::Yes) {
+      QProcess::startDetached("plasmashell", QStringList() << "--replace");
+  }
+}
+
+void MainWindow::checkDaemonStatus() {
+    int ret = QProcess::execute("systemctl", QStringList() << "--user" << "is-active" << "plasma-theme-master.service");
+    // 0 = active, otherwise inactive
+    bool isActive = (ret == 0);
+    
+    // Block signals to avoid triggering toggleDaemon
+    bool blocked = m_daemonAction->blockSignals(true);
+    m_daemonAction->setChecked(isActive);
+    m_daemonAction->blockSignals(blocked);
+}
+
+void MainWindow::toggleDaemon(bool checked) {
+    QStringList args;
+    args << "--user";
+    if (checked) {
+        args << "enable" << "--now" << "plasma-theme-master.service";
+    } else {
+        // Disable and stop
+        args << "disable" << "--now" << "plasma-theme-master.service";
+    }
+    
+    QProcess::startDetached("systemctl", args);
+}
 
 void MainWindow::showFlatpakSettings() {
     QDialog dialog(this);

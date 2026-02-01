@@ -87,9 +87,26 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
     return false;
   }
 
+  // Force reset widget style to Breeze to ensure Kvantum themes reload correctly
+  // when the target theme (which likely uses Kvantum) is applied.
+  KConfig kdeglobals(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+  KConfigGroup kdeGroup = kdeglobals.group(QStringLiteral("KDE"));
+  kdeGroup.writeEntry(QStringLiteral("widgetStyle"), QStringLiteral("Breeze"));
+  kdeglobals.sync();
+
   QProcess process;
   process.start(tool, QStringList() << QStringLiteral("-a") << themeName);
   process.waitForFinished();
+
+  QString stdoutStr = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+  QString stderrStr = QString::fromUtf8(process.readAllStandardError()).trimmed();
+
+  if (!stdoutStr.isEmpty()) {
+      Logger::log("lookandfeeltool output: " + stdoutStr, Logger::Info);
+  }
+  if (!stderrStr.isEmpty()) {
+      Logger::log("lookandfeeltool error: " + stderrStr, Logger::Warning);
+  }
 
   if (process.exitCode() == 0) {
     Logger::log("Applied global theme: \"" + themeName + "\"", Logger::Info);

@@ -38,6 +38,7 @@ private Q_SLOTS:
   void toggleAuto(bool checked);
   void applyStaticDay();
   void applyStaticNight();
+  void applyCurrentTarget();
   void onOffsetChanged(int value);
   void updateLogs();
   void clearLogs();
@@ -50,9 +51,13 @@ private Q_SLOTS:
   // Help Menu Actions
   void clearConfig();
   void triggerUninstall();
+  void refreshPlasma();
 
   // Flatpak
   void showFlatpakSettings();
+  
+  void checkDaemonStatus();
+  void toggleDaemon(bool checked);
 
 private:
   void setupUi();
@@ -65,6 +70,8 @@ private:
   QWidget *m_dashboardTab;
   QWidget *m_logsTab;
   GlobalThemeEditor *m_globalEditorTab;
+
+  QAction *m_daemonAction;
 
   // --- Dashboard Widgets ---
   // Status
@@ -85,6 +92,7 @@ private:
 
   QPushButton *m_applyDayBtn;
   QPushButton *m_applyNightBtn;
+  QPushButton *m_applyTargetBtn;
   QPushButton *m_refreshButton;
 
   // --- Log Widgets ---

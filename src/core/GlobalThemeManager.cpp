@@ -1,21 +1,21 @@
 #include "GlobalThemeManager.h"
 #include <QStandardPaths>
+#include <KConfig>
+#include <KConfigGroup>
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include "Logger.h"
 
 QList<GlobalThemeInfo> GlobalThemeManager::listInstalledThemes() {
     QList<GlobalThemeInfo> themes;
     QStringList paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "plasma/look-and-feel", QStandardPaths::LocateDirectory);
     
-    // Helper to avoid duplicates (User overrrides System)
     QStringList seen;
 
-    // Iterate backwards (User paths usually first in locateAll? No, check docs. 
-    // locateAll returns list of paths. Typically /home/... then /usr/share... 
-    // We want to process them all.
     
     for (const QString &path : paths) {
         QDir dir(path);
@@ -58,16 +58,69 @@ bool GlobalThemeManager::cloneTheme(const QString &srcName, const QString &newNa
         return false;
     }
     
-    // Copy Directory Recursively
-    // Use 'cp -r' for simplicity and robustness on Linux
     QString cmd = QString("cp -r \"%1\" \"%2\"").arg(srcInfo.path).arg(userPath);
     int ret = std::system(qPrintable(cmd));
     
     if (ret == 0) {
-        // Update metadata.json Name if possible
         QString metaPath = userPath + "/metadata.json";
-        // Simple string replace for now? Or parse JSON.
-        // Let's leave metadata alone for now, or just log success.
+        QFile metaFile(metaPath);
+        if (metaFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString content = QString::fromUtf8(metaFile.readAll());
+            metaFile.close();
+
+        }
+        
+        
+        if (metaFile.open(QIODevice::ReadOnly)) {
+            QByteArray data = metaFile.readAll();
+            metaFile.close();
+            
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            if (!doc.isNull() && doc.isObject()) {
+                QJsonObject root = doc.object();
+                
+                if (root.contains("KPlugin")) {
+                    QJsonObject plugin = root["KPlugin"].toObject();
+                    plugin["Id"] = newName;
+                    plugin["Name"] = newName;
+                    root["KPlugin"] = plugin;
+                } else {
+                     if (root.contains("Id")) root["Id"] = newName;
+                     if (root.contains("Name")) root["Name"] = newName;
+                }
+                
+                doc.setObject(root);
+                
+                if (metaFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                    metaFile.write(doc.toJson());
+                    metaFile.close();
+                    Logger::log("Updated metadata for cloned theme: " + newName, Logger::Info);
+                } else {
+                     Logger::log("Failed to write metadata for: " + newName, Logger::Error);
+                }
+            }
+        }
+
+        QString desktopPath = userPath + "/metadata.desktop";
+        if (QFile::exists(desktopPath)) {
+            KConfig config(desktopPath, KConfig::SimpleConfig);
+            
+            if (config.hasGroup("KPlugin")) {
+                KConfigGroup group = config.group("KPlugin");
+                group.writeEntry("Id", newName);
+                group.writeEntry("Name", newName);
+            } 
+            else if (config.hasGroup("Desktop Entry")) {
+                KConfigGroup group = config.group("Desktop Entry");
+                if (group.hasKey("X-KDE-PluginInfo-Name")) {
+                    group.writeEntry("X-KDE-PluginInfo-Name", newName);
+                }
+                group.writeEntry("Name", newName);
+            }
+            config.sync();
+            Logger::log("Updated metadata.desktop for cloned theme: " + newName, Logger::Info);
+        }
+    
         Logger::log("Cloned theme " + srcName + " to " + newName, Logger::Info);
         return true;
     } else {
@@ -77,7 +130,6 @@ bool GlobalThemeManager::cloneTheme(const QString &srcName, const QString &newNa
 }
 
 QString GlobalThemeManager::getDefaultsPath(const QString &themeName) {
-    // Find path
     QList<GlobalThemeInfo> themes = listInstalledThemes();
     for (const auto &t : themes) {
         if (t.name == themeName) {
@@ -94,7 +146,6 @@ QString GlobalThemeManager::readDefaults(const QString &themeName) {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return QString();
     
-    // Backup Logic: Create .bak if it doesn't exist
     QString backupPath = path + ".bak";
     if (!QFile::exists(backupPath) && isUserTheme(themeName)) {
         if (!file.copy(backupPath)) {
@@ -102,10 +153,6 @@ QString GlobalThemeManager::readDefaults(const QString &themeName) {
         } else {
              Logger::log("Created backup for " + themeName, Logger::Info);
         }
-        // Reposition file pointer after copy just in case? 
-        // copy uses the filename primarily, but if it used the fd... 
-        // QFile::copy(newName) copies the file currently specified by fileName(). 
-        // It does not affect the open handle usually, but let's be safe.
     }
 
     QTextStream in(&file);
@@ -122,7 +169,6 @@ QString GlobalThemeManager::restoreDefaults(const QString &themeName) {
         return QString();
     }
     
-    // Remove current and copy back
     QFile currentFile(path);
     if (currentFile.exists()) {
         if (!currentFile.remove()) {
@@ -144,7 +190,6 @@ bool GlobalThemeManager::writeDefaults(const QString &themeName, const QString &
     QString path = getDefaultsPath(themeName);
     if (path.isEmpty()) return false;
     
-    // Ensure writable
     if (!path.startsWith(QDir::homePath())) {
         Logger::log("Cannot write to system theme: " + themeName, Logger::Error);
         return false;
@@ -160,7 +205,6 @@ bool GlobalThemeManager::writeDefaults(const QString &themeName, const QString &
 
 QStringList GlobalThemeManager::listSubThemes(const QString &category) {
     QStringList paths;
-    // Categories based on python impl mapping
     if (category == "colors") {
         paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "color-schemes", QStandardPaths::LocateDirectory);
     } else if (category == "icons") {
@@ -168,19 +212,15 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
     } else if (category == "plasma_style") {
         paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "plasma/desktoptheme", QStandardPaths::LocateDirectory);
     } else if (category == "cursors") {
-        paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "icons", QStandardPaths::LocateDirectory); // Cursors often in icons
+        paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "icons", QStandardPaths::LocateDirectory); 
     } else if (category == "window_decorations") {
-         // This is harder. For now return empty or try scanning standard aurorae paths
          paths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "kwin/decorations", QStandardPaths::LocateDirectory);
-         // Also aurorae themes are in ~/.local/share/aurorae/themes or /usr/share/aurorae/themes
          QStringList aurorae = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "aurorae/themes", QStandardPaths::LocateDirectory);
          paths.append(aurorae);
     } else if (category == "window_decoration_engines") {
          return QStringList{"org.kde.kwin.aurorae", "org.kde.breeze", "org.kde.oxygen"};
     } else if (category == "application_styles") {
-         // KStyle. Hard to list via files as they are plugins (shared libs).
-         // Return basic known ones for now?
-         return QStringList{"Breeze", "Oxygen", "Fusion", "Windows", "kvantum"};
+         return QStringList{"Breeze", "Oxygen", "Fusion", "Windows", "kvantum", "kvantum-dark"};
     }
     
     QStringList results;
@@ -188,7 +228,6 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
         QDir dir(path);
         QStringList entries = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
         for (const QString &e : entries) {
-             // Filter for cursors
             if (category == "cursors") {
                  QDir themeDir(dir.absoluteFilePath(e));
                  if (!themeDir.exists("cursors")) continue;
@@ -196,18 +235,16 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
             
             if (!results.contains(e)) results.append(e);
         }
-        // For color schemes, they are files ending in .colors
         if (category == "colors") {
              QStringList files = dir.entryList(QStringList() << "*.colors", QDir::Files);
              for (const QString &f : files) {
-                 results.append(f.section('.', 0, -2)); // Remove extension
+                 results.append(f.section('.', 0, -2)); 
              }
         }
     }
     
-    // De-duplicate
-    results.removeDuplicates(); // Actually handle in collection
-    std::sort(results.begin(), results.end()); // List sort
+    results.removeDuplicates(); 
+    std::sort(results.begin(), results.end()); 
     return results;
 }
 

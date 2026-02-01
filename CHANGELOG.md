@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-01-31
+
+### Added
+- **Arch Linux Dependency Checking**: `install.sh` now fully supports Arch Linux, including:
+  - Checking for standard build dependencies.
+  - Detecting and offering to install `kvantum` and `libadwaita-without-adwaita`.
+  - Handling AUR helpers (`yay` or `paru`).
+- **Restart Plasma Shell**: New option in the Help menu to safely restart `plasmashell` (`--replace`) to fix visual glitches in the shell.
+- **Background Service Control**: New toggle in the Help menu to easily Enable/Disable the background daemon.
+
+### Changed
+- **Install Script**:
+  - Significantly improved visual presentation with colors and clear status messages.
+  - Now explicitly restarts the user service (`systemctl --user restart`) during installation to ensure the latest version is running.
+- **Config Folder Access**: "Open App Config Folder" now correctly opens `~/.config/plasma-theme-master/` instead of the parent directory.
+- **Global Theme Editor**: Added `kvantum-dark` to the list of available application styles.
+
+### Fixed
+- **Kvantum Theme Refresh**: Solved an issue where Kvantum themes would not visually update without a session restart. The application now forces a style reload (via `kdeglobals`) before applying global themes.
+
 ## [1.1.0] - 2026-01-25
 
 ### Added
