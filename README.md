@@ -37,16 +37,7 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 - KConfig, KCoreAddons
 - Flatpak (optional, for Flatpak support)
 
-### NixOS Support (Experimental)
-
-A `flake.nix` is provided for experimental support on NixOS. You can try it with:
-```bash
-nix run github:SonOfMithras/plasma-theme-master
-```
-> [!WARNING]
-> NixOS support is currently **incomplete and experimental**. It is not yet recommended for daily use as some paths or integrations (like systemd user services) might behave differently than expected.
-
-### Building from Source
+### Easy Install Script:
 
 1. Clone the repository:
    ```bash
@@ -58,7 +49,16 @@ nix run github:SonOfMithras/plasma-theme-master
    ```bash
    ./install.sh
    ```
-   This script will build the application, install it to `/usr/bin`, and register a systemd user service.
+   This script will check for missing dependencies on Ubuntu and Arch based systems, then request the users permission to install the dependencies and build the application, by default it will install it to `/usr/bin`, and register a systemd user service.
+
+### NixOS Support (Experimental)
+
+A `flake.nix` is provided for experimental support on NixOS. You can try it with:
+```bash
+nix run github:SonOfMithras/plasma-theme-master
+```
+> [!WARNING]
+> NixOS support is currently **incomplete and experimental**. It is not yet recommended for daily use as some paths or integrations (like systemd user services) might behave differently than expected.
 
 ## Usage
 
