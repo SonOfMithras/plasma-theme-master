@@ -25,7 +25,7 @@
 
             nativeBuildInputs = [
               pkgs.cmake
-              pkgs.extra-cmake-modules
+              pkgs.kdePackages.extra-cmake-modules
               pkgs.pkg-config
               pkgs.kdePackages.wrapQtAppsHook
             ];
