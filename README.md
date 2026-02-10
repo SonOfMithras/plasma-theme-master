@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.1**
+**Version 1.1.2**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single simple application, a simple and functional gui with a cli backend supporting it. The included daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -13,6 +13,7 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 - **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
+- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, and Obsidian.
 - **Theme Sync**: Keeps Kvantum, GTK, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -94,9 +95,28 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 | `flatpak-status` | detailed status of Flatpak integration. |
 | `flatpak-setup` | Setup Flatpak permissions. |
 | `clone-global <src> <dest>` | Clone a Global Theme to a new name. |
+| `sync-universal` | Sync enabled universal apps immediately. |
+| `sync-enable <app>` | Enable universal sync for an app (backups created). |
+| `sync-disable <app>` | Disable universal sync for an app. |
+| `sync-list` | List universal sync apps and their status. |
+| `sync-restore <app>` | Restore an app configuration from backup. |
 | `log [-n lines] [--errors]` | View application logs. |
 | `daemon` | Run the background daemon (handled by systemd usually). |
 | `uninstall` | Remove the application and service. |
+
+### Universal Theme Sync
+The application can inject Plasma's colors into various non-KDE applications.
+**Supported Apps**: `vscode` (Code/OSS/VSCodium), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `obsidian`, `generic`.
+
+**Setup**:
+1. Enable sync for an app: `plasma-theme-master sync-enable vscode`
+2. Run sync: `plasma-theme-master sync-universal`
+
+**Troubleshooting**:
+- **VS Code**: Requires reloading the window. Backups are stored as `settings.json.bak`.
+- **Firefox/Zen**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config`.
+- **BetterDiscord**: Requires the BetterDiscord extension, and enable the Plasma theme master theme under the BetterDiscord theme settings.
+- **Obsidian**: Requires "Plasma Master" snippet to be enabled in Appearance settings.
 
 ## Tips & Tricks
 

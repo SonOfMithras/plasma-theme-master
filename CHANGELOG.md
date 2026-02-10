@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-02-10
+
+### Added
+- **Universal Theme Sync**: CSS based theme sync for multiple applications.
+  - Automatically syncs Plasma colors to **VS Code** (Code, OSS, VSCodium), **Firefox** (incl. Zen Browser), **BetterDiscord**, **Kitty**, and **Obsidian**.
+  - **Backup System**: Automatically backs up configuration files before modification.
+  - **Restore System**: `sync-restore` command to revert changes.
+  - **CLI Management**: `sync-enable`, `sync-disable`, `sync-list`, `sync-restore`, and `sync-universal` commands.
+- **Specific App Support**:
+  - **Code - OSS** and **VSCodium** support added.
+  - **Zen Browser** support (via Firefox sync).
+- **Config**:
+  - All sync apps are **Disabled by Default** to prevent unwanted changes. Users must enable them via CLI.
+
+### Changed
+- **CLI Help**: Updated with new sync commands.
+- **Daemon**: Now triggers universal sync automatically when the theme changes (if apps are enabled).
+- **BetterDiscord Integration**:
+  - Updated import logic: User custom imports now take precedence over default addons.
+  - "Base Material Theme" is now an optional toggle that loads *before* user customization.
+  - Renamed checkbox to "Use Material UI (recommended for cohesive use of colors)" for clarity.
+- **Config Reloading**: The color extractor now forces a reload of the KDE configuration from disk (`reparseConfiguration`) to prevent stale data usage.
+
 ## [1.1.1] - 2026-01-31
 
 ### Added

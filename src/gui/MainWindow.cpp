@@ -3,7 +3,10 @@
 #include "../core/Solar.h"
 #include "../core/ThemeReader.h"
 #include "../core/ThemeWriter.h"
+#include "../core/ThemeWriter.h"
+#include "../core/UniversalThemeExporter.h"
 #include "GlobalThemeEditor.h"
+#include "UniversalThemePage.h"
 #include "core/Logger.h"
 #include <QAction>
 #include <QDesktopServices>
@@ -69,6 +72,10 @@ void MainWindow::setupUi() {
   // Global Theme Editor Tab
   m_globalEditorTab = new GlobalThemeEditor(this);
   m_mainTabs->addTab(m_globalEditorTab, tr("Global Theme Editor"));
+
+  // Universal Theme Tab
+  m_universalTab = new UniversalThemePage(this);
+  m_mainTabs->addTab(m_universalTab, tr("Universal Sync"));
 
   // Logs Tab
   m_mainTabs->addTab(m_logsTab, tr("Logs"));
@@ -513,11 +520,20 @@ void MainWindow::toggleAuto(bool checked) {
   refreshStatus();
 }
 
+#include <QTimer>
+
 void MainWindow::applyStaticDay() {
   m_autoCheck->setChecked(false); // Disables auto
   ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
   ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
   ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
+  
+  UniversalThemeExporter::syncAll();
+  // Second pass after 2 seconds to allow system changes to settle/propagate
+  QTimer::singleShot(2000, this, [](){
+      UniversalThemeExporter::syncAll();
+  });
+  
   refreshStatus();
 }
 
@@ -526,6 +542,13 @@ void MainWindow::applyStaticNight() {
   ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
   ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
   ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+  
+  UniversalThemeExporter::syncAll();
+  // Second pass after 2 seconds
+  QTimer::singleShot(2000, this, [](){
+      UniversalThemeExporter::syncAll();
+  });
+  
   refreshStatus();
 }
 
@@ -552,6 +575,12 @@ void MainWindow::applyCurrentTarget() {
     if (wasAuto) {
         ThemeWriter::setAutoLookAndFeel(true);
     }
+    
+    UniversalThemeExporter::syncAll();
+    // Second pass after 2 seconds
+    QTimer::singleShot(2000, this, [](){
+      UniversalThemeExporter::syncAll();
+    });
 
     refreshStatus();
 }

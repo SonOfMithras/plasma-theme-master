@@ -4,8 +4,11 @@
 #include "Logger.h"
 #include "Solar.h"
 #include "ThemeReader.h"
+#include "UniversalThemeExporter.h"
 #include "ThemeWriter.h"
+#include "Config.h"
 #include <QCoreApplication>
+#include <QDir>
 #include <QDateTime>
 #include <QDebug>
 #include <QProcessEnvironment>
@@ -70,6 +73,17 @@ void CLIHandler::printHelp() {
          "MyBreeze\n\n"
       << "  uninstall\n"
       << "                Run the uninstallation script.\n\n"
+      << "  sync-universal (or sync-now)\n"
+      << "                Sync enabled universal apps immediately.\n\n"
+      << "  sync-enable <app>\n"
+      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian, generic).\n"
+      << "                WARNING: backups will be created.\n\n"
+      << "  sync-disable <app>\n"
+      << "                Disable universal sync for an app.\n\n"
+      << "  sync-list\n"
+      << "                List universal sync apps and their status.\n\n"
+      << "  sync-restore <app>\n"
+      << "                Restore an app configuration from backup.\n\n"
       << "  log [-n <lines>] [--errors]\n"
       << "                View application logs. Default: last 100 lines.\n"
       << "                Example: plasma-theme-master log -n 50 --errors\n\n";
@@ -255,6 +269,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
       // Enable Auto AFTER applying themes, as applyGlobalTheme might reset it.
       ThemeWriter::setAutoLookAndFeel(true);
+      UniversalThemeExporter::syncAll();
       std::cout << "AutomaticLookAndFeel set to: True\n";
     } else {
       ThemeWriter::setAutoLookAndFeel(false);
@@ -391,6 +406,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cout << "Applying Default Dark GTK: " << qPrintable(gtk) << "\n";
       ThemeWriter::setGtkTheme(gtk);
     }
+    UniversalThemeExporter::syncAll();
     return 0;
   } else if (command == "set-static-light") {
     QString global = ThemeReader::defaultLightTheme();
@@ -412,6 +428,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cout << "Applying Default Light GTK: " << qPrintable(gtk) << "\n";
       ThemeWriter::setGtkTheme(gtk);
     }
+    UniversalThemeExporter::syncAll();
     return 0;
   } else if (command == "log") {
     int lines = 500;
@@ -505,6 +522,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         // technically not change but good to be sure)
         if (needUpdate) {
           ThemeWriter::setAutoLookAndFeel(true);
+          UniversalThemeExporter::syncAll();
         }
       }
 
@@ -516,7 +534,107 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     std::cout << "Launching Uninstaller...\n";
     int ret = std::system("plasma-theme-master-uninstall");
     return WEXITSTATUS(ret);
-  } else if (command == "clone-global") {
+  } else if (command == "sync-universal" || command == "sync-now") {
+    std::cout << "Syncing universal theme to configured apps...\n";
+    
+    // 1. Run standard sync for all enabled apps
+    UniversalThemeExporter::syncAll();
+
+    // 2. Extra CLI-only Check: Workspace
+    if (Config::isVSCodeSyncEnabled()) {
+        QDir currentDir = QDir::current();
+        QStringList workspaceFiles = currentDir.entryList(QStringList() << "*.code-workspace", QDir::Files);
+        if (currentDir.exists(".vscode") || currentDir.exists("CMakeLists.txt") || currentDir.exists("package.json") || !workspaceFiles.isEmpty()) {
+             UniversalPalette palette = UniversalThemeExporter::extractColors();
+             QString workspaceSettings = currentDir.absolutePath() + "/.vscode/settings.json";
+             UniversalThemeExporter::exportToVSCodeJSON(workspaceSettings, palette);
+             Logger::log("Detected workspace, exported to: " + workspaceSettings, Logger::Info);
+        }
+    }
+    
+    std::cout << "Sync completed. Check logs for details.\n";
+    
+    return 0;
+  } else if (command == "sync-enable") {
+      if (args.size() < 2) { std::cerr << "Usage: sync-enable <app>\n"; return 1; }
+      QString app = args.at(1).toLower();
+      if (app == "vscode") {
+          std::cout << "Enabling VS Code Sync. WARNING: modification of settings.json. Backups will be created.\n";
+          Config::setVSCodeSyncEnabled(true);
+      } else if (app == "firefox") {
+          std::cout << "Enabling Firefox Sync. WARNING: modification of userChrome.css. Backups will be created.\n";
+          Config::setFirefoxSyncEnabled(true);
+      } else if (app == "discord") {
+          std::cout << "Enabling BetterDiscord Sync. WARNING: modification of theme css.\n";
+          Config::setBetterDiscordSyncEnabled(true);
+      } else if (app == "kitty") {
+          std::cout << "Enabling Kitty Sync. WARNING: modification of kitty.conf include.\n";
+          Config::setKittySyncEnabled(true);
+      } else if (app == "obsidian") {
+           std::cout << "Enabling Obsidian Sync.\n";
+           Config::setObsidianSyncEnabled(true);
+      } else if (app == "generic") {
+           Config::setGenericSyncEnabled(true);
+      } else {
+          std::cerr << "Unknown app: " << qPrintable(app) << "\n";
+          return 1;
+      }
+      std::cout << "Enabled sync for " << qPrintable(app) << "\n";
+      return 0;
+  } else if (command == "sync-disable") {
+      if (args.size() < 2) { std::cerr << "Usage: sync-disable <app>\n"; return 1; }
+      QString app = args.at(1).toLower();
+      if (app == "vscode") Config::setVSCodeSyncEnabled(false);
+      else if (app == "firefox") Config::setFirefoxSyncEnabled(false);
+      else if (app == "discord") Config::setBetterDiscordSyncEnabled(false);
+      else if (app == "kitty") Config::setKittySyncEnabled(false);
+      else if (app == "obsidian") Config::setObsidianSyncEnabled(false);
+      else if (app == "generic") Config::setGenericSyncEnabled(false);
+      else { std::cerr << "Unknown app: " << qPrintable(app) << "\n"; return 1; }
+      std::cout << "Disabled sync for " << qPrintable(app) << "\n";
+      return 0;
+   } else if (command == "sync-list") {
+       std::cout << "Universal Sync Status:\n";
+       std::cout << "  VS Code: " << (Config::isVSCodeSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  Firefox: " << (Config::isFirefoxSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  BetterDiscord: " << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  Kitty: " << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  Obsidian: " << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  Generic: " << (Config::isGenericSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       return 0;
+    } else if (command == "sync-restore") {
+        if (args.size() < 2) { std::cerr << "Usage: sync-restore <app>\n"; return 1; }
+        QString app = args.at(1).toLower();
+        bool success = false;
+        
+        if (app == "vscode") {
+            std::cout << "Restoring VS Code settings...\n";
+            success = UniversalThemeExporter::restoreVSCode();
+        } else if (app == "firefox") {
+             std::cout << "Restoring Firefox (Partial)...\n";
+             success = UniversalThemeExporter::restoreFirefox();
+        } else if (app == "discord") {
+             std::cout << "Restoring BetterDiscord...\n";
+             success = UniversalThemeExporter::restoreBetterDiscord();
+        } else if (app == "kitty") {
+            std::cout << "Restoring Kitty config...\n";
+            success = UniversalThemeExporter::restoreKitty();
+        } else if (app == "obsidian") {
+            std::cout << "Restoring Obsidian snippet...\n";
+            success = UniversalThemeExporter::restoreObsidian();
+        } else if (app == "generic") {
+            std::cout << "Restoring Generic CSS...\n";
+            success = UniversalThemeExporter::restoreGeneric();
+        } else {
+            std::cout << "Unknown app or restore not supported: " << qPrintable(app) << "\n";
+            return 1;
+        }
+        
+        if (success) std::cout << "Restore successful.\n";
+        else std::cout << "Restore finished (some files may not have existed or failed).\n";
+        
+        return 0;
+   } else if (command == "clone-global") {
     if (args.size() < 2) {
       std::cout << "Usage: plasma-theme-master clone-global <source> <dest>\n";
       return 1;

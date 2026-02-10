@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(plasma-theme-master VERSION 1.1.1)
+project(plasma-theme-master VERSION 1.1.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,7 +11,7 @@ find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
 find_package(Qt6 6.0 REQUIRED COMPONENTS Core Widgets)
-find_package(KF6 6.0 REQUIRED COMPONENTS Config CoreAddons)
+find_package(KF6 6.0 REQUIRED COMPONENTS Config CoreAddons ColorScheme)
 
 # Suppress KDEInstallDirs warnings by explicitly adopting Qt's install paths
 if(DEFINED CMAKE_INSTALL_DATAROOTDIR)

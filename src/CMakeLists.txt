@@ -8,8 +8,10 @@ add_executable(plasma-theme-master
     core/CLIHandler.cpp
     core/GlobalThemeManager.cpp
     core/FlatpakManager.cpp
+    core/UniversalThemeExporter.cpp
     gui/MainWindow.cpp
     gui/GlobalThemeEditor.cpp
+    gui/UniversalThemePage.cpp
 )
 
 target_link_libraries(plasma-theme-master
@@ -17,6 +19,7 @@ target_link_libraries(plasma-theme-master
     Qt6::Widgets
     KF6::ConfigCore
     KF6::CoreAddons
+    KF6::ColorScheme
 )
 
 install(TARGETS plasma-theme-master DESTINATION ${KDE_INSTALL_BINDIR})

@@ -70,6 +70,8 @@ private:
   QWidget *m_dashboardTab;
   QWidget *m_logsTab;
   GlobalThemeEditor *m_globalEditorTab;
+  QWidget *m_universalTab; // We'll instantiate the class as a widget
+
 
   QAction *m_daemonAction;
 
