@@ -256,3 +256,44 @@ void ThemeWriter::setNightGtkTheme(const QString &themeName) {
   config.sync();
   qDebug() << "Set NightGtkTheme to" << themeName;
 }
+
+
+// Klassy Day & Night
+void ThemeWriter::setKlassyPreset(const QString &presetName) {
+    if (presetName.isEmpty()) return;
+
+    QString tool = QStandardPaths::findExecutable("klassy-settings");
+    if (tool.isEmpty()) {
+        Logger::log("klassy-settings executable not found.", Logger::Warning);
+        return;
+    }
+
+    QProcess process;
+    process.start(tool, QStringList() << "-w" << presetName);
+    process.waitForFinished();
+
+    if (process.exitCode() == 0) {
+        Logger::log("Applied Klassy preset: \"" + presetName + "\"", Logger::Info);
+    } else {
+        QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
+        Logger::log("Failed to set Klassy preset: " + err, Logger::Error);
+    }
+}
+
+void ThemeWriter::setDayKlassyPreset(const QString &presetName) {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group("General");
+    group.writeEntry("DayKlassyPreset", presetName);
+    config.sync();
+    Logger::log("Set DayKlassyPreset to \"" + presetName + "\"", Logger::Info);
+}
+
+void ThemeWriter::setNightKlassyPreset(const QString &presetName) {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group("General");
+    group.writeEntry("NightKlassyPreset", presetName);
+    config.sync();
+    Logger::log("Set NightKlassyPreset to \"" + presetName + "\"", Logger::Info);
+}

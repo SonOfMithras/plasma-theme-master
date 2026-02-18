@@ -56,6 +56,7 @@ public:
     static bool exportToBetterDiscord(const UniversalPalette &palette);
     static bool exportToObsidian(const UniversalPalette &palette, const QString &vaultPath);
     static bool exportToKitty(const UniversalPalette &palette);
+    static bool exportToKonsole(const UniversalPalette &palette);
     static bool exportGeneric(const UniversalPalette &palette);
     
     // Restore Methods
@@ -63,6 +64,7 @@ public:
     static bool restoreFirefox();
     static bool restoreBetterDiscord();
     static bool restoreKitty();
+    static bool restoreKonsole();
     static bool restoreObsidian();
     static bool restoreGeneric();
 

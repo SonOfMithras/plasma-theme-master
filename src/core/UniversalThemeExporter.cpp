@@ -239,6 +239,7 @@ void UniversalThemeExporter::syncAll() {
     if (Config::isFirefoxSyncEnabled()) exportToFirefox(palette);
     if (Config::isBetterDiscordSyncEnabled()) exportToBetterDiscord(palette);
     if (Config::isKittySyncEnabled()) exportToKitty(palette); 
+    if (Config::isKonsoleSyncEnabled()) exportToKonsole(palette);
     if (Config::isGenericSyncEnabled()) exportGeneric(palette); 
     
     if (Config::isObsidianSyncEnabled()) {
@@ -551,6 +552,110 @@ bool UniversalThemeExporter::exportToKitty(const UniversalPalette &palette) {
     return res;
 }
 
+bool UniversalThemeExporter::exportToKonsole(const UniversalPalette &palette) {
+    if (!Config::isKonsoleSyncEnabled()) return false;
+
+    // 1. Generate Color Scheme
+    QString schemePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/konsole/PlasmaMaster.colorscheme";
+    QFileInfo schemeInfo(schemePath);
+    QDir().mkpath(schemeInfo.absolutePath());
+
+    auto rgb = [](const QColor &c) { return QString("%1,%2,%3").arg(c.red()).arg(c.green()).arg(c.blue()); };
+
+    QString schemeContent = QString(
+        "[General]\n"
+        "Description=PlasmaMaster\n"
+        "Opacity=1\n"
+        "Wallpaper=\n\n"
+        
+        "[Background]\n"
+        "Color=%1\n\n"
+        "[BackgroundIntense]\n"
+        "Color=%2\n\n"
+        
+        "[Foreground]\n"
+        "Color=%3\n\n"
+        "[ForegroundIntense]\n"
+        "Color=%4\n\n"
+
+        "[Color0]\n"
+        "Color=%5\n\n"
+        "[Color0Intense]\n"
+        "Color=%6\n\n"
+
+        "[Color1]\n"
+        "Color=%7\n\n"
+        "[Color1Intense]\n"
+        "Color=%8\n\n"
+
+        "[Color2]\n"
+        "Color=%9\n\n"
+        "[Color2Intense]\n"
+        "Color=%10\n\n"
+
+        "[Color3]\n"
+        "Color=%11\n\n"
+        "[Color3Intense]\n"
+        "Color=%12\n\n"
+
+        "[Color4]\n"
+        "Color=%13\n\n"
+        "[Color4Intense]\n"
+        "Color=%14\n\n"
+
+        "[Color5]\n"
+        "Color=%15\n\n"
+        "[Color5Intense]\n"
+        "Color=%16\n\n"
+
+        "[Color6]\n"
+        "Color=%17\n\n"
+        "[Color6Intense]\n"
+        "Color=%18\n\n"
+
+        "[Color7]\n"
+        "Color=%19\n\n"
+        "[Color7Intense]\n"
+        "Color=%20\n\n"
+    ).arg(rgb(palette.ansiBlack))
+     .arg(rgb(palette.ansiBlack))
+     .arg(rgb(palette.ansiWhite))
+     .arg(rgb(palette.ansiWhiteBright))
+     .arg(rgb(palette.ansiBlack))        .arg(rgb(palette.ansiBlackBright))
+     .arg(rgb(palette.ansiRed))          .arg(rgb(palette.ansiRedBright))
+     .arg(rgb(palette.ansiGreen))        .arg(rgb(palette.ansiGreenBright))
+     .arg(rgb(palette.ansiYellow))       .arg(rgb(palette.ansiYellowBright))
+     .arg(rgb(palette.ansiBlue))         .arg(rgb(palette.ansiBlueBright))
+     .arg(rgb(palette.ansiMagenta))      .arg(rgb(palette.ansiMagentaBright))
+     .arg(rgb(palette.ansiCyan))         .arg(rgb(palette.ansiCyanBright))
+     .arg(rgb(palette.ansiWhite))        .arg(rgb(palette.ansiWhiteBright));
+
+    writeToFile(schemePath, schemeContent);
+
+    // 2. Generate Profile
+    QString profilePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/konsole/PlasmaMaster.profile";
+    QString profileContent = 
+        "[Appearance]\n"
+        "ColorScheme=PlasmaMaster\n\n"
+        "[General]\n"
+        "Name=PlasmaMaster\n"
+        "Parent=FALLBACK/\n";
+        
+    bool profileWritten = writeToFile(profilePath, profileContent);
+    
+    // 3. Set as Default Profile
+    if (profileWritten) {
+        QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/konsolerc";
+        KConfig config(configPath, KConfig::SimpleConfig);
+        KConfigGroup group = config.group("Desktop Entry");
+        group.writeEntry("DefaultProfile", "PlasmaMaster.profile");
+        config.sync();
+        Logger::log("Set Konsole default profile to PlasmaMaster", Logger::Info);
+    }
+
+    return true;
+}
+
 bool UniversalThemeExporter::exportGeneric(const UniversalPalette &palette) {
     if (!Config::isGenericSyncEnabled()) return false;
     QString cachePath = QDir::homePath() + "/.cache/plasma-theme-master/universal.css";
@@ -650,6 +755,19 @@ bool UniversalThemeExporter::restoreGeneric() {
     }
     return false;
 }
+
+bool UniversalThemeExporter::restoreKonsole() {
+    QString schemePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/konsole/PlasmaMaster.colorscheme";
+    QString profilePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/konsole/PlasmaMaster.profile";
+    
+    if (QFile::exists(schemePath)) QFile::remove(schemePath);
+    if (QFile::exists(profilePath)) QFile::remove(profilePath);
+
+    Logger::log("Removed PlasmaMaster Konsole files. You may need to manually reset your default Konsole profile.", Logger::Warning);
+    
+    return true;
+}
+
 
 // -----------------------------------------------------------------------------
 // Scanners

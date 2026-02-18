@@ -34,6 +34,9 @@ private:
     QCheckBox *m_kittyCheck;
     QPushButton *m_kittyRestoreBtn;
 
+    QCheckBox *m_konsoleCheck;
+    QPushButton *m_konsoleRestoreBtn;
+
     QCheckBox *m_genericCheck;
     QPushButton *m_genericRestoreBtn;
 

@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.2**
+**Version 1.2.0**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single simple application, a simple and functional gui with a cli backend supporting it. The included daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -8,13 +8,14 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 
 ## Features
 
-- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, and Flatpak themes.
+- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Klassy, and Flatpak themes.
 - **Solar Calculation**: Automatically calculates sunrise and sunset times based on the long and lat provided to vial plasma's integrated day/night cycle.
 - **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
+- **Klassy Integration**: Apply window decoration presets (Day/Night) automatically.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
 - **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, and Obsidian.
-- **Theme Sync**: Keeps Kvantum, GTK, and Flatpak themes in sync with your Global Theme.
+- **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
   - GUI App: ~50MB Memory Usage

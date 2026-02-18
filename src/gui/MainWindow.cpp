@@ -325,6 +325,16 @@ void MainWindow::setupDashboardTab() {
   gtkLayout->addRow(tr("Night:"), m_gtkNightCombo);
   configLayout->addLayout(gtkLayout);
 
+  // Klassy
+  QLabel *klassyLabel = new QLabel(tr("<b>Klassy Preset</b>"), this);
+  configLayout->addWidget(klassyLabel);
+  QFormLayout *klassyLayout = new QFormLayout();
+  m_klassyDayCombo = new QComboBox(this);
+  m_klassyNightCombo = new QComboBox(this);
+  klassyLayout->addRow(tr("Day:"), m_klassyDayCombo);
+  klassyLayout->addRow(tr("Night:"), m_klassyNightCombo);
+  configLayout->addLayout(klassyLayout);
+
   connect(m_globalDayCombo, &QComboBox::activated, this,
           &MainWindow::saveSettings);
   connect(m_globalNightCombo, &QComboBox::activated, this,
@@ -336,6 +346,10 @@ void MainWindow::setupDashboardTab() {
   connect(m_gtkDayCombo, &QComboBox::activated, this,
           &MainWindow::saveSettings);
   connect(m_gtkNightCombo, &QComboBox::activated, this,
+          &MainWindow::saveSettings);
+  connect(m_klassyDayCombo, &QComboBox::activated, this,
+          &MainWindow::saveSettings);
+  connect(m_klassyNightCombo, &QComboBox::activated, this,
           &MainWindow::saveSettings);
 
   layout->addWidget(configGroup);
@@ -438,6 +452,10 @@ void MainWindow::populateThemes() {
   QStringList gtkThemes = ThemeReader::listGtkThemes();
   m_gtkDayCombo->addItems(gtkThemes);
   m_gtkNightCombo->addItems(gtkThemes);
+
+  QStringList klassyPresets = ThemeReader::listKlassyPresets();
+  m_klassyDayCombo->addItems(klassyPresets);
+  m_klassyNightCombo->addItems(klassyPresets);
 }
 
 void MainWindow::loadSettings() {
@@ -462,6 +480,12 @@ void MainWindow::loadSettings() {
   if (!gNight.isEmpty())
     m_gtkNightCombo->setCurrentText(gNight);
 
+  // Klassy Defaults
+  QString kDayP = ThemeReader::dayKlassyPreset();
+  QString kNightP = ThemeReader::nightKlassyPreset();
+  if (!kDayP.isEmpty()) m_klassyDayCombo->setCurrentText(kDayP);
+  if (!kNightP.isEmpty()) m_klassyNightCombo->setCurrentText(kNightP);
+
   // Solar Padding
   int padding = ThemeReader::solarPadding();
   m_offsetSlider->setValue(padding);
@@ -480,6 +504,8 @@ void MainWindow::saveSettings() {
   ThemeWriter::setNightKvantumTheme(m_kvantumNightCombo->currentText());
   ThemeWriter::setDayGtkTheme(m_gtkDayCombo->currentText());
   ThemeWriter::setNightGtkTheme(m_gtkNightCombo->currentText());
+  ThemeWriter::setDayKlassyPreset(m_klassyDayCombo->currentText());
+  ThemeWriter::setNightKlassyPreset(m_klassyNightCombo->currentText());
   ThemeWriter::setSolarPadding(m_offsetSlider->value());
 
   // If Auto is enabled, re-apply logic immediately to reflect changes
@@ -513,6 +539,9 @@ void MainWindow::toggleAuto(bool checked) {
     if (!gtk.isEmpty())
       ThemeWriter::setGtkTheme(gtk);
 
+    QString klassy = isDay ? m_klassyDayCombo->currentText() : m_klassyNightCombo->currentText();
+    if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy);
+
     ThemeWriter::setAutoLookAndFeel(true);
   } else {
     ThemeWriter::setAutoLookAndFeel(false);
@@ -527,6 +556,7 @@ void MainWindow::applyStaticDay() {
   ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
   ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
   ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
+  ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
   
   UniversalThemeExporter::syncAll();
   // Second pass after 2 seconds to allow system changes to settle/propagate
@@ -542,6 +572,7 @@ void MainWindow::applyStaticNight() {
   ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
   ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
   ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+  ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
   
   UniversalThemeExporter::syncAll();
   // Second pass after 2 seconds
@@ -565,10 +596,12 @@ void MainWindow::applyCurrentTarget() {
         ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
         ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
         ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText()); 
+        ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
     } else {
         ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
         ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
         ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+        ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
     }
 
     // Restore auto state if it was enabled (as applyGlobalTheme might have disabled it)

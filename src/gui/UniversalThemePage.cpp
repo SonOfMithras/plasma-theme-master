@@ -92,6 +92,17 @@ void UniversalThemePage::setupUi() {
     });
     addRow(m_kittyCheck, m_kittyRestoreBtn);
 
+    // Konsole
+    m_konsoleCheck = new QCheckBox("Konsole (Colors & Profile)", this);
+    m_konsoleRestoreBtn = new QPushButton(this);
+    connect(m_konsoleRestoreBtn, &QPushButton::clicked, [this]() {
+        if (QMessageBox::question(this, "Restore Konsole", "Remove PlasmaMaster profile and colors?") == QMessageBox::Yes) {
+             UniversalThemeExporter::restoreKonsole();
+             QMessageBox::information(this, "Done", "Removed Konsole config.");
+        }
+    });
+    addRow(m_konsoleCheck, m_konsoleRestoreBtn);
+
     // Generic
     m_genericCheck = new QCheckBox("Generic CSS (~/.cache/.../universal.css)", this);
     m_genericRestoreBtn = new QPushButton(this);
@@ -146,6 +157,7 @@ void UniversalThemePage::setupUi() {
     connect(m_firefoxCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_discordCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_kittyCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_konsoleCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_genericCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianPathEdit, &QLineEdit::editingFinished, this, &UniversalThemePage::saveSettings);
@@ -157,6 +169,7 @@ void UniversalThemePage::loadSettings() {
     m_firefoxCheck->setChecked(Config::isFirefoxSyncEnabled());
     m_discordCheck->setChecked(Config::isBetterDiscordSyncEnabled());
     m_kittyCheck->setChecked(Config::isKittySyncEnabled());
+    m_konsoleCheck->setChecked(Config::isKonsoleSyncEnabled());
     m_genericCheck->setChecked(Config::isGenericSyncEnabled());
     
     m_obsidianCheck->setChecked(Config::isObsidianSyncEnabled());
@@ -171,6 +184,7 @@ void UniversalThemePage::saveSettings() {
     Config::setFirefoxSyncEnabled(m_firefoxCheck->isChecked());
     Config::setBetterDiscordSyncEnabled(m_discordCheck->isChecked());
     Config::setKittySyncEnabled(m_kittyCheck->isChecked());
+    Config::setKonsoleSyncEnabled(m_konsoleCheck->isChecked());
     Config::setGenericSyncEnabled(m_genericCheck->isChecked());
     
     Config::setObsidianSyncEnabled(m_obsidianCheck->isChecked());
@@ -292,6 +306,11 @@ void UniversalThemePage::syncNow() {
     if (m_kittyCheck->isChecked()) {
         bool ok = UniversalThemeExporter::exportToKitty(palette);
         results << QString("Kitty: %1").arg(ok ? "OK" : "Failed");
+    }
+
+    if (m_konsoleCheck->isChecked()) {
+        bool ok = UniversalThemeExporter::exportToKonsole(palette);
+        results << QString("Konsole: %1").arg(ok ? "OK" : "Failed");
     }
 
     if (m_genericCheck->isChecked()) {

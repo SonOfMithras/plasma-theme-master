@@ -87,3 +87,8 @@ QStringList Config::betterDiscordImports() {
 void Config::setBetterDiscordImports(const QStringList &imports) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("BetterDiscordImports", imports); c.sync();
 }
+
+bool Config::isKonsoleSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Konsole", false); }
+void Config::setKonsoleSyncEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Konsole", enabled); c.sync();
+}

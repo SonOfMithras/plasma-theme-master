@@ -25,6 +25,11 @@ public:
   static void setDayFlatpakTheme(const QString &themeName);
   static void setNightFlatpakTheme(const QString &themeName);
   static void setFlatpakFollowsGtk(bool follow);
+
+  // Klassy
+  static void setKlassyPreset(const QString &presetName);
+  static void setDayKlassyPreset(const QString &presetName);
+  static void setNightKlassyPreset(const QString &presetName);
 };
 
 #endif // THEME_WRITER_H

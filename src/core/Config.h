@@ -23,6 +23,9 @@ public:
     static bool isKittySyncEnabled();
     static void setKittySyncEnabled(bool enabled);
     
+    static bool isKonsoleSyncEnabled();
+    static void setKonsoleSyncEnabled(bool enabled);
+
     static bool isGenericSyncEnabled();
     static void setGenericSyncEnabled(bool enabled);
 
@@ -36,6 +39,7 @@ public:
     static void setBetterDiscordMaterialEnabled(bool enabled);
     static QStringList betterDiscordImports();
     static void setBetterDiscordImports(const QStringList &imports);
+
 };
 
 #endif // CONFIG_H

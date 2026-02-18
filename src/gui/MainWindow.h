@@ -91,6 +91,8 @@ private:
   QComboBox *m_kvantumNightCombo;
   QComboBox *m_gtkDayCombo;
   QComboBox *m_gtkNightCombo;
+  QComboBox *m_klassyDayCombo;
+  QComboBox *m_klassyNightCombo;
 
   QPushButton *m_applyDayBtn;
   QPushButton *m_applyNightBtn;

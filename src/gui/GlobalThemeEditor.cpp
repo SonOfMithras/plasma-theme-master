@@ -13,6 +13,9 @@
 #include <QDebug>
 #include <KConfig>
 #include <KConfigGroup>
+#include <QCoreApplication>
+#include <QFileInfo>
+#include <QDir>
 
 GlobalThemeEditor::GlobalThemeEditor(QWidget *parent) : QWidget(parent) {
     initUi();
@@ -67,14 +70,45 @@ void GlobalThemeEditor::initUi() {
         combo->setEditable(true); // Allow custom
         // Populate (deferred or now? now is fine, categories are static-ish)
         QStringList items = GlobalThemeManager::listSubThemes(f.category);
+        if (f.category == "window_decoration_engines") {
+             // Defaults
+             items = QStringList{"org.kde.breeze", "org.kde.oxygen", "org.kde.kwin.aurorae", "org.kde.klassy", "org.kde.lightly"};
+             
+             // 1. Scan for Plugin Files (org.kde.kdecoration3)
+             // This finds standalone themes like Klassy, Lightly, etc even if not used by a global theme
+             QStringList libPaths = QCoreApplication::libraryPaths();
+             for (const QString &libPath : libPaths) {
+                 QDir dir(libPath + "/org.kde.kdecoration3");
+                 if (dir.exists()) {
+                     QStringList entries = dir.entryList(QStringList() << "*.so", QDir::Files);
+                     for (const QString &entry : entries) {
+                         // entry is like "org.kde.klassy.so" -> "org.kde.klassy"
+                         QString name = QFileInfo(entry).completeBaseName();
+                         if (!items.contains(name)) items << name;
+                     }
+                 }
+             }
+
+             // 2. Dynamic Scan of Global Themes
+             QList<GlobalThemeInfo> themes = GlobalThemeManager::listInstalledThemes();
+             for (const auto &t : themes) {
+                 QString path = GlobalThemeManager::getDefaultsPath(t.name);
+                 KConfig subConfig(path, KConfig::SimpleConfig);
+                 if (subConfig.hasGroup("kwinrc")) {
+                     KConfigGroup kwin = subConfig.group("kwinrc");
+                     if (kwin.hasGroup("org.kde.kdecoration2")) {
+                          QString lib = kwin.group("org.kde.kdecoration2").readEntry("library");
+                          if (!lib.isEmpty() && !items.contains(lib)) items << lib;
+                     }
+                 }
+             }
+             items.sort();
+        }
+        
         combo->addItem(""); // Empty default
         combo->addItems(items);
         
         ConfigKey key = {f.subgroup.isEmpty() ? f.group : f.group + "][" + f.subgroup, f.key};
-        // Actually KConfigGroup identifiers are simpler. construct a string key for map?
-        // Using struct ConfigKey matches QMap.
-        // Wait, KConfig handles nested groups by accessing group("A").group("B").
-        // Let's store "group|subgroup" in section string for easy parsing later.
         QString section = f.group;
         if (!f.subgroup.isEmpty()) section += "|" + f.subgroup;
         

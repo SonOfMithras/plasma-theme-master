@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-02-17
+
+### Added
+- **Klassy Window Decoration Integration**:
+  - Full support for setting Day/Night **Klassy presets** via the Dashboard.
+  - Automatically applies presets using `klassy-settings` when theme changes.
+  - Reads presets from dynamic config path (`~/.config/klassy/windecopresetsrc`).
+- **Global Theme Editor Enhancements**:
+  - **Dynamic Engine Discovery**: Now scans all installed global themes to populate the "Window Decoration Engine" dropdown (supports Klassy, Lightly, etc.).
+  - **Dynamic Application Styles**: Now lists all available system widget styles (via `QStyleFactory`) instead of a hardcoded list.
+
+### Fixed
+- **Global Theme Editor**: Correctly detects `org.kde.klassy` window decorations without incorrectly applying Aurorae-specific prefixes.
+
 ## [1.1.2] - 2026-02-10
 
 ### Added

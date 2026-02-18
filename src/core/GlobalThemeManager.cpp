@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QStyleFactory>
 #include "Logger.h"
 
 QList<GlobalThemeInfo> GlobalThemeManager::listInstalledThemes() {
@@ -220,7 +221,10 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
     } else if (category == "window_decoration_engines") {
          return QStringList{"org.kde.kwin.aurorae", "org.kde.breeze", "org.kde.oxygen"};
     } else if (category == "application_styles") {
-         return QStringList{"Breeze", "Oxygen", "Fusion", "Windows", "kvantum", "kvantum-dark"};
+         QStringList styles = QStyleFactory::keys();
+         // Ensure standard KDE ones are present if for some reason not returned (though they should be)
+         if (!styles.contains("Breeze") && styles.contains("breeze")) styles.replaceInStrings("breeze", "Breeze");
+         return styles;
     }
     
     QStringList results;

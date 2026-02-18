@@ -199,3 +199,42 @@ bool ThemeReader::flatpakFollowsGtk() {
     KConfigGroup group = config.group(QStringLiteral("General"));
     return group.readEntry("FlatpakFollowsGtk", false);
 }
+
+QStringList ThemeReader::listKlassyPresets() {
+    QStringList presets;
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/klassy/windecopresetsrc";
+    QFile file(path);
+    
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            // Look for [Windeco Preset <Name>]
+            if (line.startsWith("[Windeco Preset ") && line.endsWith("]")) {
+                int start = 16; // Length of "[Windeco Preset "
+                int end = line.length() - 1;
+                QString name = line.mid(start, end - start);
+                if (!name.isEmpty()) {
+                    presets.append(name);
+                }
+            }
+        }
+        file.close();
+    }
+    presets.sort();
+    return presets;
+}
+
+QString ThemeReader::dayKlassyPreset() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry("DayKlassyPreset", QString());
+}
+
+QString ThemeReader::nightKlassyPreset() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry("NightKlassyPreset", QString());
+}

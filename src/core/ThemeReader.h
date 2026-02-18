@@ -35,6 +35,11 @@ public:
   static QString dayFlatpakTheme();
   static QString nightFlatpakTheme();
   static bool flatpakFollowsGtk();
+
+  // Klassy
+  static QStringList listKlassyPresets();
+  static QString dayKlassyPreset();
+  static QString nightKlassyPreset();
 };
 
 #endif // THEME_READER_H
