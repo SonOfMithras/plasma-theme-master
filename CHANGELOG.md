@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
   - **Dynamic Application Styles**: Now lists all available system widget styles (via `QStyleFactory`) instead of a hardcoded list.
 
 ### Fixed
-- **Global Theme Editor**: Correctly detects `org.kde.klassy` window decorations without incorrectly applying Aurorae-specific prefixes.
+- **Global Theme Editor**: Correctly detects `org.kde.klassy` and other installed window decorations regardless of them appearing in Global themes.
 
 ## [1.1.2] - 2026-02-10
 
