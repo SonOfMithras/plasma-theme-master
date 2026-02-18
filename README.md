@@ -8,7 +8,7 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 
 ## Features
 
-- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Klassy, and Flatpak themes.
+- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Flatpak themes, and Klassy Window Decorations.
 - **Solar Calculation**: Automatically calculates sunrise and sunset times based on the long and lat provided to vial plasma's integrated day/night cycle.
 - **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
 - **Klassy Integration**: Apply window decoration presets (Day/Night) automatically.

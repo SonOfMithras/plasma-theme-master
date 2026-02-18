@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2026-02-17
+## [1.1.3] - 2026-02-17
 
 ### Added
 - **Klassy Window Decoration Integration**:
