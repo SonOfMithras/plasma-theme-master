@@ -26,8 +26,8 @@ public:
     static bool isKonsoleSyncEnabled();
     static void setKonsoleSyncEnabled(bool enabled);
 
-    static bool isGenericSyncEnabled();
-    static void setGenericSyncEnabled(bool enabled);
+    static bool isMaterialYouOverrideEnabled();
+    static void setMaterialYouOverrideEnabled(bool enabled);
 
     static QString obsidianVaultPath();
     static void setObsidianVaultPath(const QString &path);

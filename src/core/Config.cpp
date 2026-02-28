@@ -59,9 +59,9 @@ void Config::setKittySyncEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Kitty", enabled); c.sync();
 }
 
-bool Config::isGenericSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Generic", false); }
-void Config::setGenericSyncEnabled(bool enabled) {
-    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Generic", enabled); c.sync();
+bool Config::isMaterialYouOverrideEnabled() { return KConfig(CONFIG_FILE).group("General").readEntry("MaterialYouOverride", false); }
+void Config::setMaterialYouOverrideEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouOverride", enabled); c.sync();
 }
 
 QString Config::obsidianVaultPath() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("ObsidianVaultPath", ""); }

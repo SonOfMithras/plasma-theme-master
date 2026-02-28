@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [1.1.4] - 2026-02-27
+### Added
+- **Material You Colors Integration**:
+  - Automatically generate and apply Material You based color schemes (`MaterialYouLight` and `MaterialYouDark`) when the theme switches.
+  - New "Material You Colors" sub-menu in the Help menu to install/upgrade the `kde-material-you-colors` script via `pipx`.
+  - Toggle autostart for the Material You generator directly from the Help menu.
+  - Checkbox in Dashboard to "Override color scheme with Material You" without needing to edit your Global Theme.
+  - Universal Theme Sync now correctly reads from generated Material You colors if the override is enabled.
+
+### Changed
+- **Universal Theme Sync**:
+  - Removed old "Generic CSS" (universal.css) export and UI elements to declutter the application.
+- **Kitty Integration**:
+  - Improved theme synchronization logic to generate separate `light-theme.auto.conf` and `dark-theme.auto.conf` files based on the global theme settings.
+  - Removed the `include plasma-colors.conf` directive from `kitty.conf` to prevent conflicts, allowing Kitty to manage theme switching natively or via its own configuration.
+  - `exportToKitty` now sources colors directly from the configured Day and Night Global Themes rather than the current system state, or from Material You generated schemes if that feature is enabled.
+
+### Fixed
+- **Klassy Window Decoration Integration**:
+  - Resolved issue where Klassy Window Decorations were not updating automatically with the day/night cycle. Implemented state tracking for Klassy to detect mismatches and trigger updates.
+  - Ensured Universal Theme Sync (CSS injection) is triggered when Klassy window decorations are updated.
+- **CLI**: Added Klassy status fields to the `status` CLI command for better debugging.
+
 ## [1.1.3] - 2026-02-17
 
 ### Added

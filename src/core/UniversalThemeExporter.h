@@ -4,6 +4,7 @@
 #include <QString>
 #include <QColor>
 #include <QMap>
+#include <KSharedConfig>
 
 struct UniversalPalette {
     QColor windowBg;
@@ -47,6 +48,7 @@ struct UniversalPalette {
 class UniversalThemeExporter {
 public:
     static UniversalPalette extractColors();
+    static UniversalPalette extractColors(const QString &configPath);
     static void syncAll();
     
     // Exporters
@@ -57,7 +59,6 @@ public:
     static bool exportToObsidian(const UniversalPalette &palette, const QString &vaultPath);
     static bool exportToKitty(const UniversalPalette &palette);
     static bool exportToKonsole(const UniversalPalette &palette);
-    static bool exportGeneric(const UniversalPalette &palette);
     
     // Restore Methods
     static bool restoreVSCode();
@@ -66,7 +67,6 @@ public:
     static bool restoreKitty();
     static bool restoreKonsole();
     static bool restoreObsidian();
-    static bool restoreGeneric();
 
     // Helpers
     static QStringList scanBetterDiscordImports();
@@ -78,6 +78,9 @@ private:
     static QString colorToHex(const QColor &color);
     static QString colorToRgb(const QColor &color); // "r, g, b"
     static bool writeToFile(const QString &path, const QString &content);
+    
+    // Internal helper
+    static UniversalPalette extractColorsFromConfig(KSharedConfig::Ptr config);
 };
 
 #endif // UNIVERSALTHEMEEXPORTER_H

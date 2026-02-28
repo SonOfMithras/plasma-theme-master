@@ -35,6 +35,10 @@ public:
     
     // Get absolute path to details file
     static QString getDefaultsPath(const QString &themeName);
+
+    // Helpers to resolve Color Scheme from Global Theme
+    static QString getColorSchemeFromGlobal(const QString &themeName);
+    static QString findColorSchemePath(const QString &schemeName);
 };
 
 #endif // GLOBALTHEMEMANAGER_H

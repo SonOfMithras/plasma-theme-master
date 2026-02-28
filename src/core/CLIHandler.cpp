@@ -76,7 +76,7 @@ void CLIHandler::printHelp() {
       << "  sync-universal (or sync-now)\n"
       << "                Sync enabled universal apps immediately.\n\n"
       << "  sync-enable <app>\n"
-      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian, generic).\n"
+      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian).\n"
       << "                WARNING: backups will be created.\n\n"
       << "  sync-disable <app>\n"
       << "                Disable universal sync for an app.\n\n"
@@ -134,6 +134,9 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     out << "Kvantum Light: " << ThemeReader::dayKvantumTheme() << "\n";
     out << "GTK Dark: " << ThemeReader::nightGtkTheme() << "\n";
     out << "GTK Light: " << ThemeReader::dayGtkTheme() << "\n";
+    out << "Klassy Day Preset: " << ThemeReader::dayKlassyPreset() << "\n";
+    out << "Klassy Night Preset: " << ThemeReader::nightKlassyPreset() << "\n";
+    out << "Last Applied Klassy: " << ThemeReader::lastAppliedKlassyPreset() << "\n";
     out << "\n[Solar]\n";
     out << "Location: " << lat << ", " << lon << "\n";
     out << "Sunrise: " << sunriseStr << "\n";
@@ -249,6 +252,9 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         std::cout << "Applying calculated Global (" << (isDay ? "Day" : "Night")
                   << "): " << qPrintable(targetGlobal) << "\n";
         ThemeWriter::applyGlobalTheme(targetGlobal);
+        if (Config::isMaterialYouOverrideEnabled()) {
+             ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+        }
         // Kvantum might be reset by Global Theme, so always apply it AFTER
       }
 
@@ -473,12 +479,14 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
         bool needUpdate = false;
 
-        // Strict check: If target is defined and different, apply.
         if (!targetGlobal.isEmpty() && currentGlobal != targetGlobal) {
           Logger::log("Daemon: Global theme mismatch detected. Applying " +
                           targetGlobal,
                       Logger::Info);
           ThemeWriter::applyGlobalTheme(targetGlobal);
+          if (Config::isMaterialYouOverrideEnabled()) {
+               ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+          }
           needUpdate = true;
         }
 
@@ -504,6 +512,15 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                       Logger::Info);
           ThemeWriter::setGtkTheme(targetGtk);
           needUpdate = true;
+        }
+
+        // Klassy Window Decorations
+        QString currentKlassy = ThemeReader::lastAppliedKlassyPreset();
+        QString targetKlassy = isDay ? ThemeReader::dayKlassyPreset() : ThemeReader::nightKlassyPreset();
+        if (!targetKlassy.isEmpty() && currentKlassy != targetKlassy) {
+            Logger::log("Daemon: Klassy preset mismatch detected. Applying " + targetKlassy, Logger::Info);
+            ThemeWriter::setKlassyPreset(targetKlassy);
+            needUpdate = true;
         }
         
         // Flatpak (Independent configuration)
@@ -573,8 +590,6 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       } else if (app == "obsidian") {
            std::cout << "Enabling Obsidian Sync.\n";
            Config::setObsidianSyncEnabled(true);
-      } else if (app == "generic") {
-           Config::setGenericSyncEnabled(true);
       } else {
           std::cerr << "Unknown app: " << qPrintable(app) << "\n";
           return 1;
@@ -589,7 +604,6 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       else if (app == "discord") Config::setBetterDiscordSyncEnabled(false);
       else if (app == "kitty") Config::setKittySyncEnabled(false);
       else if (app == "obsidian") Config::setObsidianSyncEnabled(false);
-      else if (app == "generic") Config::setGenericSyncEnabled(false);
       else { std::cerr << "Unknown app: " << qPrintable(app) << "\n"; return 1; }
       std::cout << "Disabled sync for " << qPrintable(app) << "\n";
       return 0;
@@ -600,7 +614,6 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
        std::cout << "  BetterDiscord: " << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled") << "\n";
        std::cout << "  Kitty: " << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled") << "\n";
        std::cout << "  Obsidian: " << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  Generic: " << (Config::isGenericSyncEnabled() ? "Enabled" : "Disabled") << "\n";
        return 0;
     } else if (command == "sync-restore") {
         if (args.size() < 2) { std::cerr << "Usage: sync-restore <app>\n"; return 1; }
@@ -622,9 +635,6 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         } else if (app == "obsidian") {
             std::cout << "Restoring Obsidian snippet...\n";
             success = UniversalThemeExporter::restoreObsidian();
-        } else if (app == "generic") {
-            std::cout << "Restoring Generic CSS...\n";
-            success = UniversalThemeExporter::restoreGeneric();
         } else {
             std::cout << "Unknown app or restore not supported: " << qPrintable(app) << "\n";
             return 1;

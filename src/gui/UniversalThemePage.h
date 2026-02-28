@@ -37,8 +37,6 @@ private:
     QCheckBox *m_konsoleCheck;
     QPushButton *m_konsoleRestoreBtn;
 
-    QCheckBox *m_genericCheck;
-    QPushButton *m_genericRestoreBtn;
 
     QCheckBox *m_obsidianCheck;
     QPushButton *m_obsidianRestoreBtn;

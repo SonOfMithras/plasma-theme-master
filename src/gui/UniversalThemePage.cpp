@@ -103,15 +103,6 @@ void UniversalThemePage::setupUi() {
     });
     addRow(m_konsoleCheck, m_konsoleRestoreBtn);
 
-    // Generic
-    m_genericCheck = new QCheckBox("Generic CSS (~/.cache/.../universal.css)", this);
-    m_genericRestoreBtn = new QPushButton(this);
-    connect(m_genericRestoreBtn, &QPushButton::clicked, [this]() {
-        UniversalThemeExporter::restoreGeneric();
-        QMessageBox::information(this, "Done", "Removed generic universal.css.");
-    });
-    addRow(m_genericCheck, m_genericRestoreBtn);
-
     // Obsidian
     m_obsidianCheck = new QCheckBox("Obsidian (Vault Snippet)", this);
     m_obsidianRestoreBtn = new QPushButton(this);
@@ -158,7 +149,7 @@ void UniversalThemePage::setupUi() {
     connect(m_discordCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_kittyCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_konsoleCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_genericCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+
     connect(m_obsidianCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianPathEdit, &QLineEdit::editingFinished, this, &UniversalThemePage::saveSettings);
 }
@@ -170,7 +161,7 @@ void UniversalThemePage::loadSettings() {
     m_discordCheck->setChecked(Config::isBetterDiscordSyncEnabled());
     m_kittyCheck->setChecked(Config::isKittySyncEnabled());
     m_konsoleCheck->setChecked(Config::isKonsoleSyncEnabled());
-    m_genericCheck->setChecked(Config::isGenericSyncEnabled());
+
     
     m_obsidianCheck->setChecked(Config::isObsidianSyncEnabled());
     m_obsidianPathEdit->setText(Config::obsidianVaultPath());
@@ -185,7 +176,7 @@ void UniversalThemePage::saveSettings() {
     Config::setBetterDiscordSyncEnabled(m_discordCheck->isChecked());
     Config::setKittySyncEnabled(m_kittyCheck->isChecked());
     Config::setKonsoleSyncEnabled(m_konsoleCheck->isChecked());
-    Config::setGenericSyncEnabled(m_genericCheck->isChecked());
+
     
     Config::setObsidianSyncEnabled(m_obsidianCheck->isChecked());
     Config::setObsidianVaultPath(m_obsidianPathEdit->text());
@@ -313,10 +304,6 @@ void UniversalThemePage::syncNow() {
         results << QString("Konsole: %1").arg(ok ? "OK" : "Failed");
     }
 
-    if (m_genericCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportGeneric(palette);
-        results << QString("Generic CSS: %1").arg(ok ? "OK" : "Failed");
-    }
     
     if (m_obsidianCheck->isChecked()) {
         if (m_obsidianPathEdit->text().isEmpty()) {

@@ -222,7 +222,6 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
          return QStringList{"org.kde.kwin.aurorae", "org.kde.breeze", "org.kde.oxygen"};
     } else if (category == "application_styles") {
          QStringList styles = QStyleFactory::keys();
-         // Ensure standard KDE ones are present if for some reason not returned (though they should be)
          if (!styles.contains("Breeze") && styles.contains("breeze")) styles.replaceInStrings("breeze", "Breeze");
          return styles;
     }
@@ -255,4 +254,47 @@ QStringList GlobalThemeManager::listSubThemes(const QString &category) {
 bool GlobalThemeManager::isUserTheme(const QString &themeName) {
      QString path = getDefaultsPath(themeName);
      return path.startsWith(QDir::homePath());
+}
+
+QString GlobalThemeManager::getColorSchemeFromGlobal(const QString &themeName) {
+    if (themeName.isEmpty()) return QString();
+    
+    QString defaultsPath = getDefaultsPath(themeName);
+    if (defaultsPath.isEmpty()) return QString();
+    
+    // Check if defaults exists, even if user hasn't explicitly backed it up or used it before
+    if (!QFile::exists(defaultsPath)) return QString();
+    
+    KConfig config(defaultsPath, KConfig::SimpleConfig);
+    // Usually under [kdeglobals][General] ColorScheme=BreezeDark
+    KConfigGroup kdeglobals = config.group("kdeglobals");
+    KConfigGroup general = kdeglobals.group("General");
+    
+    // KDE global theme format stores sub-configurations exactly like that
+    if (!kdeglobals.isValid()) return QString();
+    
+    return general.readEntry("ColorScheme", QString());
+}
+
+QString GlobalThemeManager::findColorSchemePath(const QString &schemeName) {
+    if (schemeName.isEmpty()) return QString();
+    
+    QStringList searchPaths = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "color-schemes", QStandardPaths::LocateDirectory);
+    
+    // First, try exact name matches (file name matches scheme name)
+    // The schemeName might be just "Breeze", and file "Breeze.colors"
+    
+    for (const QString &path : searchPaths) {
+        QDir dir(path);
+        QString filePath = dir.absoluteFilePath(schemeName + ".colors");
+        if (QFile::exists(filePath)) {
+            return filePath;
+        }
+    }
+    
+    // Some logic assumes schemeName IS the filename base. So we just need to find it.
+    // If not found by direct lookup, maybe we scan?
+    // Usually ColorScheme=XYZ maps directly to XYZ.colors
+    
+    return QString();
 }

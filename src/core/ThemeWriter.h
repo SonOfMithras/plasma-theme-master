@@ -13,6 +13,7 @@ public:
   static void setDefaultDarkTheme(const QString &themeName);
   static void setDefaultLightTheme(const QString &themeName);
   static bool applyGlobalTheme(const QString &themeName);
+  static bool applyColorScheme(const QString &schemeName);
 
   // App Config (plasma-theme-masterrc)
   static void setSolarPadding(int minutes);

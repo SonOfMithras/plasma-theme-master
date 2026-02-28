@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.3**
+**Version 1.1.4**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single simple application, a simple and functional gui with a cli backend supporting it. The included daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -8,13 +8,14 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 
 ## Features
 
-- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Flatpak themes, and Klassy Window Decorations.
+- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Flatpak themes, Klassy Window Decorations, and Material You Color Schemes.
 - **Solar Calculation**: Automatically calculates sunrise and sunset times based on the long and lat provided to vial plasma's integrated day/night cycle.
 - **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
 - **Klassy Integration**: Apply window decoration presets (Day/Night) automatically.
+- **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
-- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, and Obsidian.
+- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, and Obsidian. (Sourced from Material You colors if enabled).
 - **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -29,15 +30,19 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 ![Global Theme Editor](screenshots/global-theme-editor-tab.png)
 *Global Theme Editor*
 
+![Universal Theme Sync](screenshots/universal-theme-sync-tab.png)
+*Universal Theme Sync*
 
 ## Installation
 
 ### Prerequisites
-- KDE Plasma 6
+- KDE Plasma 6.5+
 - Qt 6
 - CMake
 - KConfig, KCoreAddons
+- pipx (required for installing Material You dependencies)
 - Flatpak (optional, for Flatpak support)
+- Klassy Window Decoration (optional, for window decoration preset switching)
 
 ### Easy Install Script:
 
@@ -69,9 +74,10 @@ Launch the application from your application menu or terminal:
 ```bash
 plasma-theme-master
 ```
-- **Dashboard**: View system status, sun times, and manually override themes.
+- **Dashboard**: View system status, sun times, set Klassy presets, enable Material You overrides, and manually override themes.
 - **Global Theme Editor**: Select a global theme, edit its components, and save changes.
 - **Flatpak Settings**: Manage Flatpak theme integration (Help -> Flatpak Settings...).
+- **Material You Colors**: Install, upgrade, and toggle autostart for the Material You generator (Help -> Material You Colors).
 - **Check for Updates**: Check for new releases directly from the Help -> About dialog.
 - **Logs**: View application logs for debugging.
 
@@ -107,7 +113,7 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 
 ### Universal Theme Sync
 The application can inject Plasma's colors into various non-KDE applications.
-**Supported Apps**: `vscode` (Code/OSS/VSCodium), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `obsidian`, `generic`.
+**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `konsole`, `obsidian`, `generic`.
 
 **Setup**:
 1. Enable sync for an app: `plasma-theme-master sync-enable vscode`
@@ -131,6 +137,17 @@ The application can inject Plasma's colors into various non-KDE applications.
 - **Config Reset**: If the app misbehaves, you can reset all settings via `Help > Clear Config` in the GUI.
 
 ## Troubleshooting Build Issues
+
+### Known Issues/Limitations
+
+#### Universal Theme Sync
+- Some CSS themes will only partially update automatically, Apply target on the Dashboard, and Sync target on the Universal Theme Sync tab will force the sync. Workshopping potential solutions.
+- Konsole needs to be restarted to reflect the change in colors. Kitty works fine without a restart.
+
+#### Material You Colors
+- If generating colors immediately after clicking "Apply Target" while the daemon is actively running through a sync process, you might experience a slight delay before the material you script finishes updating the global scheme colors. The system will generally sort itself out within 2 seconds.
+
+### Build Issues
 
 If you encounter errors during the build process on Debian/Ubuntu-based systems (e.g., `CMake Error`, `missing header` files), you may be missing dependencies.
 

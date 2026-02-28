@@ -40,6 +40,7 @@ public:
   static QStringList listKlassyPresets();
   static QString dayKlassyPreset();
   static QString nightKlassyPreset();
+  static QString lastAppliedKlassyPreset();
 };
 
 #endif // THEME_READER_H

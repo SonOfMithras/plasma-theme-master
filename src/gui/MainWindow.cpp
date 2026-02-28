@@ -5,6 +5,7 @@
 #include "../core/ThemeWriter.h"
 #include "../core/ThemeWriter.h"
 #include "../core/UniversalThemeExporter.h"
+#include "../core/Config.h"
 #include "GlobalThemeEditor.h"
 #include "UniversalThemePage.h"
 #include "core/Logger.h"
@@ -127,6 +128,27 @@ void MainWindow::setupMenuBar() {
 
   // --- Help Menu ---
   QMenu *helpMenu = menuBar->addMenu(tr("&Help"));
+
+  QMenu *materialMenu = helpMenu->addMenu(tr("Material You Colors"));
+  QAction *installAction = new QAction(tr("Install dependencies (pipx)"), this);
+  connect(installAction, &QAction::triggered, this, &MainWindow::installMaterialYou);
+  materialMenu->addAction(installAction);
+
+  QAction *upgradeAction = new QAction(tr("Upgrade"), this);
+  connect(upgradeAction, &QAction::triggered, this, &MainWindow::upgradeMaterialYou);
+  materialMenu->addAction(upgradeAction);
+
+  m_myAutostartAction = new QAction(tr("Autostart on Login"), this);
+  m_myAutostartAction->setCheckable(true);
+  
+  // Check if autostart file exists
+  QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
+  m_myAutostartAction->setChecked(QFile::exists(autostartPath));
+
+  connect(m_myAutostartAction, &QAction::toggled, this, &MainWindow::toggleMaterialYouAutostart);
+  materialMenu->addAction(m_myAutostartAction);
+
+  helpMenu->addSeparator();
 
   QAction *flatpakAction = new QAction(tr("&Flatpak Settings..."), this);
   connect(flatpakAction, &QAction::triggered, this,
@@ -356,7 +378,9 @@ void MainWindow::setupDashboardTab() {
 
   // --- Automation Control ---
   QGroupBox *autoGroup = new QGroupBox(tr("Automation Control"), this);
-  QHBoxLayout *autoLayout = new QHBoxLayout(autoGroup);
+  QVBoxLayout *autoMainLayout = new QVBoxLayout(autoGroup);
+
+  QHBoxLayout *autoLayout = new QHBoxLayout();
   m_autoCheck = new QCheckBox(tr("Enable Auto-Switch"), this);
   connect(m_autoCheck, &QCheckBox::toggled, this, &MainWindow::toggleAuto);
 
@@ -370,6 +394,15 @@ void MainWindow::setupDashboardTab() {
   autoLayout->addWidget(m_autoCheck);
   autoLayout->addStretch();
   autoLayout->addWidget(m_refreshButton);
+  autoMainLayout->addLayout(autoLayout);
+
+  m_materialYouCheck = new QCheckBox(tr("Override color scheme with Material You"), this);
+  connect(m_materialYouCheck, &QCheckBox::toggled, this, [this](bool checked) {
+      if (checked) promptMaterialYouInstall();
+      saveSettings();
+  });
+  autoMainLayout->addWidget(m_materialYouCheck);
+
   layout->addWidget(autoGroup);
 
   // --- Manual Overrides ---
@@ -493,6 +526,7 @@ void MainWindow::loadSettings() {
 
   // Auto Switch
   m_autoCheck->setChecked(ThemeReader::isAutoLookAndFeel());
+  m_materialYouCheck->setChecked(Config::isMaterialYouOverrideEnabled());
 
   blockSignals(blocked);
 }
@@ -507,6 +541,7 @@ void MainWindow::saveSettings() {
   ThemeWriter::setDayKlassyPreset(m_klassyDayCombo->currentText());
   ThemeWriter::setNightKlassyPreset(m_klassyNightCombo->currentText());
   ThemeWriter::setSolarPadding(m_offsetSlider->value());
+  Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
 
   // If Auto is enabled, re-apply logic immediately to reflect changes
   if (m_autoCheck->isChecked()) {
@@ -518,31 +553,48 @@ void MainWindow::saveSettings() {
 
 void MainWindow::toggleAuto(bool checked) {
   if (checked) {
-    // Apply logic FIRST, then enable auto.
-    double lat = ThemeReader::nativeLatitude();
-    double lon = ThemeReader::nativeLongitude();
-    int offset = ThemeReader::solarPadding();
-    bool isDay = Solar::isDaytime(lat, lon, offset);
+    auto applyAction = [this]() {
+        double lat = ThemeReader::nativeLatitude();
+        double lon = ThemeReader::nativeLongitude();
+        int offset = ThemeReader::solarPadding();
+        bool isDay = Solar::isDaytime(lat, lon, offset);
 
-    QString global = isDay ? m_globalDayCombo->currentText()
-                           : m_globalNightCombo->currentText();
-    QString kvantum = isDay ? m_kvantumDayCombo->currentText()
-                            : m_kvantumNightCombo->currentText();
+        QString global = isDay ? m_globalDayCombo->currentText()
+                               : m_globalNightCombo->currentText();
+        QString kvantum = isDay ? m_kvantumDayCombo->currentText()
+                                : m_kvantumNightCombo->currentText();
 
-    if (!global.isEmpty())
-      ThemeWriter::applyGlobalTheme(global);
-    if (!kvantum.isEmpty())
-      ThemeWriter::setKvantumTheme(kvantum);
+        if (!global.isEmpty()) {
+          ThemeWriter::applyGlobalTheme(global);
+          if (Config::isMaterialYouOverrideEnabled()) {
+              ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+          }
+        }
+        if (!kvantum.isEmpty())
+          ThemeWriter::setKvantumTheme(kvantum);
 
-    QString gtk =
-        isDay ? m_gtkDayCombo->currentText() : m_gtkNightCombo->currentText();
-    if (!gtk.isEmpty())
-      ThemeWriter::setGtkTheme(gtk);
+        QString gtk =
+            isDay ? m_gtkDayCombo->currentText() : m_gtkNightCombo->currentText();
+        if (!gtk.isEmpty())
+          ThemeWriter::setGtkTheme(gtk);
 
-    QString klassy = isDay ? m_klassyDayCombo->currentText() : m_klassyNightCombo->currentText();
-    if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy);
+        QString klassy = isDay ? m_klassyDayCombo->currentText() : m_klassyNightCombo->currentText();
+        if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy);
 
-    ThemeWriter::setAutoLookAndFeel(true);
+        ThemeWriter::setAutoLookAndFeel(true);
+        UniversalThemeExporter::syncAll();
+    };
+
+    applyAction();
+    
+    // Second pass after 2 seconds to allow system changes to settle/propagate
+    QTimer::singleShot(2000, this, [this, applyAction](){
+        // Only run second pass if auto is still enabled
+        if (m_autoCheck->isChecked()) {
+            applyAction();
+        }
+    });
+
   } else {
     ThemeWriter::setAutoLookAndFeel(false);
   }
@@ -552,67 +604,102 @@ void MainWindow::toggleAuto(bool checked) {
 #include <QTimer>
 
 void MainWindow::applyStaticDay() {
-  m_autoCheck->setChecked(false); // Disables auto
-  ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
-  ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
-  ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
-  ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
-  
-  UniversalThemeExporter::syncAll();
-  // Second pass after 2 seconds to allow system changes to settle/propagate
-  QTimer::singleShot(2000, this, [](){
+  auto applyAction = [this]() {
+      ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
+      if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme("MaterialYouLight");
+      }
+      ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
+      ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
+      ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
       UniversalThemeExporter::syncAll();
+      refreshStatus();
+  };
+
+  m_autoCheck->setChecked(false); // Disables auto
+  applyAction();
+
+  // Second pass after 2 seconds to allow system changes to settle/propagate
+  QTimer::singleShot(2000, this, [this, applyAction](){
+      // Re-apply if still not in auto mode
+      if (!m_autoCheck->isChecked()) {
+          applyAction();
+      }
   });
   
   refreshStatus();
 }
 
 void MainWindow::applyStaticNight() {
-  m_autoCheck->setChecked(false); // Disables auto
-  ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
-  ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
-  ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
-  ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
-  
-  UniversalThemeExporter::syncAll();
-  // Second pass after 2 seconds
-  QTimer::singleShot(2000, this, [](){
+  auto applyAction = [this]() {
+      ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
+      if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme("MaterialYouDark");
+      }
+      ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
+      ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+      ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
       UniversalThemeExporter::syncAll();
+      refreshStatus();
+  };
+
+  m_autoCheck->setChecked(false); // Disables auto
+  applyAction();
+  
+  // Second pass after 2 seconds
+  QTimer::singleShot(2000, this, [this, applyAction](){
+      // Re-apply if still not in auto mode
+      if (!m_autoCheck->isChecked()) {
+          applyAction();
+      }
   });
   
   refreshStatus();
 }
 
 void MainWindow::applyCurrentTarget() {
-    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
+    auto applyAction = [this]() {
+        double lat = ThemeReader::nativeLatitude();
+        double lon = ThemeReader::nativeLongitude();
+        int offset = m_offsetSlider->value();
+        bool isDay = Solar::isDaytime(lat, lon, offset);
+        
+        // Apply target themes
+        if (isDay) {
+            ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
+            if (Config::isMaterialYouOverrideEnabled()) {
+                ThemeWriter::applyColorScheme("MaterialYouLight");
+            }
+            ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
+            ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText()); 
+            ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
+        } else {
+            ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
+            if (Config::isMaterialYouOverrideEnabled()) {
+                ThemeWriter::applyColorScheme("MaterialYouDark");
+            }
+            ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
+            ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
+            ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
+        }
+        UniversalThemeExporter::syncAll();
+        refreshStatus();
+    };
 
-    double lat = ThemeReader::nativeLatitude();
-    double lon = ThemeReader::nativeLongitude();
-    int offset = m_offsetSlider->value();
-    bool isDay = Solar::isDaytime(lat, lon, offset);
-    
-    // Apply target themes
-    if (isDay) {
-        ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
-        ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
-        ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText()); 
-        ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
-    } else {
-        ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
-        ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
-        ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
-        ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
-    }
+    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
+    applyAction();
 
     // Restore auto state if it was enabled (as applyGlobalTheme might have disabled it)
     if (wasAuto) {
         ThemeWriter::setAutoLookAndFeel(true);
     }
     
-    UniversalThemeExporter::syncAll();
     // Second pass after 2 seconds
-    QTimer::singleShot(2000, this, [](){
-      UniversalThemeExporter::syncAll();
+    QTimer::singleShot(2000, this, [this, applyAction, wasAuto](){
+      applyAction();
+      if (wasAuto) {
+          ThemeWriter::setAutoLookAndFeel(true);
+      }
     });
 
     refreshStatus();
@@ -907,5 +994,40 @@ void MainWindow::showFlatpakSettings() {
         }
         
         QMessageBox::information(this, tr("Saved"), tr("Flatpak settings saved and applied."));
+    }
+}
+
+void MainWindow::installMaterialYou() {
+    QMessageBox::information(this, tr("Install Material You"), tr("A terminal window will open to install the required python packages. Press OK to proceed."));
+    QProcess::startDetached("konsole", QStringList() << "-e" << "bash" << "-c" << "pipx install kde-material-you-colors && pipx inject kde-material-you-colors pywal16 && pipx install pywal16; echo 'Press Enter to close'; read");
+}
+
+void MainWindow::upgradeMaterialYou() {
+    QProcess::startDetached("konsole", QStringList() << "-e" << "bash" << "-c" << "pipx upgrade kde-material-you-colors; echo 'Press Enter to close'; read");
+}
+
+void MainWindow::toggleMaterialYouAutostart(bool checked) {
+    if (checked) {
+        QProcess::startDetached("kde-material-you-colors", QStringList() << "-a");
+        Logger::log("Added kde-material-you-colors to autostart.", Logger::Info);
+    } else {
+        QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
+        if (QFile::exists(autostartPath)) {
+            QFile::remove(autostartPath);
+            Logger::log("Removed kde-material-you-colors from autostart.", Logger::Info);
+        }
+    }
+}
+
+void MainWindow::promptMaterialYouInstall() {
+    QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
+    if (exe.isEmpty()) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, tr("Missing Dependency"), 
+                tr("kde-material-you-colors is not installed. Would you like to install it now via pipx?"),
+                QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            installMaterialYou();
+        }
     }
 }

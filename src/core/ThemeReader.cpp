@@ -238,3 +238,10 @@ QString ThemeReader::nightKlassyPreset() {
     KConfigGroup group = config.group(QStringLiteral("General"));
     return group.readEntry("NightKlassyPreset", QString());
 }
+
+QString ThemeReader::lastAppliedKlassyPreset() {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/plasma-theme-masterrc");
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("State"));
+    return group.readEntry("LastAppliedKlassyPreset", QString());
+}

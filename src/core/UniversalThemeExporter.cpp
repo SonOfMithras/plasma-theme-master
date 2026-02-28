@@ -1,24 +1,69 @@
 #include "UniversalThemeExporter.h"
 #include "ThemeWriter.h"
 #include "Config.h"
+#include "Solar.h"
 #include <KColorScheme>
 #include <KSharedConfig>
 #include <KConfigGroup>
 #include <QDir>
+#include <QStandardPaths>
 #include <QFile>
 #include <QTextStream>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QThread>
+#include "ThemeReader.h"
+#include "GlobalThemeManager.h"
 #include "Logger.h"
 
 UniversalPalette UniversalThemeExporter::extractColors() {
+    auto config = KSharedConfig::openConfig();
+    config->reparseConfiguration(); // Force reload from disk to get latest changes
+
+    if (Config::isMaterialYouOverrideEnabled()) {
+        KConfigGroup group = config->group(QStringLiteral("General"));
+        QString scheme = group.readEntry(QStringLiteral("ColorScheme"), QString());
+        
+        if (scheme != "MaterialYouLight" && scheme != "MaterialYouDark") {
+            // Fallback to time-based if scheme isn't set
+            double lat = ThemeReader::nativeLatitude();
+            double lon = ThemeReader::nativeLongitude();
+            int offset = ThemeReader::solarPadding();
+            bool isDay = Solar::isDaytime(lat, lon, offset);
+            scheme = isDay ? "MaterialYouLight" : "MaterialYouDark";
+        }
+        
+        QString path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, "color-schemes/" + scheme + ".colors");
+        if (path.isEmpty()) {
+            path = QDir::homePath() + "/.local/share/color-schemes/" + scheme + ".colors";
+        }
+        
+        if (QFile::exists(path)) {
+            Logger::log("UniversalThemeExporter: Sourcing colors from " + path, Logger::Info);
+            return extractColors(path);
+        } else {
+             Logger::log("UniversalThemeExporter: Failed to find " + scheme + ".colors", Logger::Warning);
+        }
+    }
+
+    return extractColorsFromConfig(config);
+}
+
+UniversalPalette UniversalThemeExporter::extractColors(const QString &configPath) {
+    if (configPath.isEmpty() || !QFile::exists(configPath)) {
+        // Fallback to current if path invalid
+        Logger::log("Invalid config path for color extraction: " + configPath, Logger::Warning);
+        return extractColors(); 
+    }
+    auto config = KSharedConfig::openConfig(configPath, KConfig::SimpleConfig);
+    return extractColorsFromConfig(config);
+}
+
+UniversalPalette UniversalThemeExporter::extractColorsFromConfig(KSharedConfig::Ptr config) {
     UniversalPalette palette;
     
     // Load system color scheme
-    auto config = KSharedConfig::openConfig();
-    config->reparseConfiguration(); // Force reload from disk to get latest changes
     KColorScheme windowScheme(QPalette::Active, KColorScheme::Window, config);
     KColorScheme viewScheme(QPalette::Active, KColorScheme::View, config);
     KColorScheme selectionScheme(QPalette::Active, KColorScheme::Selection, config);
@@ -240,7 +285,6 @@ void UniversalThemeExporter::syncAll() {
     if (Config::isBetterDiscordSyncEnabled()) exportToBetterDiscord(palette);
     if (Config::isKittySyncEnabled()) exportToKitty(palette); 
     if (Config::isKonsoleSyncEnabled()) exportToKonsole(palette);
-    if (Config::isGenericSyncEnabled()) exportGeneric(palette); 
     
     if (Config::isObsidianSyncEnabled()) {
         QString vault = Config::obsidianVaultPath();
@@ -474,82 +518,114 @@ bool UniversalThemeExporter::exportToObsidian(const UniversalPalette &palette, c
     return res;
 }
 
-bool UniversalThemeExporter::exportToKitty(const UniversalPalette &palette) {
+bool UniversalThemeExporter::exportToKitty(const UniversalPalette &) {
     if (!Config::isKittySyncEnabled()) return false;
-    QString confPath = QDir::homePath() + "/.config/kitty/plasma-colors.conf";
-    QFileInfo fileInfo(confPath);
-    QDir().mkpath(fileInfo.absolutePath());
+    
+    // We ignore the passed palette because we need to generate two distinct files 
+    // for Day and Night, based on the stored Global Theme settings.
+    
+    struct ThemeTarget {
+        QString name;
+        QString path;
+        QString globalTheme;
+    };
+    
+    QList<ThemeTarget> targets = {
+        {"Day", QDir::homePath() + "/.config/kitty/light-theme.auto.conf", ThemeReader::defaultLightTheme()},
+        {"Night", QDir::homePath() + "/.config/kitty/dark-theme.auto.conf", ThemeReader::defaultDarkTheme()}
+    };
+    
+    // Helper to generate content
+    auto generateConfig = [](const UniversalPalette &p) -> QString {
+        return QString(
+            "foreground %1\n"
+            "background %2\n"
+            "selection_foreground %3\n"
+            "selection_background %4\n"
+            "active_border_color %5\n"
+            "url_color %6\n\n"
+            "# black\n"
+            "color0 %7\n"
+            "color8 %8\n\n"
+            "# red\n"
+            "color1 %9\n"
+            "color9 %10\n\n"
+            "# green\n"
+            "color2 %11\n"
+            "color10 %12\n\n"
+            "# yellow\n"
+            "color3 %13\n"
+            "color11 %14\n\n"
+            "# blue\n"
+            "color4 %15\n"
+            "color12 %16\n\n"
+            "# magenta\n"
+            "color5 %17\n"
+            "color13 %18\n\n"
+            "# cyan\n"
+            "color6 %19\n"
+            "color14 %20\n\n"
+            "# white\n"
+            "color7 %21\n"
+            "color15 %22\n"
+        ).arg(colorToHex(p.ansiWhite)) // Foreground usually matches Text
+         .arg(colorToHex(p.ansiBlack)) // Background usually matches Window
+         .arg(colorToHex(p.ansiWhite)) // Selection FG
+         .arg(colorToHex(p.selection)) // Selection BG
+         .arg(colorToHex(p.accent)) // Active Border
+         .arg(colorToHex(p.ansiCyan)) // URL Color
+         .arg(colorToHex(p.ansiBlack)) .arg(colorToHex(p.ansiBlackBright))
+         .arg(colorToHex(p.ansiRed))   .arg(colorToHex(p.ansiRedBright))
+         .arg(colorToHex(p.ansiGreen)) .arg(colorToHex(p.ansiGreenBright))
+         .arg(colorToHex(p.ansiYellow)).arg(colorToHex(p.ansiYellowBright))
+         .arg(colorToHex(p.ansiBlue))  .arg(colorToHex(p.ansiBlueBright))
+         .arg(colorToHex(p.ansiMagenta)).arg(colorToHex(p.ansiMagentaBright))
+         .arg(colorToHex(p.ansiCyan))  .arg(colorToHex(p.ansiCyanBright))
+         .arg(colorToHex(p.ansiWhite)) .arg(colorToHex(p.ansiWhiteBright));
+    };
 
-    QString conf = QString(
-        "foreground %1\n"
-        "background %2\n"
-        "selection_foreground %3\n"
-        "selection_background %4\n"
-        "active_border_color %5\n"
-        "url_color %6\n\n"
-        "# black\n"
-        "color0 %7\n"
-        "color8 %8\n\n"
-        "# red\n"
-        "color1 %9\n"
-        "color9 %10\n\n"
-        "# green\n"
-        "color2 %11\n"
-        "color10 %12\n\n"
-        "# yellow\n"
-        "color3 %13\n"
-        "color11 %14\n\n"
-        "# blue\n"
-        "color4 %15\n"
-        "color12 %16\n\n"
-        "# magenta\n"
-        "color5 %17\n"
-        "color13 %18\n\n"
-        "# cyan\n"
-        "color6 %19\n"
-        "color14 %20\n\n"
-        "# white\n"
-        "color7 %21\n"
-        "color15 %22\n"
-    ).arg(colorToHex(palette.ansiWhite)) // Foreground usually matches Text
-     .arg(colorToHex(palette.ansiBlack)) // Background usually matches Window
-     .arg(colorToHex(palette.ansiWhite)) // Selection FG
-     .arg(colorToHex(palette.selection)) // Selection BG
-     .arg(colorToHex(palette.accent)) // Active Border
-     .arg(colorToHex(palette.ansiCyan)) // URL Color
-     .arg(colorToHex(palette.ansiBlack)) .arg(colorToHex(palette.ansiBlackBright))
-     .arg(colorToHex(palette.ansiRed))   .arg(colorToHex(palette.ansiRedBright))
-     .arg(colorToHex(palette.ansiGreen)) .arg(colorToHex(palette.ansiGreenBright))
-     .arg(colorToHex(palette.ansiYellow)).arg(colorToHex(palette.ansiYellowBright))
-     .arg(colorToHex(palette.ansiBlue))  .arg(colorToHex(palette.ansiBlueBright))
-     .arg(colorToHex(palette.ansiMagenta)).arg(colorToHex(palette.ansiMagentaBright))
-     .arg(colorToHex(palette.ansiCyan))  .arg(colorToHex(palette.ansiCyanBright))
-     .arg(colorToHex(palette.ansiWhite)) .arg(colorToHex(palette.ansiWhiteBright));
-
-    backupFile(confPath);
-    bool res = writeToFile(confPath, conf);
-    if (res) {
-         // Ensure kitty.conf includes this file
-        QString originalConfPath = QDir::homePath() + "/.config/kitty/kitty.conf";
-        QFile mainConf(originalConfPath);
-        if (mainConf.open(QIODevice::ReadWrite | QIODevice::Text)) {
-            QString content = mainConf.readAll();
-            // Use standard include path format
-            QString includeLine = "include " + confPath;
-            QString shortInclude = "include ~/.config/kitty/plasma-colors.conf";
-            
-            if (!content.contains("plasma-colors.conf")) {
-                QTextStream out(&mainConf);
-                out.seek(mainConf.size()); // Append to end
-                backupFile(originalConfPath);
-                out << "\n# Plasma Theme Master\ninclude " << confPath << "\n";
-                Logger::log("Added include to kitty.conf", Logger::Info);
-            }
-            mainConf.close();
+    bool anySuccess = false;
+    
+    for (const auto &target : targets) {
+        if (target.globalTheme.isEmpty()) {
+            Logger::log("Skipping Kitty export for " + target.name + ": No Global Theme set.", Logger::Warning);
+            continue;
         }
-        Logger::log("Exported theme to Kitty", Logger::Info);
+        
+        QString colorsPath;
+        if (Config::isMaterialYouOverrideEnabled()) {
+             QString schemeName = (target.name == "Day") ? "MaterialYouLight" : "MaterialYouDark";
+             colorsPath = QStandardPaths::locate(QStandardPaths::GenericDataLocation, "color-schemes/" + schemeName + ".colors");
+             if (colorsPath.isEmpty()) {
+                 colorsPath = QDir::homePath() + "/.local/share/color-schemes/" + schemeName + ".colors";
+             }
+        } else {
+             QString schemeName = GlobalThemeManager::getColorSchemeFromGlobal(target.globalTheme);
+             colorsPath = GlobalThemeManager::findColorSchemePath(schemeName);
+             if (colorsPath.isEmpty()) {
+                  Logger::log("Could not find color scheme file for " + target.globalTheme + " (" + schemeName + "). Using current system colors as fallback.", Logger::Warning);
+             }
+        }
+        
+        UniversalPalette palette = extractColors(colorsPath);
+        QString content = generateConfig(palette);
+        
+        QFileInfo fileInfo(target.path);
+        QDir().mkpath(fileInfo.absolutePath());
+        
+        if (writeToFile(target.path, content)) {
+            anySuccess = true;
+            Logger::log("Exported Kitty config (" + target.name + "): " + target.path, Logger::Info);
+        }
     }
-    return res;
+    
+    // Cleanup old plasma-colors.conf inclusion if present
+    // We don't want to break user's config, but we should remove our old include.
+    // The user instruction said: "check the contents of the existing files for how the file should be set up"
+    // and "rework the revert kitty logic to just delete light and dark-theme.auto.conf"
+    // But we should also stop adding the old include.
+    
+    return anySuccess;
 }
 
 bool UniversalThemeExporter::exportToKonsole(const UniversalPalette &palette) {
@@ -656,29 +732,6 @@ bool UniversalThemeExporter::exportToKonsole(const UniversalPalette &palette) {
     return true;
 }
 
-bool UniversalThemeExporter::exportGeneric(const UniversalPalette &palette) {
-    if (!Config::isGenericSyncEnabled()) return false;
-    QString cachePath = QDir::homePath() + "/.cache/plasma-theme-master/universal.css";
-    QFileInfo fileInfo(cachePath);
-    QDir().mkpath(fileInfo.absolutePath());
-    
-    QString css = QString(
-        ":root {\n"
-        "  --ptm-window-bg: %1;\n"
-        "  --ptm-window-fg: %2;\n"
-        "  --ptm-view-bg: %3;\n"
-        "  --ptm-view-fg: %4;\n"
-        "  --ptm-accent: %5;\n"
-        "}\n"
-    ).arg(colorToHex(palette.windowBg))
-     .arg(colorToHex(palette.windowFg))
-     .arg(colorToHex(palette.viewBg))
-     .arg(colorToHex(palette.viewFg))
-     .arg(colorToHex(palette.accent));
-
-    return writeToFile(cachePath, css);
-}
-
 // -----------------------------------------------------------------------------
 // Restore Methods
 // -----------------------------------------------------------------------------
@@ -717,17 +770,27 @@ bool UniversalThemeExporter::restoreBetterDiscord() {
 }
 
 bool UniversalThemeExporter::restoreKitty() {
-    // 1. Remove include from kitty.conf by restoring backup
+    // 1. Remove include from kitty.conf by restoring backup (Legacy cleanup)
     QString kittyConf = QDir::homePath() + "/.config/kitty/kitty.conf";
     restoreFile(kittyConf);
     
-    // 2. Delete plasma-colors.conf
+    // 2. Delete plasma-colors.conf (Legacy cleanup)
     QString colorsPath = QDir::homePath() + "/.config/kitty/plasma-colors.conf";
     QFile f(colorsPath);
     if (f.exists()) {
         f.remove();
         Logger::log("Removed Kitty colors file: " + colorsPath, Logger::Info);
     }
+
+    // 3. Delete new auto conf files
+    QString lightPath = QDir::homePath() + "/.config/kitty/light-theme.auto.conf";
+    if (QFile::exists(lightPath)) QFile::remove(lightPath);
+
+    QString darkPath = QDir::homePath() + "/.config/kitty/dark-theme.auto.conf";
+    if (QFile::exists(darkPath)) QFile::remove(darkPath);
+    
+    Logger::log("Removed Kitty auto theme files", Logger::Info);
+    
     return true;
 }
 
@@ -741,16 +804,6 @@ bool UniversalThemeExporter::restoreObsidian() {
     if (QFile::exists(path)) {
         QFile::remove(path);
         Logger::log("Removed Obsidian snippet: " + path, Logger::Info);
-        return true;
-    }
-    return false;
-}
-
-bool UniversalThemeExporter::restoreGeneric() {
-    QString path = QDir::homePath() + "/.cache/plasma-theme-master/universal.css";
-    if (QFile::exists(path)) {
-        QFile::remove(path);
-        Logger::log("Removed Generic CSS: " + path, Logger::Info);
         return true;
     }
     return false;

@@ -59,6 +59,12 @@ private Q_SLOTS:
   void checkDaemonStatus();
   void toggleDaemon(bool checked);
 
+  // Material You
+  void installMaterialYou();
+  void upgradeMaterialYou();
+  void toggleMaterialYouAutostart(bool checked);
+  void promptMaterialYouInstall();
+
 private:
   void setupUi();
   void setupMenuBar();
@@ -75,6 +81,8 @@ private:
 
   QAction *m_daemonAction;
 
+  QAction *m_myAutostartAction;
+
   // --- Dashboard Widgets ---
   // Status
   QLabel *m_statusLabel;
@@ -82,6 +90,7 @@ private:
 
   // Config
   QCheckBox *m_autoCheck;
+  QCheckBox *m_materialYouCheck;
   QSlider *m_offsetSlider;
   QLabel *m_offsetValueLabel;
 

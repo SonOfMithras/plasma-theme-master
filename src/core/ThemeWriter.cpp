@@ -118,6 +118,41 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
   }
 }
 
+bool ThemeWriter::applyColorScheme(const QString &schemeName) {
+  if (schemeName.isEmpty())
+    return false;
+
+  QString tool =
+      QStandardPaths::findExecutable(QStringLiteral("plasma-apply-colorscheme"));
+  if (tool.isEmpty()) {
+    Logger::log("plasma-apply-colorscheme not found!", Logger::Warning);
+    return false;
+  }
+
+  QProcess process;
+  process.start(tool, QStringList() << schemeName);
+  process.waitForFinished();
+
+  QString stdoutStr = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+  QString stderrStr = QString::fromUtf8(process.readAllStandardError()).trimmed();
+
+  if (!stdoutStr.isEmpty()) {
+      Logger::log("plasma-apply-colorscheme output: " + stdoutStr, Logger::Info);
+  }
+  if (!stderrStr.isEmpty()) {
+      Logger::log("plasma-apply-colorscheme error: " + stderrStr, Logger::Warning);
+  }
+
+  if (process.exitCode() == 0) {
+    Logger::log("Applied color scheme: \"" + schemeName + "\"", Logger::Info);
+    return true;
+  } else {
+    Logger::log("Failed to apply color scheme: \"" + schemeName + "\"",
+                Logger::Error);
+    return false;
+  }
+}
+
 void ThemeWriter::setSolarPadding(int minutes) {
   QString path =
       QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
@@ -274,6 +309,14 @@ void ThemeWriter::setKlassyPreset(const QString &presetName) {
 
     if (process.exitCode() == 0) {
         Logger::log("Applied Klassy preset: \"" + presetName + "\"", Logger::Info);
+        
+        // Save state
+        QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
+        KConfig config(path, KConfig::SimpleConfig);
+        KConfigGroup group = config.group("State");
+        group.writeEntry("LastAppliedKlassyPreset", presetName);
+        config.sync();
+        
     } else {
         QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
         Logger::log("Failed to set Klassy preset: " + err, Logger::Error);
