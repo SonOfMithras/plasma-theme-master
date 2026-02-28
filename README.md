@@ -30,7 +30,7 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 ![Global Theme Editor](screenshots/global-theme-editor-tab.png)
 *Global Theme Editor*
 
-![Universal Theme Sync](screenshots/universal-theme-sync-tab.png)
+![Universal Theme Sync](screenshots/universal-sync-tab.png)
 *Universal Theme Sync*
 
 ## Installation
