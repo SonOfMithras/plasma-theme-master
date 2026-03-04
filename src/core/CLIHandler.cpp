@@ -402,19 +402,34 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cerr << "Warning: No Default Dark Global Theme.\n";
 
     ThemeWriter::setAutoLookAndFeel(false);
-    if (!global.isEmpty())
-      ThemeWriter::applyGlobalTheme(global);
-    if (!kvantum.isEmpty()) {
-      std::cout << "Applying Default Dark Kvantum: " << qPrintable(kvantum)
-                << "\n";
-      ThemeWriter::setKvantumTheme(kvantum);
-    }
-    QString gtk = ThemeReader::nightGtkTheme();
-    if (!gtk.isEmpty()) {
-      std::cout << "Applying Default Dark GTK: " << qPrintable(gtk) << "\n";
-      ThemeWriter::setGtkTheme(gtk);
-    }
+    
+    auto applyTheme = [&]() {
+        if (!global.isEmpty()) {
+            ThemeWriter::applyGlobalTheme(global, true);
+            if (Config::isMaterialYouOverrideEnabled()) {
+                ThemeWriter::applyColorScheme("MaterialYouDark", true);
+            }
+        }
+        if (!kvantum.isEmpty()) {
+          ThemeWriter::setKvantumTheme(kvantum, true);
+        }
+        QString gtk = ThemeReader::nightGtkTheme();
+        if (!gtk.isEmpty()) {
+          ThemeWriter::setGtkTheme(gtk, true);
+        }
+    };
+
+    std::cout << "Applying Default Dark Themes...\n";
+    applyTheme();
+
+    std::cout << "Waiting 2 seconds for kded to write to kdeglobals...\n";
+    QEventLoop loop;
+    QTimer::singleShot(2000, &loop, &QEventLoop::quit);
+    loop.exec();
+    
     UniversalThemeExporter::syncAll();
+    std::cout << "Done.\n";
+    
     return 0;
   } else if (command == "set-static-light") {
     QString global = ThemeReader::defaultLightTheme();
@@ -424,19 +439,34 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cerr << "Warning: No Default Light Global Theme.\n";
 
     ThemeWriter::setAutoLookAndFeel(false);
-    if (!global.isEmpty())
-      ThemeWriter::applyGlobalTheme(global);
-    if (!kvantum.isEmpty()) {
-      std::cout << "Applying Default Light Kvantum: " << qPrintable(kvantum)
-                << "\n";
-      ThemeWriter::setKvantumTheme(kvantum);
-    }
-    QString gtk = ThemeReader::dayGtkTheme();
-    if (!gtk.isEmpty()) {
-      std::cout << "Applying Default Light GTK: " << qPrintable(gtk) << "\n";
-      ThemeWriter::setGtkTheme(gtk);
-    }
+    
+    auto applyTheme = [&]() {
+        if (!global.isEmpty()) {
+            ThemeWriter::applyGlobalTheme(global, true);
+            if (Config::isMaterialYouOverrideEnabled()) {
+                ThemeWriter::applyColorScheme("MaterialYouLight", true);
+            }
+        }
+        if (!kvantum.isEmpty()) {
+          ThemeWriter::setKvantumTheme(kvantum, true);
+        }
+        QString gtk = ThemeReader::dayGtkTheme();
+        if (!gtk.isEmpty()) {
+          ThemeWriter::setGtkTheme(gtk, true);
+        }
+    };
+
+    std::cout << "Applying Default Light Themes...\n";
+    applyTheme();
+
+    std::cout << "Waiting 2 seconds for kded to write to kdeglobals...\n";
+    QEventLoop loop;
+    QTimer::singleShot(2000, &loop, &QEventLoop::quit);
+    loop.exec();
+    
     UniversalThemeExporter::syncAll();
+    std::cout << "Done.\n";
+
     return 0;
   } else if (command == "log") {
     int lines = 500;
@@ -470,13 +500,11 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     // We create a separate debounce timer for file watcher events
     QTimer *syncDebounceTimer = new QTimer(qApp);
     syncDebounceTimer->setSingleShot(true);
-    syncDebounceTimer->setInterval(200); // 200ms debounce
+    syncDebounceTimer->setInterval(2000); // 2000ms debounce
     
     QObject::connect(syncDebounceTimer, &QTimer::timeout, qApp, []() {
-        if (ThemeReader::isAutoLookAndFeel()) {
-             Logger::log("Daemon: Triggering syncAll due to MaterialYou changes", Logger::Info);
-             UniversalThemeExporter::syncAll();
-        }
+        Logger::log("Daemon: Triggering syncAll due to kdeglobals change (MaterialYou/Color sync)", Logger::Info);
+        UniversalThemeExporter::syncAll();
     });
 
     QFileSystemWatcher *watcher = new QFileSystemWatcher(qApp);

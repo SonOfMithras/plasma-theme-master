@@ -21,7 +21,7 @@
 #include "Logger.h"
 
 UniversalPalette UniversalThemeExporter::extractColors() {
-    auto config = KSharedConfig::openConfig();
+    auto config = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
     config->reparseConfiguration(); // Force reload from disk to get latest changes
 
     if (Config::isMaterialYouOverrideEnabled()) {
@@ -29,12 +29,25 @@ UniversalPalette UniversalThemeExporter::extractColors() {
         QString scheme = group.readEntry(QStringLiteral("ColorScheme"), QString());
         
         if (scheme != "MaterialYouLight" && scheme != "MaterialYouDark") {
-            // Fallback to time-based if scheme isn't set
-            double lat = ThemeReader::nativeLatitude();
-            double lon = ThemeReader::nativeLongitude();
-            int offset = ThemeReader::solarPadding();
-            bool isDay = Solar::isDaytime(lat, lon, offset);
-            scheme = isDay ? "MaterialYouLight" : "MaterialYouDark";
+            // Intelligent Fallback: Check structural theme configuration first
+            QString currentGlobal = ThemeReader::currentGlobalTheme();
+            QString currentKvantum = ThemeReader::currentKvantumTheme();
+            
+            if (currentGlobal == ThemeReader::defaultDarkTheme() || (!currentKvantum.isEmpty() && currentKvantum == ThemeReader::nightKvantumTheme())) {
+                scheme = "MaterialYouDark";
+                Logger::log("Universal Fallback: Deduced Night based on active structural themes.", Logger::Info);
+            } else if (currentGlobal == ThemeReader::defaultLightTheme() || (!currentKvantum.isEmpty() && currentKvantum == ThemeReader::dayKvantumTheme())) {
+                scheme = "MaterialYouLight";
+                Logger::log("Universal Fallback: Deduced Day based on active structural themes.", Logger::Info);
+            } else {
+                // Absolute final fallback to solar clock
+                Logger::log("Universal Fallback: Both colorscheme and structural themes unrecognized. Falling back to Solar Clock.", Logger::Warning);
+                double lat = ThemeReader::nativeLatitude();
+                double lon = ThemeReader::nativeLongitude();
+                int offset = ThemeReader::solarPadding();
+                bool isDay = Solar::isDaytime(lat, lon, offset);
+                scheme = isDay ? "MaterialYouLight" : "MaterialYouDark";
+            }
         }
         
         QString path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, "color-schemes/" + scheme + ".colors");
@@ -60,6 +73,8 @@ UniversalPalette UniversalThemeExporter::extractColors(const QString &configPath
         return extractColors(); 
     }
     auto config = KSharedConfig::openConfig(configPath, KConfig::SimpleConfig);
+    // Explicitly break Qt memory cache to re-read updated MaterialYou hexes
+    config->reparseConfiguration(); 
     return extractColorsFromConfig(config);
 }
 

@@ -542,6 +542,11 @@ void MainWindow::saveSettings() {
   ThemeWriter::setNightKlassyPreset(m_klassyNightCombo->currentText());
   ThemeWriter::setSolarPadding(m_offsetSlider->value());
   Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
+  if (m_materialYouCheck->isChecked()) {
+      ThemeWriter::syncMaterialYouIcons();
+  } else {
+      QProcess::startDetached("killall", QStringList() << "kde-material-you-colors");
+  }
 
   // If Auto is enabled, re-apply logic immediately to reflect changes
   if (m_autoCheck->isChecked()) {
@@ -565,33 +570,32 @@ void MainWindow::toggleAuto(bool checked) {
                                 : m_kvantumNightCombo->currentText();
 
         if (!global.isEmpty()) {
-          ThemeWriter::applyGlobalTheme(global);
+          ThemeWriter::applyGlobalTheme(global, true);
           if (Config::isMaterialYouOverrideEnabled()) {
-              ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+              ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark", true);
           }
         }
         if (!kvantum.isEmpty())
-          ThemeWriter::setKvantumTheme(kvantum);
+          ThemeWriter::setKvantumTheme(kvantum, true);
 
         QString gtk =
             isDay ? m_gtkDayCombo->currentText() : m_gtkNightCombo->currentText();
         if (!gtk.isEmpty())
-          ThemeWriter::setGtkTheme(gtk);
+          ThemeWriter::setGtkTheme(gtk, true);
 
         QString klassy = isDay ? m_klassyDayCombo->currentText() : m_klassyNightCombo->currentText();
-        if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy);
+        if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy, true);
 
         ThemeWriter::setAutoLookAndFeel(true);
-        UniversalThemeExporter::syncAll();
     };
 
     applyAction();
     
-    // Second pass after 2 seconds to allow system changes to settle/propagate
+    // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
     QTimer::singleShot(2000, this, [this, applyAction](){
-        // Only run second pass if auto is still enabled
+        applyAction();
         if (m_autoCheck->isChecked()) {
-            applyAction();
+            UniversalThemeExporter::syncAll();
         }
     });
 
@@ -607,17 +611,25 @@ void MainWindow::applyStaticDay() {
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
-      ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
+      ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
       if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouLight");
+          ThemeWriter::applyColorScheme("MaterialYouLight", true);
       }
-      ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
-      ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
-      ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
-      UniversalThemeExporter::syncAll();
+      ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
+      ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
+      ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
   };
 
   applyAction();
+  
+  // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
+  QTimer::singleShot(2000, this, [this, applyAction](){
+      applyAction();
+      if (!m_autoCheck->isChecked()) {
+          UniversalThemeExporter::syncAll();
+      }
+  });
+  
   refreshStatus();
 }
 
@@ -625,17 +637,25 @@ void MainWindow::applyStaticNight() {
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
-      ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
+      ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
       if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouDark");
+          ThemeWriter::applyColorScheme("MaterialYouDark", true);
       }
-      ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
-      ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
-      ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
-      UniversalThemeExporter::syncAll();
+      ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
+      ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
+      ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
   };
 
   applyAction();
+
+  // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
+  QTimer::singleShot(2000, this, [this, applyAction](){
+      applyAction();
+      if (!m_autoCheck->isChecked()) {
+          UniversalThemeExporter::syncAll();
+      }
+  });
+
   refreshStatus();
 }
 
@@ -650,23 +670,22 @@ void MainWindow::applyCurrentTarget() {
         
         // Apply target themes
         if (isDay) {
-            ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
+            ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
             if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouLight");
+                ThemeWriter::applyColorScheme("MaterialYouLight", true);
             }
-            ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText());
-            ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText()); 
-            ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
+            ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
+            ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true); 
+            ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
         } else {
-            ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
+            ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
             if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouDark");
+                ThemeWriter::applyColorScheme("MaterialYouDark", true);
             }
-            ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText());
-            ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
-            ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
+            ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
+            ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
+            ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
         }
-        UniversalThemeExporter::syncAll();
     };
 
     applyAction();
@@ -676,6 +695,12 @@ void MainWindow::applyCurrentTarget() {
         ThemeWriter::setAutoLookAndFeel(true);
     }
     
+    // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
+    QTimer::singleShot(2000, this, [this, applyAction](){
+        applyAction();
+        UniversalThemeExporter::syncAll();
+    });
+
     refreshStatus();
 }
 
@@ -982,14 +1007,16 @@ void MainWindow::upgradeMaterialYou() {
 
 void MainWindow::toggleMaterialYouAutostart(bool checked) {
     if (checked) {
-        QProcess::startDetached("kde-material-you-colors", QStringList() << "-a");
-        Logger::log("Added kde-material-you-colors to autostart.", Logger::Info);
+        QProcess::startDetached("killall", QStringList() << "kde-material-you-colors"); // Ensure no orphans
+        ThemeWriter::syncMaterialYouIcons(true);
     } else {
         QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
         if (QFile::exists(autostartPath)) {
             QFile::remove(autostartPath);
             Logger::log("Removed kde-material-you-colors from autostart.", Logger::Info);
         }
+        QProcess::startDetached("killall", QStringList() << "kde-material-you-colors");
+        Logger::log("Terminated kde-material-you-colors memory process.", Logger::Info);
     }
 }
 

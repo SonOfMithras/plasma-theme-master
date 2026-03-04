@@ -323,9 +323,7 @@ void UniversalThemePage::showBDSettings() {
 void UniversalThemePage::syncNow() {
     saveSettings(); // Ensure saved
     
-    // We add a short delay to allow any pending KDE global theme changes to settle into the color scheme file
-    // before extracting the colors, otherwise we might extract the old colors.
-    QTimer::singleShot(1000, this, [this]() {
+    auto exportAction = [this]() -> QStringList {
         UniversalPalette palette = UniversalThemeExporter::extractColors();
         QStringList results;
         
@@ -377,6 +375,15 @@ void UniversalThemePage::syncNow() {
                 results << QString("Obsidian: %1").arg(ok ? "OK" : "Failed");
             }
         }
+        return results;
+    };
+
+    // First pass to kick off changes
+    exportAction();
+
+    // Double-pass: Solid delay to let kdeglobals settle, then force again
+    QTimer::singleShot(2000, this, [this, exportAction]() {
+        QStringList results = exportAction();
         
         if (results.isEmpty()) {
             QMessageBox::information(this, "Sync Universal Theme", "No apps selected.");

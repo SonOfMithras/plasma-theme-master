@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **Material You Icons Integration**:
+  - Automatically extracts the icon theme assigned in the current Day or Night Global Theme and passes it natively to `kde-material-you-colors` via the `--iconslight` and `--iconsdark` arguments.
+
+### Fixed
+- **Universal Sync Race Condition**:
+  - Resolved an issue where statically forcing Day or Night mode would sync outdated Universal App colors (VS Code, Discord, Kitty) because the Material You generation script had not finished generating the new colors yet.
+  - The background daemon now acts as a definitive failsafe, always triggering a universal sync regardless of the `Auto LookAndFeel` toggle whenever it detects that `kde-material-you-colors` has successfully updated the active KDE color scheme.
+  - Defeated the `KSharedConfig` memory cache that was causing `UniversalThemeExporter` to reuse stale hex values if it queried the `.colors` file multiple times within the same execution cycle.
 
 ## [1.1.5] - 2026-03-03
 ### Changed

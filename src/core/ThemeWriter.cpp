@@ -9,6 +9,9 @@
 #include <QProcess>
 #include <QSettings>
 #include <QStandardPaths>
+#include "GlobalThemeManager.h"
+#include "Config.h"
+#include <QDir>
 
 void ThemeWriter::setAutoLookAndFeel(bool enabled) {
   KConfig config(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
@@ -19,11 +22,11 @@ void ThemeWriter::setAutoLookAndFeel(bool enabled) {
   qDebug() << "Set AutomaticLookAndFeel to" << enabled;
 }
 
-bool ThemeWriter::setKvantumTheme(const QString &themeName) {
+bool ThemeWriter::setKvantumTheme(const QString &themeName, bool force) {
   if (themeName.isEmpty())
     return false;
 
-  if (ThemeReader::currentKvantumTheme() == themeName) {
+  if (!force && ThemeReader::currentKvantumTheme() == themeName) {
       Logger::log("Kvantum theme is already \"" + themeName + "\", skipping.", Logger::Info);
       return true;
   }
@@ -82,11 +85,11 @@ void ThemeWriter::setDefaultLightTheme(const QString &themeName) {
               Logger::Info);
 }
 
-bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
+bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
   if (themeName.isEmpty())
     return false;
 
-  if (ThemeReader::currentGlobalTheme() == themeName) {
+  if (!force && ThemeReader::currentGlobalTheme() == themeName) {
       Logger::log("Global theme is already \"" + themeName + "\", skipping.", Logger::Info);
       return true;
   }
@@ -129,11 +132,11 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
   }
 }
 
-bool ThemeWriter::applyColorScheme(const QString &schemeName) {
+bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
   if (schemeName.isEmpty())
     return false;
 
-  if (ThemeReader::currentColorScheme() == schemeName) {
+  if (!force && ThemeReader::currentColorScheme() == schemeName) {
       Logger::log("Color scheme is already \"" + schemeName + "\", skipping.", Logger::Info);
       return true;
   }
@@ -202,11 +205,11 @@ void ThemeWriter::setNightKvantumTheme(const QString &themeName) {
   Logger::log("Set NightKvantumTheme to \"" + themeName + "\"", Logger::Info);
 }
 
-bool ThemeWriter::setGtkTheme(const QString &themeName) {
+bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
   if (themeName.isEmpty())
     return false;
 
-  if (ThemeReader::currentGtkTheme() == themeName) {
+  if (!force && ThemeReader::currentGtkTheme() == themeName) {
       Logger::log("GTK theme is already \"" + themeName + "\", skipping.", Logger::Info);
       return true;
   }
@@ -315,10 +318,10 @@ void ThemeWriter::setNightGtkTheme(const QString &themeName) {
 
 
 // Klassy Day & Night
-void ThemeWriter::setKlassyPreset(const QString &presetName) {
+void ThemeWriter::setKlassyPreset(const QString &presetName, bool force) {
     if (presetName.isEmpty()) return;
 
-    if (ThemeReader::lastAppliedKlassyPreset() == presetName) {
+    if (!force && ThemeReader::lastAppliedKlassyPreset() == presetName) {
         Logger::log("Klassy preset is already \"" + presetName + "\", skipping.", Logger::Info);
         return;
     }
@@ -365,4 +368,31 @@ void ThemeWriter::setNightKlassyPreset(const QString &presetName) {
     group.writeEntry("NightKlassyPreset", presetName);
     config.sync();
     Logger::log("Set NightKlassyPreset to \"" + presetName + "\"", Logger::Info);
+}
+
+void ThemeWriter::syncMaterialYouIcons(bool force) {
+    if (!force && !Config::isMaterialYouOverrideEnabled()) return;
+
+    QString dayTheme = ThemeReader::defaultLightTheme();
+    QString nightTheme = ThemeReader::defaultDarkTheme();
+    
+    QString dayIcon = GlobalThemeManager::getIconThemeFromGlobal(dayTheme);
+    QString nightIcon = GlobalThemeManager::getIconThemeFromGlobal(nightTheme);
+    
+    QStringList args;
+    args << "-a"; // Ensure it autostarts
+    if (!dayIcon.isEmpty()) {
+        args << "--iconslight" << dayIcon;
+    }
+    if (!nightIcon.isEmpty()) {
+        args << "--iconsdark" << nightIcon;
+    }
+    
+    QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
+    if (exe.isEmpty()) {
+        exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
+    }
+
+    QProcess::startDetached(exe, args);
+    Logger::log("Synced Material You Icons and started process: day=" + dayIcon + ", night=" + nightIcon, Logger::Info);
 }

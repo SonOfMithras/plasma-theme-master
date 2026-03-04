@@ -38,6 +38,7 @@ public:
 
     // Helpers to resolve Color Scheme from Global Theme
     static QString getColorSchemeFromGlobal(const QString &themeName);
+    static QString getIconThemeFromGlobal(const QString &themeName);
     static QString findColorSchemePath(const QString &schemeName);
 };
 

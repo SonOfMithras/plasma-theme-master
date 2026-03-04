@@ -276,6 +276,25 @@ QString GlobalThemeManager::getColorSchemeFromGlobal(const QString &themeName) {
     return general.readEntry("ColorScheme", QString());
 }
 
+QString GlobalThemeManager::getIconThemeFromGlobal(const QString &themeName) {
+    if (themeName.isEmpty()) return QString();
+    
+    QString defaultsPath = getDefaultsPath(themeName);
+    if (defaultsPath.isEmpty()) return QString();
+    if (!QFile::exists(defaultsPath)) return QString();
+    
+    KConfig config(defaultsPath, KConfig::SimpleConfig);
+    KConfigGroup kdeglobals = config.group("kdeglobals");
+    if (!kdeglobals.isValid()) return QString(); // Or default?
+    
+    KConfigGroup icons = kdeglobals.group("Icons");
+    if (icons.isValid() && icons.hasKey("Theme")) {
+        return icons.readEntry("Theme", QString());
+    }
+    
+    return QString();
+}
+
 QString GlobalThemeManager::findColorSchemePath(const QString &schemeName) {
     if (schemeName.isEmpty()) return QString();
     
