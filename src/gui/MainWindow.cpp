@@ -492,7 +492,8 @@ void MainWindow::populateThemes() {
 }
 
 void MainWindow::loadSettings() {
-  bool blocked = blockSignals(true);
+  bool bA = m_autoCheck->blockSignals(true);
+  bool bM = m_materialYouCheck->blockSignals(true);
 
   m_globalDayCombo->setCurrentText(ThemeReader::defaultLightTheme());
   m_globalNightCombo->setCurrentText(ThemeReader::defaultDarkTheme());
@@ -528,7 +529,8 @@ void MainWindow::loadSettings() {
   m_autoCheck->setChecked(ThemeReader::isAutoLookAndFeel());
   m_materialYouCheck->setChecked(Config::isMaterialYouOverrideEnabled());
 
-  blockSignals(blocked);
+  m_autoCheck->blockSignals(bA);
+  m_materialYouCheck->blockSignals(bM);
 }
 
 void MainWindow::saveSettings() {
@@ -543,9 +545,18 @@ void MainWindow::saveSettings() {
   ThemeWriter::setSolarPadding(m_offsetSlider->value());
   Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
   if (m_materialYouCheck->isChecked()) {
-      ThemeWriter::syncMaterialYouIcons();
+      QProcess::execute("killall", QStringList() << "kde-material-you-colors");
+      
+      QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
+      if (exe.isEmpty()) {
+          exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
+      }
+      QProcess::startDetached(exe, QStringList());
+      Logger::log("Started kde-material-you-colors background process.", Logger::Info);
+      
+      ThemeWriter::syncMaterialYouIcons(true);
   } else {
-      QProcess::startDetached("killall", QStringList() << "kde-material-you-colors");
+      QProcess::execute("killall", QStringList() << "kde-material-you-colors");
   }
 
   // If Auto is enabled, re-apply logic immediately to reflect changes
@@ -1007,16 +1018,14 @@ void MainWindow::upgradeMaterialYou() {
 
 void MainWindow::toggleMaterialYouAutostart(bool checked) {
     if (checked) {
-        QProcess::startDetached("killall", QStringList() << "kde-material-you-colors"); // Ensure no orphans
-        ThemeWriter::syncMaterialYouIcons(true);
+        QProcess::startDetached("kde-material-you-colors", QStringList() << "-a");
+        Logger::log("Added kde-material-you-colors to autostart.", Logger::Info);
     } else {
         QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
         if (QFile::exists(autostartPath)) {
             QFile::remove(autostartPath);
             Logger::log("Removed kde-material-you-colors from autostart.", Logger::Info);
         }
-        QProcess::startDetached("killall", QStringList() << "kde-material-you-colors");
-        Logger::log("Terminated kde-material-you-colors memory process.", Logger::Info);
     }
 }
 
