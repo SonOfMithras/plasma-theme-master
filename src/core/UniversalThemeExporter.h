@@ -59,6 +59,9 @@ public:
     static bool exportToObsidian(const UniversalPalette &palette, const QString &vaultPath);
     static bool exportToKitty(const UniversalPalette &palette);
     static bool exportToKonsole(const UniversalPalette &palette);
+    static bool exportToVencord(const UniversalPalette &palette);
+    static bool exportToBtop(const UniversalPalette &palette);
+    static bool exportToVicinae(const UniversalPalette &palette);
     
     // Restore Methods
     static bool restoreVSCode();
@@ -67,9 +70,13 @@ public:
     static bool restoreKitty();
     static bool restoreKonsole();
     static bool restoreObsidian();
+    static bool restoreVencord();
+    static bool restoreBtop();
+    static bool restoreVicinae();
 
     // Helpers
     static QStringList scanBetterDiscordImports();
+    static QStringList scanVencordImports();
 
     static bool backupFile(const QString &path);
     static bool restoreFile(const QString &path);

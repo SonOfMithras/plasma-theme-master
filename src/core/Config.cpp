@@ -59,6 +59,21 @@ void Config::setKittySyncEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Kitty", enabled); c.sync();
 }
 
+bool Config::isVencordSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Vencord", false); }
+void Config::setVencordSyncEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Vencord", enabled); c.sync();
+}
+
+bool Config::isBtopSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Btop", false); }
+void Config::setBtopSyncEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Btop", enabled); c.sync();
+}
+
+bool Config::isVicinaeSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Vicinae", false); }
+void Config::setVicinaeSyncEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Vicinae", enabled); c.sync();
+}
+
 bool Config::isMaterialYouOverrideEnabled() { return KConfig(CONFIG_FILE).group("General").readEntry("MaterialYouOverride", false); }
 void Config::setMaterialYouOverrideEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouOverride", enabled); c.sync();
@@ -86,6 +101,20 @@ QStringList Config::betterDiscordImports() {
 }
 void Config::setBetterDiscordImports(const QStringList &imports) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("BetterDiscordImports", imports); c.sync();
+}
+
+bool Config::isVencordMidnightEnabled() {
+    return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("VencordUseMidnight", true);
+}
+void Config::setVencordMidnightEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("VencordUseMidnight", enabled); c.sync();
+}
+
+QStringList Config::vencordImports() {
+    return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("VencordImports", QStringList());
+}
+void Config::setVencordImports(const QStringList &imports) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("VencordImports", imports); c.sync();
 }
 
 bool Config::isKonsoleSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Konsole", false); }

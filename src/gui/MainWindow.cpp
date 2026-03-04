@@ -604,6 +604,8 @@ void MainWindow::toggleAuto(bool checked) {
 #include <QTimer>
 
 void MainWindow::applyStaticDay() {
+  m_autoCheck->setChecked(false); // Disables auto
+
   auto applyAction = [this]() {
       ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText());
       if (Config::isMaterialYouOverrideEnabled()) {
@@ -613,24 +615,15 @@ void MainWindow::applyStaticDay() {
       ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText());
       ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText());
       UniversalThemeExporter::syncAll();
-      refreshStatus();
   };
 
-  m_autoCheck->setChecked(false); // Disables auto
   applyAction();
-
-  // Second pass after 2 seconds to allow system changes to settle/propagate
-  QTimer::singleShot(2000, this, [this, applyAction](){
-      // Re-apply if still not in auto mode
-      if (!m_autoCheck->isChecked()) {
-          applyAction();
-      }
-  });
-  
   refreshStatus();
 }
 
 void MainWindow::applyStaticNight() {
+  m_autoCheck->setChecked(false); // Disables auto
+
   auto applyAction = [this]() {
       ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText());
       if (Config::isMaterialYouOverrideEnabled()) {
@@ -640,24 +633,15 @@ void MainWindow::applyStaticNight() {
       ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText());
       ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
       UniversalThemeExporter::syncAll();
-      refreshStatus();
   };
 
-  m_autoCheck->setChecked(false); // Disables auto
   applyAction();
-  
-  // Second pass after 2 seconds
-  QTimer::singleShot(2000, this, [this, applyAction](){
-      // Re-apply if still not in auto mode
-      if (!m_autoCheck->isChecked()) {
-          applyAction();
-      }
-  });
-  
   refreshStatus();
 }
 
 void MainWindow::applyCurrentTarget() {
+    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
+
     auto applyAction = [this]() {
         double lat = ThemeReader::nativeLatitude();
         double lon = ThemeReader::nativeLongitude();
@@ -683,10 +667,8 @@ void MainWindow::applyCurrentTarget() {
             ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText());
         }
         UniversalThemeExporter::syncAll();
-        refreshStatus();
     };
 
-    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
     applyAction();
 
     // Restore auto state if it was enabled (as applyGlobalTheme might have disabled it)
@@ -694,14 +676,6 @@ void MainWindow::applyCurrentTarget() {
         ThemeWriter::setAutoLookAndFeel(true);
     }
     
-    // Second pass after 2 seconds
-    QTimer::singleShot(2000, this, [this, applyAction, wasAuto](){
-      applyAction();
-      if (wasAuto) {
-          ThemeWriter::setAutoLookAndFeel(true);
-      }
-    });
-
     refreshStatus();
 }
 

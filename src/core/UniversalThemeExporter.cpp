@@ -13,6 +13,9 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QThread>
+#include <QProcess>
+#include <QRegularExpression>
+#include <QSaveFile>
 #include "ThemeReader.h"
 #include "GlobalThemeManager.h"
 #include "Logger.h"
@@ -122,16 +125,6 @@ UniversalPalette UniversalThemeExporter::extractColorsFromConfig(KSharedConfig::
     return palette;
 }
 
-static void colorToHsl(const QColor &color, int &h, int &s, int &l) {
-    color.getHsl(&h, &s, &l);
-    // Convert ranges:
-    // QColor: H(0-359), S(0-255), L(0-255)
-    // CSS:    H(0-360), S(0-100%), L(0-100%)
-    if (h == -1) h = 0; // Achromatic
-    s = (s * 100) / 255;
-    l = (l * 100) / 255;
-}
-
 QString UniversalThemeExporter::colorToHex(const QColor &color) {
     return color.name();
 }
@@ -227,7 +220,7 @@ bool UniversalThemeExporter::exportToVSCodeJSON(const QString &path, const Unive
     // If file doesn't exist, create empty Object
     QJsonObject root;
     if (file.exists()) {
-        if (file.open(QIODevice::ReadWrite)) {
+        if (file.open(QIODevice::ReadOnly)) {
              QByteArray data = file.readAll();
              QJsonDocument doc = QJsonDocument::fromJson(data);
              if (doc.isObject()) {
@@ -260,12 +253,14 @@ bool UniversalThemeExporter::exportToVSCodeJSON(const QString &path, const Unive
     // Backup before write
     backupFile(path);
 
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QSaveFile saveFile(path);
+    if (saveFile.open(QIODevice::WriteOnly)) {
         QJsonDocument doc(root);
-        file.write(doc.toJson());
-        file.close();
-        Logger::log("Wrote VS Code theme to: " + path, Logger::Info);
-        return true;
+        saveFile.write(doc.toJson());
+        if (saveFile.commit()) {
+            Logger::log("Wrote VS Code theme to: " + path, Logger::Info);
+            return true;
+        }
     }
     
     Logger::log("Failed to write to: " + path, Logger::Error);
@@ -281,10 +276,31 @@ void UniversalThemeExporter::syncAll() {
         exportToVSCode(palette);
     }
     
-    if (Config::isFirefoxSyncEnabled()) exportToFirefox(palette);
-    if (Config::isBetterDiscordSyncEnabled()) exportToBetterDiscord(palette);
-    if (Config::isKittySyncEnabled()) exportToKitty(palette); 
-    if (Config::isKonsoleSyncEnabled()) exportToKonsole(palette);
+    if (Config::isFirefoxSyncEnabled()) {
+        exportToFirefox(palette);
+    }
+
+    if (Config::isBetterDiscordSyncEnabled()) {
+        exportToBetterDiscord(palette);
+    }
+   
+    if (Config::isKittySyncEnabled()) {
+        exportToKitty(palette);
+    }
+    
+    if (Config::isKonsoleSyncEnabled()) {
+        exportToKonsole(palette);
+    }
+    
+    if (Config::isVencordSyncEnabled()) {
+        exportToVencord(palette);
+    }
+    if (Config::isBtopSyncEnabled()) {
+        exportToBtop(palette);
+    }
+    if (Config::isVicinaeSyncEnabled()) {
+        exportToVicinae(palette);
+    }
     
     if (Config::isObsidianSyncEnabled()) {
         QString vault = Config::obsidianVaultPath();
@@ -392,9 +408,9 @@ bool UniversalThemeExporter::exportToBetterDiscord(const UniversalPalette &palet
     // Prepare Imports
     QString imports = "";
     
-    // 1. Base Material Theme (Toggled) - First for overrides
-    if (Config::isBetterDiscordMaterialEnabled()) {
-        imports += "@import url(\"https://capnkitten.github.io/BetterDiscord/Themes/Material-Discord/css/source.css\");\n";
+    // 1. Base Theme (Midnight instead of Material)
+    if (Config::isBetterDiscordMaterialEnabled()) { // Using the same bool for backwards compatibility
+        imports += "@import url(\"https://refact0r.github.io/midnight-discord/build/midnight.css\");\n";
     }
 
     // 2. Custom / User Selected Imports
@@ -410,82 +426,61 @@ bool UniversalThemeExporter::exportToBetterDiscord(const UniversalPalette &palet
         }
     }
 
-    // 3. Default Addons (Icons, Custom Themes, Material You) - LAST
-    imports += "@import url(\"https://capnkitten.github.io/BetterDiscord/Themes/Material-Discord/css/addons/custom-themes/source.css\");\n"
-               "@import url(\"https://capnkitten.github.io/BetterDiscord/Themes/Material-Discord/css/addons/material-you/source.css\");\n";
-
-    // Helper for HSL extraction
-    int ah, as, al; colorToHsl(palette.accent, ah, as, al);
-    int wh, ws, wl; colorToHsl(palette.warning, wh, ws, wl); // Using Warning for Warning
-    int eh, es, el; colorToHsl(palette.error, eh, es, el);     // Using Error for Alert
-
     QString css = QString(
         "/**\n"
-        " * @name Plasma Master (Material)\n"
-        " * @version 1.0.0\n"
-        " * @description A theme based on Google's Material Design, synchronized with KDE Plasma.\n"
+        " * @name Plasma Master (BetterDiscord)\n"
+        " * @description A dynamic discord theme based on Midnight, synchronized with KDE Plasma.\n"
         " * @author Plasma Theme Master\n"
-        " * @source https://github.com/CapnKitten/BetterDiscord/blob/master/Themes/Material-Discord/css/source.css\n"
-        " */\n\n"
-        "%16\n" 
+        " * @version 1.0.0\n"
+        " */\n"
+        "%1\n\n"
         ":root {\n"
-        "    /* APP FONT SETTINGS */\n"
-        "    --app-font: \"Google Sans Flex\";\n"
-        "    --app-font-width: 100;\n"
-        "    --app-font-roundness: 100;\n\n"
-        "    /* ACCENT HSL */\n"
-        "    --accent-hue: %1;\n"
-        "    --accent-saturation: %2%;\n"
-        "    --accent-lightness: %3%;\n"
-        "    --accent-text-color: hsl(0,0%,100%);\n\n"
-        "    /* ALERT (Error) HSL */\n"
-        "    --alert-hue: %4;\n"
-        "    --alert-saturation: %5%;\n"
-        "    --alert-lightness: %6%;\n"
-        "    --alert-text-color: hsl(0,0%,100%);\n\n"
-        "    /* WARNING HSL */\n"
-        "    --warning-hue: %7;\n"
-        "    --warning-saturation: %8%;\n"
-        "    --warning-lightness: %9%;\n"
-        "    --warning-text-color: hsl(0,0%,100%);\n\n"
-        "    /* Plasma Overrides (Enforce Backgrounds) */\n"
-        "    /* Specific MaterialDiscord Vars */\n"
-        "    --main-alt: %10 !important;             /* App Background */\n"
-        "    --main-content-color: %11 !important;   /* Content Region */\n"
-        "    --main-textarea-color: %13 !important;  /* Chat Input */\n"
-        "    --main-textarea-border: %12 !important;\n"
-        "    \n"
-        "    /* Standard Discord Vars (Backup) */\n"
-        "    --background-primary: %10 !important;\n"
-        "    --background-secondary: %11 !important;\n"
-        "    --background-secondary-alt: %11 !important;\n"
-        "    --background-tertiary: %12 !important;\n"
-        "    --channeltextarea-background: %13 !important;\n"
-        "    --text-normal: %14 !important;\n"
-        "    --text-muted: %15 !important;\n"
-        "}\n\n"
-        /* Dark/Light mode overrides for Material calculation adjustments */
-        ".theme-dark {\n"
-        "    --saturation-modifier: 1;\n"
-        "    --lightness-modifier: 0.225;\n"
-        "    --text-lightness-modifier: 1.0;\n"
-        "    --ui-darkness-modifier: 1.0;\n"
+        "  /* text colors */\n"
+        "  --text-0: %2;\n"
+        "  --text-1: %3;\n"
+        "  --text-2: %4;\n"
+        "  --text-3: %5;\n"
+        "  --text-4: %6;\n"
+        "  --text-5: %7;\n"
+        "  /* background and dark colors */\n"
+        "  --bg-1: %8;\n"
+        "  --bg-2: %9;\n"
+        "  --bg-3: %10;\n"
+        "  --bg-4: %11;\n"
+        "  /* accent colors */\n"
+        "  --accent-1: %12;\n"
+        "  --accent-2: %13;\n"
+        "  --accent-3: %14;\n"
+        "  --accent-4: %15;\n"
+        "  --accent-5: %16;\n"
+        "  --accent-new: %21;\n"
+        "  /* status indicator colors */\n"
+        "  --online: %17;\n"
+        "  --dnd: %18;\n"
+        "  --idle: %19;\n"
+        "  --streaming: %20;\n"
         "}\n"
-        ".theme-light {\n"
-        "    --saturation-modifier: 1;\n"
-        "    --lightness-modifier: 2.125;\n"
-        "    --text-lightness-modifier: 1.0;\n"
-        "}\n"
-    ).arg(ah).arg(as).arg(al)      // 1-3: Accent
-     .arg(eh).arg(es).arg(el)      // 4-6: Alert (Error)
-     .arg(wh).arg(ws).arg(wl)      // 7-9: Warning
-     .arg(colorToHex(palette.viewBg))               // 10: Primary BG (App BG)
-     .arg(colorToHex(palette.windowBg))             // 11: Secondary BG
-     .arg(colorToHex(palette.windowBg.darker(110))) // 12: Tertiary BG (Borders)
-     .arg(colorToHex(palette.viewBg.darker(110)))   // 13: Text Area
-     .arg(colorToHex(palette.viewFg))               // 14: Text Normal
-     .arg(colorToHex(palette.viewFg.darker(130)))   // 15: Text Muted
-     .arg(imports);                                 // 16: Imports
+    ).arg(imports)
+     .arg(colorToHex(palette.windowBg))                    // text-0 (text on colored elements)
+     .arg(colorToHex(palette.windowFg.lighter(120)))       // text-1
+     .arg(colorToHex(palette.windowFg))                    // text-2
+     .arg(colorToHex(palette.viewFg))                      // text-3 (normal)
+     .arg(colorToHex(palette.viewFg.darker(150)))          // text-4 (muted)
+     .arg(colorToHex(palette.viewFg.darker(180)))          // text-5 (very muted)
+     .arg(colorToHex(palette.buttonBg.darker(150)))        // bg-1
+     .arg(colorToHex(palette.buttonBg))                    // bg-2
+     .arg(colorToHex(palette.viewBg))                      // bg-3
+     .arg(colorToHex(palette.windowBg))                    // bg-4
+     .arg(colorToHex(palette.accent.lighter(120)))         // accent-1
+     .arg(colorToHex(palette.accent))                      // accent-2
+     .arg(colorToHex(palette.accent))                      // accent-3
+     .arg(colorToHex(palette.accent.lighter(110)))         // accent-4
+     .arg(colorToHex(palette.accent.darker(110)))          // accent-5
+     .arg(colorToHex(palette.success))                     // online
+     .arg(colorToHex(palette.error))                       // dnd
+     .arg(colorToHex(palette.warning))                     // idle
+     .arg(colorToHex(palette.ansiMagenta))                 // streaming
+     .arg(colorToHex(palette.error));                      // accent-new (usually red for mute/deafen)
 
     backupFile(themePath);
     bool res = writeToFile(themePath, css);
@@ -850,6 +845,38 @@ QStringList UniversalThemeExporter::scanBetterDiscordImports() {
                              results << url;
                          }
                     }
+                 }
+             }
+             f.close();
+         }
+     }
+     return results;
+}
+
+QStringList UniversalThemeExporter::scanVencordImports() {
+    QStringList results;
+    QDir dir(QDir::homePath() + "/.config/Vencord/themes");
+    if (!dir.exists()) return results;
+    
+    QStringList files = dir.entryList(QStringList() << "*.css", QDir::Files);
+    for (const QString &filename : files) {
+        if (filename == "PlasmaMaster.theme.css") continue; // Skip self
+        
+        QFile f(dir.absoluteFilePath(filename));
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&f);
+            while (!in.atEnd()) {
+                QString line = in.readLine().trimmed();
+                if (line.startsWith("@import url")) {
+                    // Extract URL roughly
+                    int start = line.indexOf('"');
+                    int end = line.lastIndexOf('"');
+                    if (start != -1 && end != -1 && end > start) {
+                         QString url = line.mid(start + 1, end - start - 1);
+                         if (!results.contains(url)) {
+                             results << url;
+                         }
+                    }
                 }
             }
             f.close();
@@ -857,3 +884,257 @@ QStringList UniversalThemeExporter::scanBetterDiscordImports() {
     }
     return results;
 }
+
+
+// -----------------------------------------------------------------------------
+// Vencord
+// -----------------------------------------------------------------------------
+bool UniversalThemeExporter::exportToVencord(const UniversalPalette &palette) {
+    if (!Config::isVencordSyncEnabled()) return false;
+    
+    // Vencord uses a standard themes folder
+    QString themePath = QDir::homePath() + "/.config/Vencord/themes/PlasmaMaster.theme.css";
+    QFileInfo fileInfo(themePath);
+    if (!QDir(fileInfo.absolutePath()).exists()) {
+        QDir().mkpath(fileInfo.absolutePath());
+    }
+
+    QString imports = "";
+    if (Config::isVencordMidnightEnabled()) {
+        imports += "@import url(\"https://refact0r.github.io/midnight-discord/build/midnight.css\");\n";
+    }
+
+    // Custom / User Selected Imports
+    QStringList customImports = Config::vencordImports();
+    for (const QString &url : customImports) {
+        if (!url.trimmed().isEmpty()) {
+            QString cleanUrl = url.trimmed();
+            if (!cleanUrl.startsWith("@import")) {
+                imports += QString("@import url(\"%1\");\n").arg(cleanUrl);
+            } else {
+                imports += cleanUrl + "\n";
+            }
+        }
+    }
+
+    QString css = QString(
+        "/**\n"
+        " * @name Plasma Master (Vencord)\n"
+        " * @description A dynamic discord theme based on Midnight, synchronized with KDE Plasma.\n"
+        " * @author Plasma Theme Master\n"
+        " * @version 1.0.0\n"
+        " */\n"
+        "%1\n\n"
+        ":root {\n"
+        "  /* text colors */\n"
+        "  --text-0: %2;\n"
+        "  --text-1: %3;\n"
+        "  --text-2: %4;\n"
+        "  --text-3: %5;\n"
+        "  --text-4: %6;\n"
+        "  --text-5: %7;\n"
+        "  /* background and dark colors */\n"
+        "  --bg-1: %8;\n"
+        "  --bg-2: %9;\n"
+        "  --bg-3: %10;\n"
+        "  --bg-4: %11;\n"
+        "  /* accent colors */\n"
+        "  --accent-1: %12;\n"
+        "  --accent-2: %13;\n"
+        "  --accent-3: %14;\n"
+        "  --accent-4: %15;\n"
+        "  --accent-5: %16;\n"
+        "  --accent-new: %21;\n"
+        "  /* status indicator colors */\n"
+        "  --online: %17;\n"
+        "  --dnd: %18;\n"
+        "  --idle: %19;\n"
+        "  --streaming: %20;\n"
+        "}\n"
+    ).arg(imports).arg(colorToHex(palette.windowBg))                    // text-0 (text on colored elements)
+     .arg(colorToHex(palette.windowFg.lighter(120)))       // text-1
+     .arg(colorToHex(palette.windowFg))                    // text-2
+     .arg(colorToHex(palette.viewFg))                      // text-3 (normal)
+     .arg(colorToHex(palette.viewFg.darker(150)))          // text-4 (muted)
+     .arg(colorToHex(palette.viewFg.darker(180)))          // text-5 (very muted)
+     .arg(colorToHex(palette.buttonBg.darker(150)))        // bg-1
+     .arg(colorToHex(palette.buttonBg))                    // bg-2
+     .arg(colorToHex(palette.viewBg))                      // bg-3
+     .arg(colorToHex(palette.windowBg))                    // bg-4
+     .arg(colorToHex(palette.accent.lighter(120)))         // accent-1
+     .arg(colorToHex(palette.accent))                      // accent-2
+     .arg(colorToHex(palette.accent))                      // accent-3
+     .arg(colorToHex(palette.accent.lighter(110)))         // accent-4
+     .arg(colorToHex(palette.accent.darker(110)))          // accent-5
+     .arg(colorToHex(palette.success))                     // online
+     .arg(colorToHex(palette.error))                       // dnd
+     .arg(colorToHex(palette.warning))                     // idle
+     .arg(colorToHex(palette.ansiMagenta))                 // streaming
+     .arg(colorToHex(palette.error));                      // accent-new (usually red for mute/deafen)
+
+    return writeToFile(themePath, css);
+}
+
+bool UniversalThemeExporter::restoreVencord() {
+    QString themePath = QDir::homePath() + "/.config/Vencord/themes/PlasmaMaster.theme.css";
+    return QFile::remove(themePath);
+}
+
+// -----------------------------------------------------------------------------
+// Btop
+// -----------------------------------------------------------------------------
+bool UniversalThemeExporter::exportToBtop(const UniversalPalette &palette) {
+    if (!Config::isBtopSyncEnabled()) return false;
+    
+    QString themeDir = QDir::homePath() + "/.config/btop/themes";
+    if (!QDir(themeDir).exists()) {
+        QDir().mkpath(themeDir);
+    }
+    QString themePath = themeDir + "/plasma-theme-master.theme";
+
+    QString btopTheme = QString(
+        "# Theme generated by Plasma Theme Master\n"
+        "theme[main_bg]=\"%3\"\n"
+        "theme[main_fg]=\"%1\"\n"
+        "theme[title]=\"%1\"\n"
+        "theme[hi_fg]=\"%2\"\n"
+        "theme[selected_bg]=\"%3\"\n"
+        "theme[selected_fg]=\"%2\"\n"
+        "theme[inactive_fg]=\"%4\"\n"
+        "theme[graph_text]=\"%1\"\n"
+        "theme[meter_bg]=\"%3\"\n"
+        "theme[proc_misc]=\"%1\"\n"
+        "theme[cpu_box]=\"%2\"\n"
+        "theme[mem_box]=\"%5\"\n"
+        "theme[net_box]=\"%6\"\n"
+        "theme[proc_box]=\"%2\"\n"
+        "theme[div_line]=\"%4\"\n"
+        "theme[temp_start]=\"%5\"\n"
+        "theme[temp_mid]=\"%7\"\n"
+        "theme[temp_end]=\"%6\"\n"
+        "theme[cpu_start]=\"%2\"\n"
+        "theme[cpu_mid]=\"%2\"\n"
+        "theme[cpu_end]=\"%2\"\n"
+        "theme[free_start]=\"%5\"\n"
+        "theme[free_mid]=\"%7\"\n"
+        "theme[free_end]=\"%6\"\n"
+        "theme[cached_start]=\"%2\"\n"
+        "theme[cached_mid]=\"%2\"\n"
+        "theme[cached_end]=\"%2\"\n"
+        "theme[available_start]=\"%2\"\n"
+        "theme[available_mid]=\"%2\"\n"
+        "theme[available_end]=\"%2\"\n"
+        "theme[used_start]=\"%5\"\n"
+        "theme[used_mid]=\"%7\"\n"
+        "theme[used_end]=\"%6\"\n"
+        "theme[download_start]=\"%5\"\n"
+        "theme[download_mid]=\"%7\"\n"
+        "theme[download_end]=\"%6\"\n"
+        "theme[upload_start]=\"%5\"\n"
+        "theme[upload_mid]=\"%7\"\n"
+        "theme[upload_end]=\"%6\"\n"
+        "theme[process_start]=\"%2\"\n"
+        "theme[process_mid]=\"%2\"\n"
+        "theme[process_end]=\"%2\"\n"
+    ).arg(colorToHex(palette.viewFg))
+     .arg(colorToHex(palette.accent))
+     .arg(colorToHex(palette.windowBg))
+     .arg(colorToHex(palette.viewFg.darker(150)))
+     .arg(colorToHex(palette.success))
+     .arg(colorToHex(palette.error))
+     .arg(colorToHex(palette.warning));
+
+    if (!writeToFile(themePath, btopTheme)) {
+        return false;
+    }
+
+    // Attempt to update btop configuration to use this theme if it's set to something else
+    QString confPath = QDir::homePath() + "/.config/btop/btop.conf";
+    QFile confFile(confPath);
+    if (confFile.exists() && confFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        QString confContent = QTextStream(&confFile).readAll();
+        QRegularExpression themeRegex("color_theme\\s*=\\s*\\\"[^\\\"]*\\\"");
+        if (confContent.contains(themeRegex)) {
+            confContent.replace(themeRegex, "color_theme = \"plasma-theme-master\"");
+        } else {
+            confContent += "\ncolor_theme = \"plasma-theme-master\"\n";
+        }
+        confFile.resize(0);
+        QTextStream out(&confFile);
+        out << confContent;
+        confFile.close();
+    }
+
+    // Send SIGUSR2 to running btop instances to reload the theme
+    QProcess process;
+    process.start("pkill", QStringList() << "-USR2" << "btop");
+    process.waitForFinished(1000);
+
+    return true;
+}
+
+bool UniversalThemeExporter::restoreBtop() {
+    QString themePath = QDir::homePath() + "/.config/btop/themes/plasma-theme-master.theme";
+    return QFile::remove(themePath);
+}
+
+// -----------------------------------------------------------------------------
+// Vicinae
+// -----------------------------------------------------------------------------
+bool UniversalThemeExporter::exportToVicinae(const UniversalPalette &palette) {
+    if (!Config::isVicinaeSyncEnabled()) return false;
+    
+    QString themeDir = QDir::homePath() + "/.local/share/vicinae/themes";
+    if (!QDir(themeDir).exists()) {
+        QDir().mkpath(themeDir);
+    }
+    QString themePath = themeDir + "/plasma-theme-master.toml";
+
+    QString isDark = (palette.windowBg.lightness() < 128) ? "dark" : "light";
+    QString inherits = "vicinae-" + isDark;
+
+    QString vicinaeTheme = QString(
+        "[meta]\n"
+        "version = 1\n"
+        "name = \"Plasma Theme Master\"\n"
+        "description = \"Dynamically generated theme matching KDE Plasma\"\n"
+        "variant = \"%8\"\n"
+        "inherits = \"%9\"\n\n"
+        "[colors.core]\n"
+        "accent = \"%1\"\n"
+        "accent_foreground = \"%2\"\n"
+        "background = \"%3\"\n"
+        "foreground = \"%4\"\n"
+        "secondary_background = \"%5\"\n"
+        "border = \"%6\"\n\n"
+        "[colors.accents]\n"
+        "blue = \"%1\"\n"
+        "green = \"%10\"\n"
+        "red = \"%11\"\n"
+        "yellow = \"%12\"\n"
+    ).arg(colorToHex(palette.accent))
+     .arg(colorToHex(palette.viewBg))
+     .arg(colorToHex(palette.windowBg))
+     .arg(colorToHex(palette.viewFg))
+     .arg(colorToHex(palette.windowBg.darker(110)))
+     .arg(colorToHex(palette.windowBg.darker(120)))
+     .arg(colorToHex(palette.windowBg)) 
+     .arg(isDark)
+     .arg(inherits)
+     .arg(colorToHex(palette.success))
+     .arg(colorToHex(palette.error))
+     .arg(colorToHex(palette.warning));
+
+    if (writeToFile(themePath, vicinaeTheme)) {
+        QProcess::startDetached("vicinae", QStringList() << "theme" << "set" << "plasma-theme-master");
+        Logger::log("Exported theme to Vicinae and triggered update.", Logger::Info);
+        return true;
+    }
+    return false;
+}
+
+bool UniversalThemeExporter::restoreVicinae() {
+    QString themePath = QDir::homePath() + "/.local/share/vicinae/themes/plasma-theme-master.toml";
+    return QFile::remove(themePath);
+}
+

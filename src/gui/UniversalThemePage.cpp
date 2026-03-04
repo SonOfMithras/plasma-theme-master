@@ -12,6 +12,9 @@
 #include <QDialog>
 #include <QTextEdit>
 #include <QScrollArea>
+#include <QTimer>
+#include <QCheckBox>
+#include <QDialogButtonBox>
 
 UniversalThemePage::UniversalThemePage(QWidget *parent) : QWidget(parent) {
     setupUi();
@@ -70,7 +73,7 @@ void UniversalThemePage::setupUi() {
     addRow(m_firefoxCheck, m_firefoxRestoreBtn);
 
     // BetterDiscord
-    m_discordCheck = new QCheckBox("BetterDiscord (theme.css)", this);
+    m_discordCheck = new QCheckBox("BetterDiscord (Midnight Theme CSS)", this);
     m_discordRestoreBtn = new QPushButton(this);
     m_discordConfigBtn = new QPushButton("Configure", this);
     connect(m_discordRestoreBtn, &QPushButton::clicked, [this]() {
@@ -80,6 +83,19 @@ void UniversalThemePage::setupUi() {
     });
     connect(m_discordConfigBtn, &QPushButton::clicked, this, &UniversalThemePage::showBDSettings);
     addRow(m_discordCheck, m_discordRestoreBtn, m_discordConfigBtn);
+
+    // Vencord
+    m_vencordCheck = new QCheckBox("Vencord (Midnight Theme CSS)", this);
+    m_vencordRestoreBtn = new QPushButton(this);
+    m_vencordConfigBtn = new QPushButton("Configure", this);
+    connect(m_vencordRestoreBtn, &QPushButton::clicked, [this]() {
+        if (QMessageBox::question(this, "Restore Vencord", "Remove Vencord theme?") == QMessageBox::Yes) {
+            UniversalThemeExporter::restoreVencord();
+            QMessageBox::information(this, "Done", "Removed Vencord config.");
+        }
+    });
+    connect(m_vencordConfigBtn, &QPushButton::clicked, this, &UniversalThemePage::showVencordSettings);
+    addRow(m_vencordCheck, m_vencordRestoreBtn, m_vencordConfigBtn);
 
     // Kitty
     m_kittyCheck = new QCheckBox("Kitty Terminal (kitty.conf)", this);
@@ -102,6 +118,28 @@ void UniversalThemePage::setupUi() {
         }
     });
     addRow(m_konsoleCheck, m_konsoleRestoreBtn);
+
+    // Btop
+    m_btopCheck = new QCheckBox("Btop (Material Theme)", this);
+    m_btopRestoreBtn = new QPushButton(this);
+    connect(m_btopRestoreBtn, &QPushButton::clicked, [this]() {
+        if (QMessageBox::question(this, "Restore Btop", "Remove Btop theme file?") == QMessageBox::Yes) {
+            UniversalThemeExporter::restoreBtop();
+            QMessageBox::information(this, "Done", "Removed Btop config.");
+        }
+    });
+    addRow(m_btopCheck, m_btopRestoreBtn);
+
+    // Vicinae
+    m_vicinaeCheck = new QCheckBox("Vicinae (Dynamic Theme)", this);
+    m_vicinaeRestoreBtn = new QPushButton(this);
+    connect(m_vicinaeRestoreBtn, &QPushButton::clicked, [this]() {
+        if (QMessageBox::question(this, "Restore Vicinae", "Remove Vicinae dynamic theme?") == QMessageBox::Yes) {
+            UniversalThemeExporter::restoreVicinae();
+            QMessageBox::information(this, "Done", "Removed Vicinae config.");
+        }
+    });
+    addRow(m_vicinaeCheck, m_vicinaeRestoreBtn);
 
     // Obsidian
     m_obsidianCheck = new QCheckBox("Obsidian (Vault Snippet)", this);
@@ -149,6 +187,9 @@ void UniversalThemePage::setupUi() {
     connect(m_discordCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_kittyCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_konsoleCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_vencordCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_btopCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_vicinaeCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
 
     connect(m_obsidianCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianPathEdit, &QLineEdit::editingFinished, this, &UniversalThemePage::saveSettings);
@@ -161,6 +202,9 @@ void UniversalThemePage::loadSettings() {
     m_discordCheck->setChecked(Config::isBetterDiscordSyncEnabled());
     m_kittyCheck->setChecked(Config::isKittySyncEnabled());
     m_konsoleCheck->setChecked(Config::isKonsoleSyncEnabled());
+    m_vencordCheck->setChecked(Config::isVencordSyncEnabled());
+    m_btopCheck->setChecked(Config::isBtopSyncEnabled());
+    m_vicinaeCheck->setChecked(Config::isVicinaeSyncEnabled());
 
     
     m_obsidianCheck->setChecked(Config::isObsidianSyncEnabled());
@@ -176,6 +220,9 @@ void UniversalThemePage::saveSettings() {
     Config::setBetterDiscordSyncEnabled(m_discordCheck->isChecked());
     Config::setKittySyncEnabled(m_kittyCheck->isChecked());
     Config::setKonsoleSyncEnabled(m_konsoleCheck->isChecked());
+    Config::setVencordSyncEnabled(m_vencordCheck->isChecked());
+    Config::setBtopSyncEnabled(m_btopCheck->isChecked());
+    Config::setVicinaeSyncEnabled(m_vicinaeCheck->isChecked());
 
     
     Config::setObsidianSyncEnabled(m_obsidianCheck->isChecked());
@@ -199,7 +246,7 @@ void UniversalThemePage::showBDSettings() {
     
     QVBoxLayout *layout = new QVBoxLayout(&dlg);
     
-    QCheckBox *useMaterial = new QCheckBox("Use Material UI (recommended for cohesive use of colors)", &dlg);
+    QCheckBox *useMaterial = new QCheckBox("Use Midnight UI (recommended for cohesive use of colors)", &dlg);
     useMaterial->setChecked(Config::isBetterDiscordMaterialEnabled());
     layout->addWidget(useMaterial);
     
@@ -276,47 +323,140 @@ void UniversalThemePage::showBDSettings() {
 void UniversalThemePage::syncNow() {
     saveSettings(); // Ensure saved
     
-    UniversalPalette palette = UniversalThemeExporter::extractColors();
-    QStringList results;
-    
-    if (m_vscodeCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportToVSCode(palette);
-        results << QString("VS Code: %1").arg(ok ? "OK" : "Failed");
-    }
-    
-    if (m_firefoxCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportToFirefox(palette);
-        results << QString("Firefox: %1").arg(ok ? "OK" : "Failed");
-    }
-
-    if (m_discordCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportToBetterDiscord(palette);
-        results << QString("BetterDiscord: %1").arg(ok ? "OK" : "Failed");
-    }
-
-    if (m_kittyCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportToKitty(palette);
-        results << QString("Kitty: %1").arg(ok ? "OK" : "Failed");
-    }
-
-    if (m_konsoleCheck->isChecked()) {
-        bool ok = UniversalThemeExporter::exportToKonsole(palette);
-        results << QString("Konsole: %1").arg(ok ? "OK" : "Failed");
-    }
-
-    
-    if (m_obsidianCheck->isChecked()) {
-        if (m_obsidianPathEdit->text().isEmpty()) {
-            results << "Obsidian: Skipped (No Path)";
-        } else {
-            bool ok = UniversalThemeExporter::exportToObsidian(palette, m_obsidianPathEdit->text());
-            results << QString("Obsidian: %1").arg(ok ? "OK" : "Failed");
+    // We add a short delay to allow any pending KDE global theme changes to settle into the color scheme file
+    // before extracting the colors, otherwise we might extract the old colors.
+    QTimer::singleShot(1000, this, [this]() {
+        UniversalPalette palette = UniversalThemeExporter::extractColors();
+        QStringList results;
+        
+        if (m_vscodeCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToVSCode(palette);
+            results << QString("VS Code: %1").arg(ok ? "OK" : "Failed");
         }
+        
+        if (m_firefoxCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToFirefox(palette);
+            results << QString("Firefox: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_discordCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToBetterDiscord(palette);
+            results << QString("BetterDiscord: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_kittyCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToKitty(palette);
+            results << QString("Kitty: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_konsoleCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToKonsole(palette);
+            results << QString("Konsole: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_vencordCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToVencord(palette);
+            results << QString("Vencord: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_btopCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToBtop(palette);
+            results << QString("Btop: %1").arg(ok ? "OK" : "Failed");
+        }
+
+        if (m_vicinaeCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToVicinae(palette);
+            results << QString("Vicinae: %1").arg(ok ? "OK" : "Failed");
+        }
+        
+        if (m_obsidianCheck->isChecked()) {
+            if (m_obsidianPathEdit->text().isEmpty()) {
+                results << "Obsidian: Skipped (No Path)";
+            } else {
+                bool ok = UniversalThemeExporter::exportToObsidian(palette, m_obsidianPathEdit->text());
+                results << QString("Obsidian: %1").arg(ok ? "OK" : "Failed");
+            }
+        }
+        
+        if (results.isEmpty()) {
+            QMessageBox::information(this, "Sync Universal Theme", "No apps selected.");
+        } else {
+            QMessageBox::information(this, "Sync Universal Theme", results.join("\n"));
+        }
+    });
+}
+
+void UniversalThemePage::showVencordSettings() {
+    QDialog dlg(this);
+    dlg.setWindowTitle("Configure Vencord Sync");
+    dlg.resize(500, 400);
+    
+    QVBoxLayout *layout = new QVBoxLayout(&dlg);
+    
+    QCheckBox *useMidnight = new QCheckBox("Use Midnight Theme Base (recommended for cohesive colors)", &dlg);
+    useMidnight->setChecked(Config::isVencordMidnightEnabled());
+    layout->addWidget(useMidnight);
+    
+    layout->addWidget(new QLabel("<b>Detected Imports:</b>"));
+    QScrollArea *scroll = new QScrollArea(&dlg);
+    QWidget *scrollContent = new QWidget();
+    QVBoxLayout *scrollLayout = new QVBoxLayout(scrollContent);
+    scroll->setWidget(scrollContent);
+    scroll->setWidgetResizable(true);
+    layout->addWidget(scroll);
+    
+    QStringList currentImports = Config::vencordImports();
+    QStringList detectedImports = UniversalThemeExporter::scanVencordImports();
+    QList<QCheckBox*> importChecks;
+    
+    for (const QString &url : detectedImports) {
+        QCheckBox *cb = new QCheckBox(url, scrollContent);
+        if (currentImports.contains(url)) cb->setChecked(true);
+        importChecks << cb;
+        scrollLayout->addWidget(cb);
     }
     
-    if (results.isEmpty()) {
-        QMessageBox::information(this, "Sync Universal Theme", "No apps selected.");
-    } else {
-        QMessageBox::information(this, "Sync Universal Theme", results.join("\n"));
+    if (detectedImports.isEmpty()) {
+        scrollLayout->addWidget(new QLabel("No other themes with imports found in Vencord themes folder."));
+    }
+    
+    layout->addWidget(new QLabel("<b>Custom Import URLs (One per line):</b>"));
+    QTextEdit *customEdit = new QTextEdit(&dlg);
+    
+    QStringList textImports;
+    for (const QString &saved : currentImports) {
+        bool found = false;
+        for (const QString &detected : detectedImports) {
+            if (saved == detected) { found = true; break; }
+        }
+        if (!found) textImports << saved;
+    }
+    customEdit->setText(textImports.join("\n"));
+    
+    layout->addWidget(customEdit);
+    
+    QDialogButtonBox *bbox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    layout->addWidget(bbox);
+    connect(bbox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bbox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    
+    if (dlg.exec() == QDialog::Accepted) {
+        Config::setVencordMidnightEnabled(useMidnight->isChecked());
+        
+        QStringList finalImports;
+        // Add checked detected imports
+        for (int i=0; i<importChecks.size(); ++i) {
+            if (importChecks[i]->isChecked()) {
+                finalImports << detectedImports[i];
+            }
+        }
+        // Add text imports
+        QStringList lines = customEdit->toPlainText().split("\n");
+        for (const QString &line : lines) {
+            if (!line.trimmed().isEmpty()) finalImports << line.trimmed();
+        }
+        // Remove dupes
+        finalImports.removeDuplicates();
+        Config::setVencordImports(finalImports);
     }
 }

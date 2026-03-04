@@ -15,6 +15,7 @@ private slots:
     void syncNow();
     void pickObsidianVault();
     void showBDSettings(); // New slot
+    void showVencordSettings(); // New slot
 
 private:
     void setupUi();
@@ -34,6 +35,15 @@ private:
     QCheckBox *m_kittyCheck;
     QPushButton *m_kittyRestoreBtn;
 
+    QCheckBox *m_vencordCheck;
+    QCheckBox *m_btopCheck;
+    QCheckBox *m_vicinaeCheck;
+    
+    QPushButton *m_vencordRestoreBtn;
+    QPushButton *m_vencordConfigBtn; // New member
+    QPushButton *m_btopRestoreBtn;
+    QPushButton *m_vicinaeRestoreBtn;
+    
     QCheckBox *m_konsoleCheck;
     QPushButton *m_konsoleRestoreBtn;
 

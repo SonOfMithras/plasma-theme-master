@@ -20,11 +20,20 @@ public:
     static bool isBetterDiscordSyncEnabled();
     static void setBetterDiscordSyncEnabled(bool enabled);
 
+    static bool isVencordSyncEnabled();
+    static void setVencordSyncEnabled(bool enabled);
+    
     static bool isKittySyncEnabled();
     static void setKittySyncEnabled(bool enabled);
     
     static bool isKonsoleSyncEnabled();
     static void setKonsoleSyncEnabled(bool enabled);
+
+    static bool isBtopSyncEnabled();
+    static void setBtopSyncEnabled(bool enabled);
+
+    static bool isVicinaeSyncEnabled();
+    static void setVicinaeSyncEnabled(bool enabled);
 
     static bool isMaterialYouOverrideEnabled();
     static void setMaterialYouOverrideEnabled(bool enabled);
@@ -39,6 +48,12 @@ public:
     static void setBetterDiscordMaterialEnabled(bool enabled);
     static QStringList betterDiscordImports();
     static void setBetterDiscordImports(const QStringList &imports);
+
+    // Vencord Advanced
+    static bool isVencordMidnightEnabled();
+    static void setVencordMidnightEnabled(bool enabled);
+    static QStringList vencordImports();
+    static void setVencordImports(const QStringList &imports);
 
 };
 
