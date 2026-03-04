@@ -37,6 +37,12 @@ QString ThemeReader::currentGlobalTheme() {
     return group.readEntry(QStringLiteral("LookAndFeelPackage"), QString());
 }
 
+QString ThemeReader::currentColorScheme() {
+    KConfig config(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+    KConfigGroup group = config.group(QStringLiteral("General"));
+    return group.readEntry(QStringLiteral("ColorScheme"), QString());
+}
+
 QString ThemeReader::currentKvantumTheme() {
     QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral("/Kvantum/kvantum.kvconfig");
     if (!QFile::exists(path)) return QString();

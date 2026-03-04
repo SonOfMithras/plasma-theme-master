@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-03-03
+### Changed
+- Bugfixes and improved material you integration.
+- Significantly reduced CPU spikes by avoiding redundant shell executions (`lookandfeeltool`, `plasma-apply-colorscheme`, etc.) when themes correctly match the active configuration.
+- Transformed the daemon into an event-driven service utilizing `QTimer` and `QFileSystemWatcher` instead of a continuous blocking `while` loop, improving efficiency.
+
 ## [1.1.4] - 2026-02-27
 ### Added
 - **Material You Colors Integration**:

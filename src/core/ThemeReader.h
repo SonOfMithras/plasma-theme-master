@@ -7,6 +7,7 @@
 class ThemeReader {
 public:
   static QString currentGlobalTheme();
+  static QString currentColorScheme();
   static QString currentKvantumTheme();
   static QString currentGtkTheme();
   static bool isAutoLookAndFeel();

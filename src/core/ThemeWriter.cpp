@@ -1,4 +1,5 @@
 #include "ThemeWriter.h"
+#include "ThemeReader.h"
 #include "FlatpakManager.h"
 #include "Logger.h"
 #include <KConfig>
@@ -21,6 +22,11 @@ void ThemeWriter::setAutoLookAndFeel(bool enabled) {
 bool ThemeWriter::setKvantumTheme(const QString &themeName) {
   if (themeName.isEmpty())
     return false;
+
+  if (ThemeReader::currentKvantumTheme() == themeName) {
+      Logger::log("Kvantum theme is already \"" + themeName + "\", skipping.", Logger::Info);
+      return true;
+  }
 
   // Method 1: kvantummanager
   QString kvantumExe =
@@ -80,6 +86,11 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
   if (themeName.isEmpty())
     return false;
 
+  if (ThemeReader::currentGlobalTheme() == themeName) {
+      Logger::log("Global theme is already \"" + themeName + "\", skipping.", Logger::Info);
+      return true;
+  }
+
   QString tool =
       QStandardPaths::findExecutable(QStringLiteral("lookandfeeltool"));
   if (tool.isEmpty()) {
@@ -121,6 +132,11 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName) {
 bool ThemeWriter::applyColorScheme(const QString &schemeName) {
   if (schemeName.isEmpty())
     return false;
+
+  if (ThemeReader::currentColorScheme() == schemeName) {
+      Logger::log("Color scheme is already \"" + schemeName + "\", skipping.", Logger::Info);
+      return true;
+  }
 
   QString tool =
       QStandardPaths::findExecutable(QStringLiteral("plasma-apply-colorscheme"));
@@ -189,6 +205,11 @@ void ThemeWriter::setNightKvantumTheme(const QString &themeName) {
 bool ThemeWriter::setGtkTheme(const QString &themeName) {
   if (themeName.isEmpty())
     return false;
+
+  if (ThemeReader::currentGtkTheme() == themeName) {
+      Logger::log("GTK theme is already \"" + themeName + "\", skipping.", Logger::Info);
+      return true;
+  }
 
   // Path 1: GTK 3
   QString gtk3Path =
@@ -296,6 +317,11 @@ void ThemeWriter::setNightGtkTheme(const QString &themeName) {
 // Klassy Day & Night
 void ThemeWriter::setKlassyPreset(const QString &presetName) {
     if (presetName.isEmpty()) return;
+
+    if (ThemeReader::lastAppliedKlassyPreset() == presetName) {
+        Logger::log("Klassy preset is already \"" + presetName + "\", skipping.", Logger::Info);
+        return;
+    }
 
     QString tool = QStandardPaths::findExecutable("klassy-settings");
     if (tool.isEmpty()) {
