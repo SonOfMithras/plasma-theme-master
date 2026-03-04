@@ -14,6 +14,8 @@
 #include <QProcessEnvironment>
 #include <QTextStream>
 #include <QThread>
+#include <QTimer>
+#include <QFileSystemWatcher>
 #include <iostream>
 
 // Forward declaration if needed, or include appropriate headers
@@ -462,9 +464,41 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     std::cout << "Starting Plasma Theme Master Daemon...\n";
     Logger::log("Daemon started", Logger::Info);
 
-    // Monitor loop for automatic theme switching
+    // Monitor setup for automatic theme switching and universal sync triggers
+    QTimer *solarTimer = new QTimer(qApp);
+    
+    // We create a separate debounce timer for file watcher events
+    QTimer *syncDebounceTimer = new QTimer(qApp);
+    syncDebounceTimer->setSingleShot(true);
+    syncDebounceTimer->setInterval(200); // 200ms debounce
+    
+    QObject::connect(syncDebounceTimer, &QTimer::timeout, qApp, []() {
+        if (ThemeReader::isAutoLookAndFeel()) {
+             Logger::log("Daemon: Triggering syncAll due to MaterialYou changes", Logger::Info);
+             UniversalThemeExporter::syncAll();
+        }
+    });
 
-    while (true) {
+    QFileSystemWatcher *watcher = new QFileSystemWatcher(qApp);
+    QString kdeGlobalsFile = QDir::homePath() + "/.config/kdeglobals";
+    // Add the file to watch for changes
+    if (QFile::exists(kdeGlobalsFile)) {
+        watcher->addPath(kdeGlobalsFile);
+    }
+    
+    QObject::connect(watcher, &QFileSystemWatcher::fileChanged, syncDebounceTimer, [watcher, kdeGlobalsFile, syncDebounceTimer](const QString &path) {
+        (void)path;
+        // Restart the timer. If it receives multiple signals quickly, it will only fire once after 2 seconds.
+        syncDebounceTimer->start();
+        
+        // Qt sometimes removes a watched file if it's replaced (like some text editors do).
+        // Let's ensure it's re-added if it was removed.
+        if (!watcher->files().contains(kdeGlobalsFile) && QFile::exists(kdeGlobalsFile)) {
+             watcher->addPath(kdeGlobalsFile);
+        }
+    });
+
+    auto performSolarCheck = []() {
       // 1. Check if Auto is enabled
       if (ThemeReader::isAutoLookAndFeel()) {
         double lat = ThemeReader::nativeLatitude();
@@ -542,11 +576,17 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
           UniversalThemeExporter::syncAll();
         }
       }
+    };
 
-      // Sleep for 60 seconds
-      QThread::sleep(60);
-    }
-    return 0;
+    QObject::connect(solarTimer, &QTimer::timeout, qApp, performSolarCheck);
+    
+    // Perform initial check immediately
+    performSolarCheck();
+    
+    // Start interval timer
+    solarTimer->start(60000); // 60 seconds
+
+    return qApp->exec();
   } else if (command == "uninstall") {
     std::cout << "Launching Uninstaller...\n";
     int ret = std::system("plasma-theme-master-uninstall");

@@ -154,7 +154,7 @@ If you encounter errors during the build process on Debian/Ubuntu-based systems 
 1. Install the required packages:
    ```bash
    sudo apt update
-   sudo apt install build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev libkf6config-dev libkf6coreaddons-dev
+   sudo apt install build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev libkf6config-dev libkf6coreaddons-dev libkf6colorscheme-dev pipx
    ```
 
 2. Retry the installation script:
