@@ -167,5 +167,17 @@ If you encounter errors during the build process on Debian/Ubuntu-based systems 
 **Author**: Ammar Al-Riyamy (SonOfMithras)
 **GitHub**: [https://github.com/SonOfMithras](https://github.com/SonOfMithras)
 
+## Accreditations
+
+This project integrates with or was inspired by the following awesome projects:
+- **BetterDiscord**: [https://betterdiscord.app/](https://betterdiscord.app/)
+- **Vencord**: [https://vencord.dev/](https://vencord.dev/)
+- **Kio** (KDE Day/Night Cycle concept inspiration): [https://github.com/sspanak/kde-auto-day-night-mode](https://github.com/sspanak/kde-auto-day-night-mode)
+- **Kvantum**: [https://github.com/tsujan/Kvantum/tree/master/Kvantum](https://github.com/tsujan/Kvantum/tree/master/Kvantum)
+- **kde-material-you-colors**: [https://github.com/luisbocanegra/kde-material-you-colors](https://github.com/luisbocanegra/kde-material-you-colors)
+- **Klassy**: [https://github.com/paulmcauley/klassy](https://github.com/paulmcauley/klassy)
+- **Caelestia-dots**: [https://github.com/caelestia-dots/caelestia](https://github.com/caelestia-dots/caelestia)
+- **ML4W Dotfiles**: [https://github.com/mylinuxforwork/dotfiles](https://github.com/mylinuxforwork/dotfiles)
+
 ## License
 MIT License
