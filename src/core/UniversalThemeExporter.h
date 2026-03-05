@@ -62,6 +62,7 @@ public:
     static bool exportToVencord(const UniversalPalette &palette);
     static bool exportToBtop(const UniversalPalette &palette);
     static bool exportToVicinae(const UniversalPalette &palette);
+    static bool exportToZed(const UniversalPalette &palette);
     
     // Restore Methods
     static bool restoreVSCode();
@@ -73,6 +74,7 @@ public:
     static bool restoreVencord();
     static bool restoreBtop();
     static bool restoreVicinae();
+    static bool restoreZed();
 
     // Helpers
     static QStringList scanBetterDiscordImports();

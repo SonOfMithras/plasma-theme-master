@@ -23,6 +23,9 @@ public:
     static bool isVencordSyncEnabled();
     static void setVencordSyncEnabled(bool enabled);
     
+    static bool isZedSyncEnabled();
+    static void setZedSyncEnabled(bool enabled);
+    
     static bool isKittySyncEnabled();
     static void setKittySyncEnabled(bool enabled);
     

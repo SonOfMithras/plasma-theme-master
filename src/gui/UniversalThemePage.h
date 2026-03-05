@@ -44,6 +44,9 @@ private:
     QPushButton *m_btopRestoreBtn;
     QPushButton *m_vicinaeRestoreBtn;
     
+    QCheckBox *m_zedCheck;
+    QPushButton *m_zedRestoreBtn;
+    
     QCheckBox *m_konsoleCheck;
     QPushButton *m_konsoleRestoreBtn;
 

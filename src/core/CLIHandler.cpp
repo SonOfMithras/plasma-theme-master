@@ -78,7 +78,7 @@ void CLIHandler::printHelp() {
       << "  sync-universal (or sync-now)\n"
       << "                Sync enabled universal apps immediately.\n\n"
       << "  sync-enable <app>\n"
-      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian).\n"
+      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian, zed).\n"
       << "                WARNING: backups will be created.\n\n"
       << "  sync-disable <app>\n"
       << "                Disable universal sync for an app.\n\n"
@@ -658,6 +658,9 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       } else if (app == "obsidian") {
            std::cout << "Enabling Obsidian Sync.\n";
            Config::setObsidianSyncEnabled(true);
+      } else if (app == "zed") {
+           std::cout << "Enabling Zed Sync. WARNING: modification of Zed settings.json and themes.\n";
+           Config::setZedSyncEnabled(true);
       } else {
           std::cerr << "Unknown app: " << qPrintable(app) << "\n";
           return 1;
@@ -672,6 +675,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       else if (app == "discord") Config::setBetterDiscordSyncEnabled(false);
       else if (app == "kitty") Config::setKittySyncEnabled(false);
       else if (app == "obsidian") Config::setObsidianSyncEnabled(false);
+      else if (app == "zed") Config::setZedSyncEnabled(false);
       else { std::cerr << "Unknown app: " << qPrintable(app) << "\n"; return 1; }
       std::cout << "Disabled sync for " << qPrintable(app) << "\n";
       return 0;
@@ -682,6 +686,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
        std::cout << "  BetterDiscord: " << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled") << "\n";
        std::cout << "  Kitty: " << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled") << "\n";
        std::cout << "  Obsidian: " << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+       std::cout << "  Zed: " << (Config::isZedSyncEnabled() ? "Enabled" : "Disabled") << "\n";
        return 0;
     } else if (command == "sync-restore") {
         if (args.size() < 2) { std::cerr << "Usage: sync-restore <app>\n"; return 1; }
@@ -703,6 +708,9 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         } else if (app == "obsidian") {
             std::cout << "Restoring Obsidian snippet...\n";
             success = UniversalThemeExporter::restoreObsidian();
+        } else if (app == "zed") {
+            std::cout << "Restoring Zed config...\n";
+            success = UniversalThemeExporter::restoreZed();
         } else {
             std::cout << "Unknown app or restore not supported: " << qPrintable(app) << "\n";
             return 1;

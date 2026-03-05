@@ -64,6 +64,11 @@ void Config::setVencordSyncEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Vencord", enabled); c.sync();
 }
 
+bool Config::isZedSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Zed", false); }
+void Config::setZedSyncEnabled(bool enabled) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Zed", enabled); c.sync();
+}
+
 bool Config::isBtopSyncEnabled() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("Btop", false); }
 void Config::setBtopSyncEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("Btop", enabled); c.sync();

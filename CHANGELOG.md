@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **Zed Code Editor Integration**:
+  - Automatically generates and applies a "Plasma Master" theme to the Zed editor (`~/.config/zed/themes/plasma-master.json`).
+  - Sets Zed to use this theme in its `settings.json`.
+  - Added GUI and CLI controls (`sync-enable zed`) for this feature.
 
 ## [1.1.5] - 2026-03-03
 ### Changed

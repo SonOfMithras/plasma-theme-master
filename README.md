@@ -15,7 +15,7 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
-- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, and Obsidian. (Sourced from Material You colors if enabled).
+- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, Zed Editor, and Obsidian. (Sourced from Material You colors if enabled).
 - **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -113,7 +113,7 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 
 ### Universal Theme Sync
 The application can inject Plasma's colors into various non-KDE applications.
-**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `konsole`, `obsidian`, `generic`.
+**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `konsole`, `obsidian`, `zed`, `generic`.
 
 **Setup**:
 1. Enable sync for an app: `plasma-theme-master sync-enable vscode`
@@ -172,7 +172,7 @@ If you encounter errors during the build process on Debian/Ubuntu-based systems 
 This project integrates with or was inspired by the following awesome projects:
 - **BetterDiscord**: [https://betterdiscord.app/](https://betterdiscord.app/)
 - **Vencord**: [https://vencord.dev/](https://vencord.dev/)
-- **Kio** (KDE Day/Night Cycle concept inspiration): [https://github.com/sspanak/kde-auto-day-night-mode](https://github.com/sspanak/kde-auto-day-night-mode)
+- **Koi** (KDE Day/Night Cycle concept inspiration): [https://github.com/baduhai/Koi](https://github.com/baduhai/Koi)
 - **Kvantum**: [https://github.com/tsujan/Kvantum/tree/master/Kvantum](https://github.com/tsujan/Kvantum/tree/master/Kvantum)
 - **kde-material-you-colors**: [https://github.com/luisbocanegra/kde-material-you-colors](https://github.com/luisbocanegra/kde-material-you-colors)
 - **Klassy**: [https://github.com/paulmcauley/klassy](https://github.com/paulmcauley/klassy)

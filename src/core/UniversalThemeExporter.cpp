@@ -11,6 +11,7 @@
 #include <QTextStream>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonValue>
 #include <QThread>
 #include <QProcess>
@@ -320,6 +321,10 @@ void UniversalThemeExporter::syncAll() {
     if (Config::isObsidianSyncEnabled()) {
         QString vault = Config::obsidianVaultPath();
         if (!vault.isEmpty()) exportToObsidian(palette, vault);
+    }
+
+    if (Config::isZedSyncEnabled()) {
+        exportToZed(palette);
     }
 }
 
@@ -1151,5 +1156,389 @@ bool UniversalThemeExporter::exportToVicinae(const UniversalPalette &palette) {
 bool UniversalThemeExporter::restoreVicinae() {
     QString themePath = QDir::homePath() + "/.local/share/vicinae/themes/plasma-theme-master.toml";
     return QFile::remove(themePath);
+}
+
+bool UniversalThemeExporter::exportToZed(const UniversalPalette &) {
+    if (!Config::isZedSyncEnabled()) return false;
+    
+    struct ThemeTarget {
+        QString name;
+        QString appearance;
+        QString globalTheme;
+    };
+    
+    QList<ThemeTarget> targets = {
+        {"Day", "light", ThemeReader::defaultLightTheme()},
+        {"Night", "dark", ThemeReader::defaultDarkTheme()}
+    };
+    
+    QString themesDir = QDir::homePath() + "/.config/zed/themes";
+    QDir().mkpath(themesDir);
+    QString themePath = themesDir + "/plasma-master.json";
+
+    QJsonObject themeObj;
+    themeObj["name"] = "Plasma Master";
+    themeObj["author"] = "Plasma Theme Master";
+    
+    QJsonArray themesArray;
+
+    auto generateStyle = [](const UniversalPalette &palette, bool isDark) -> QJsonObject {
+        QJsonObject style;
+        
+        auto mix = [](QColor a, QColor b, float ratio) {
+            return QColor(
+                a.red() * ratio + b.red() * (1 - ratio),
+                a.green() * ratio + b.green() * (1 - ratio),
+                a.blue() * ratio + b.blue() * (1 - ratio)
+            );
+        };
+        auto toHex = [](QColor c) { return c.name(); };
+        auto toHexAlpha = [](QColor c, int alpha) { 
+            c.setAlpha(alpha);
+            return QString("#%1%2%3%4")
+                .arg(c.red(), 2, 16, QChar('0'))
+                .arg(c.green(), 2, 16, QChar('0'))
+                .arg(c.blue(), 2, 16, QChar('0'))
+                .arg(c.alpha(), 2, 16, QChar('0'));
+        };
+
+        QColor base = palette.viewBg;
+        QColor mantle = palette.windowBg;
+        QColor crust = isDark ? mantle.darker(115) : mantle.darker(105);
+        QColor surface0 = isDark ? mantle.lighter(115) : mantle.darker(110);
+        QColor surface1 = isDark ? mantle.lighter(130) : mantle.darker(120);
+        QColor surface2 = isDark ? mantle.lighter(145) : mantle.darker(130);
+        
+        QColor text = palette.viewFg;
+        QColor subtext0 = mix(text, base, 0.75);
+        QColor subtext1 = mix(text, base, 0.55);
+        QColor overlay0 = mix(text, base, 0.35);
+        
+        QColor accent = palette.accent;
+        QColor transparent(0,0,0,0);
+
+        // Core UI
+        style["border"] = toHex(surface1);
+        style["border.variant"] = toHex(surface0);
+        style["border.focused"] = toHex(accent);
+        style["border.selected"] = toHex(accent);
+        style["border.transparent"] = toHexAlpha(transparent, 0);
+        style["border.disabled"] = toHex(surface0);
+        
+        style["elevated_surface.background"] = toHex(surface1);
+        style["surface.background"] = toHex(surface0);
+        style["background"] = toHex(mantle);
+        
+        style["element.background"] = toHex(surface0);
+        style["element.hover"] = toHex(surface1);
+        style["element.active"] = toHex(surface2);
+        style["element.selected"] = toHex(surface2);
+        style["element.disabled"] = toHex(surface0);
+        
+        style["drop_target.background"] = toHexAlpha(surface2, 128);
+        
+        style["ghost_element.background"] = toHexAlpha(transparent, 0);
+        style["ghost_element.hover"] = toHex(surface0);
+        style["ghost_element.active"] = toHex(surface1);
+        style["ghost_element.selected"] = toHex(surface1);
+        style["ghost_element.disabled"] = toHexAlpha(transparent, 0);
+        
+        // Text & Icons
+        style["text"] = toHex(text);
+        style["text.muted"] = toHex(subtext0);
+        style["text.placeholder"] = toHex(subtext1);
+        style["text.disabled"] = toHex(subtext1);
+        style["text.accent"] = toHex(accent);
+        
+        style["icon"] = toHex(text);
+        style["icon.muted"] = toHex(subtext0);
+        style["icon.disabled"] = toHex(subtext1);
+        style["icon.placeholder"] = toHex(subtext1);
+        style["icon.accent"] = toHex(accent);
+        
+        // Bars
+        style["status_bar.background"] = toHex(crust);
+        style["title_bar.background"] = toHex(crust);
+        style["title_bar.inactive_background"] = toHex(mantle);
+        style["toolbar.background"] = toHex(surface0);
+        style["tab_bar.background"] = toHex(crust);
+        style["tab.inactive_background"] = toHex(mantle);
+        style["tab.active_background"] = toHex(base);
+        
+        style["search.match_background"] = toHexAlpha(palette.ansiBlue, 64);
+        style["search.active_match_background"] = toHexAlpha(palette.ansiYellow, 100);
+        
+        style["panel.background"] = toHex(mantle);
+        style["panel.focused_border"] = toHex(accent);
+        style["pane.focused_border"] = toHex(accent);
+        
+        style["scrollbar.thumb.background"] = toHexAlpha(overlay0, 64);
+        style["scrollbar.thumb.hover_background"] = toHex(overlay0);
+        style["scrollbar.thumb.border"] = toHex(overlay0);
+        style["scrollbar.track.background"] = toHexAlpha(transparent, 0);
+        style["scrollbar.track.border"] = toHex(surface0);
+        
+        // Editor
+        style["editor.foreground"] = toHex(text);
+        style["editor.background"] = toHex(base);
+        style["editor.gutter.background"] = toHex(base);
+        style["editor.subheader.background"] = toHex(surface0);
+        style["editor.active_line.background"] = toHexAlpha(surface0, 64);
+        style["editor.highlighted_line.background"] = toHex(surface0);
+        style["editor.line_number"] = toHex(overlay0);
+        style["editor.active_line_number"] = toHex(text);
+        style["editor.hover_line_number"] = toHex(subtext0);
+        style["editor.invisible"] = toHex(overlay0);
+        style["editor.wrap_guide"] = toHexAlpha(overlay0, 32);
+        style["editor.active_wrap_guide"] = toHexAlpha(overlay0, 64);
+        style["editor.document_highlight.read_background"] = toHexAlpha(palette.ansiBlue, 32);
+        style["editor.document_highlight.write_background"] = toHexAlpha(palette.ansiYellow, 32);
+        
+        // Terminal
+        style["terminal.background"] = toHex(base);
+        style["terminal.foreground"] = toHex(text);
+        style["terminal.bright_foreground"] = toHex(palette.ansiWhiteBright);
+        style["terminal.dim_foreground"] = toHex(subtext0);
+
+        style["terminal.ansi.black"] = toHex(palette.ansiBlack);
+        style["terminal.ansi.bright_black"] = toHex(palette.ansiBlackBright);
+        style["terminal.ansi.dim_black"] = toHex(palette.ansiBlack.darker(150));
+        style["terminal.ansi.red"] = toHex(palette.ansiRed);
+        style["terminal.ansi.bright_red"] = toHex(palette.ansiRedBright);
+        style["terminal.ansi.dim_red"] = toHex(palette.ansiRed.darker(150));
+        style["terminal.ansi.green"] = toHex(palette.ansiGreen);
+        style["terminal.ansi.bright_green"] = toHex(palette.ansiGreenBright);
+        style["terminal.ansi.dim_green"] = toHex(palette.ansiGreen.darker(150));
+        style["terminal.ansi.yellow"] = toHex(palette.ansiYellow);
+        style["terminal.ansi.bright_yellow"] = toHex(palette.ansiYellowBright);
+        style["terminal.ansi.dim_yellow"] = toHex(palette.ansiYellow.darker(150));
+        style["terminal.ansi.blue"] = toHex(palette.ansiBlue);
+        style["terminal.ansi.bright_blue"] = toHex(palette.ansiBlueBright);
+        style["terminal.ansi.dim_blue"] = toHex(palette.ansiBlue.darker(150));
+        style["terminal.ansi.magenta"] = toHex(palette.ansiMagenta);
+        style["terminal.ansi.bright_magenta"] = toHex(palette.ansiMagentaBright);
+        style["terminal.ansi.dim_magenta"] = toHex(palette.ansiMagenta.darker(150));
+        style["terminal.ansi.cyan"] = toHex(palette.ansiCyan);
+        style["terminal.ansi.bright_cyan"] = toHex(palette.ansiCyanBright);
+        style["terminal.ansi.dim_cyan"] = toHex(palette.ansiCyan.darker(150));
+        style["terminal.ansi.white"] = toHex(palette.ansiWhite);
+        style["terminal.ansi.bright_white"] = toHex(palette.ansiWhiteBright);
+        style["terminal.ansi.dim_white"] = toHex(palette.ansiWhite.darker(150));
+        
+        style["link_text.hover"] = toHex(palette.ansiBlue);
+
+        // VC & Diagnostics
+        style["version_control.added"] = toHex(palette.ansiGreen);
+        style["version_control.modified"] = toHex(palette.ansiYellow);
+        style["version_control.word_added"] = toHexAlpha(palette.ansiGreen, 64);
+        style["version_control.word_deleted"] = toHexAlpha(palette.ansiRed, 64);
+        style["version_control.deleted"] = toHex(palette.ansiRed);
+        style["version_control.conflict_marker.ours"] = toHexAlpha(palette.ansiGreen, 64);
+        style["version_control.conflict_marker.theirs"] = toHexAlpha(palette.ansiBlue, 64);
+        
+        auto setupDiag = [&](const QString &pfx, QColor c) {
+            style[pfx] = toHex(c);
+            style[pfx + ".background"] = toHexAlpha(c, 32);
+            style[pfx + ".border"] = toHexAlpha(c, 128);
+        };
+        
+        setupDiag("conflict", palette.ansiYellow);
+        setupDiag("created", palette.ansiGreen);
+        setupDiag("deleted", palette.ansiRed);
+        setupDiag("error", palette.ansiRed);
+        setupDiag("hidden", subtext0);
+        setupDiag("hint", palette.ansiBlue);
+        setupDiag("ignored", subtext0);
+        setupDiag("info", palette.ansiBlue);
+        setupDiag("modified", palette.ansiYellow);
+        setupDiag("predictive", subtext0);
+        setupDiag("renamed", palette.ansiBlue);
+        setupDiag("success", palette.ansiGreen);
+        setupDiag("unreachable", subtext1);
+        setupDiag("warning", palette.ansiYellow);
+
+        QJsonArray players;
+        QList<QColor> pColors = { palette.ansiBlue, palette.ansiRed, palette.ansiYellow, palette.ansiMagenta, palette.ansiCyan, palette.ansiRedBright, palette.ansiBlueBright, palette.ansiGreen };
+        for (const auto &c : pColors) {
+            QJsonObject p;
+            p["cursor"] = toHex(c);
+            p["background"] = toHex(c);
+            p["selection"] = toHexAlpha(c, 64);
+            players.append(p);
+        }
+        style["players"] = players;
+
+        // Syntax
+        QJsonObject syntax;
+        auto addSyntax = [&](const QString &key, QColor c, const QString &fStyle = "", int fWeight = -1) {
+            QJsonObject s;
+            s["color"] = toHex(c);
+            if (!fStyle.isEmpty()) s["font_style"] = fStyle;
+            else s["font_style"] = QJsonValue::Null;
+            if (fWeight > 0) s["font_weight"] = fWeight;
+            else s["font_weight"] = QJsonValue::Null;
+            syntax[key] = s;
+        };
+        
+        addSyntax("attribute", palette.ansiBlue);
+        addSyntax("boolean", palette.ansiYellow);
+        addSyntax("comment", overlay0);
+        addSyntax("comment.doc", overlay0);
+        addSyntax("constant", palette.ansiYellow);
+        addSyntax("constructor", palette.ansiBlue);
+        addSyntax("embedded", text);
+        addSyntax("emphasis", palette.ansiBlue);
+        addSyntax("emphasis.strong", palette.ansiYellow, "normal", 700);
+        addSyntax("enum", palette.ansiCyan);
+        addSyntax("function", palette.ansiBlue);
+        addSyntax("hint", palette.ansiBlue);
+        addSyntax("keyword", palette.ansiMagenta);
+        addSyntax("label", palette.ansiBlue);
+        addSyntax("link_text", palette.ansiBlue, "normal");
+        addSyntax("link_uri", palette.ansiCyan);
+        addSyntax("namespace", text);
+        addSyntax("number", palette.ansiYellow);
+        addSyntax("operator", palette.ansiCyan);
+        addSyntax("predictive", subtext0, "italic");
+        addSyntax("preproc", text);
+        addSyntax("primary", text);
+        addSyntax("property", palette.ansiRed);
+        addSyntax("punctuation", text);
+        addSyntax("punctuation.bracket", subtext0);
+        addSyntax("punctuation.delimiter", subtext0);
+        addSyntax("punctuation.list_marker", palette.ansiRed);
+        addSyntax("punctuation.markup", palette.ansiRed);
+        addSyntax("punctuation.special", palette.ansiRedBright);
+        addSyntax("selector", palette.ansiYellow);
+        addSyntax("selector.pseudo", palette.ansiBlue);
+        addSyntax("string", palette.ansiGreen);
+        addSyntax("string.escape", overlay0);
+        addSyntax("string.regex", palette.ansiYellow);
+        addSyntax("string.special", palette.ansiYellow);
+        addSyntax("string.special.symbol", palette.ansiYellow);
+        addSyntax("tag", palette.ansiBlue);
+        addSyntax("text.literal", palette.ansiGreen);
+        addSyntax("title", palette.ansiRed, "normal", 400);
+        addSyntax("type", palette.ansiCyan);
+        addSyntax("variable", text);
+        addSyntax("variable.special", palette.ansiYellow);
+        addSyntax("variant", palette.ansiBlue);
+        
+        style["syntax"] = syntax;
+
+        return style;
+    };
+
+    bool anySuccess = false;
+
+    for (const auto &target : targets) {
+        if (!Config::isMaterialYouOverrideEnabled() && target.globalTheme.isEmpty()) {
+            Logger::log("Skipping Zed export for " + target.name + ": No Global Theme set and Material You override disabled.", Logger::Warning);
+            continue;
+        }
+        
+        QString colorsPath;
+        if (Config::isMaterialYouOverrideEnabled()) {
+             QString schemeName = (target.name == "Day") ? "MaterialYouLight" : "MaterialYouDark";
+             colorsPath = QStandardPaths::locate(QStandardPaths::GenericDataLocation, "color-schemes/" + schemeName + ".colors");
+             if (colorsPath.isEmpty()) {
+                 colorsPath = QDir::homePath() + "/.local/share/color-schemes/" + schemeName + ".colors";
+             }
+        } else {
+             QString schemeName = GlobalThemeManager::getColorSchemeFromGlobal(target.globalTheme);
+             colorsPath = GlobalThemeManager::findColorSchemePath(schemeName);
+             if (colorsPath.isEmpty()) {
+                  Logger::log("Could not find color scheme file for " + target.globalTheme + " (" + schemeName + "). Using current system colors as fallback.", Logger::Warning);
+             }
+        }
+        
+        UniversalPalette extractedPalette = extractColors(colorsPath);
+        
+        QJsonObject t;
+        // Zed requires distinct names if they are part of the same file
+        // e.g "Plasma Master Light" and "Plasma Master Dark"
+        t["name"] = QString("Plasma Master %1").arg(target.name == "Day" ? "Light" : "Dark");
+        t["appearance"] = target.appearance;
+        t["style"] = generateStyle(extractedPalette, target.appearance == "dark");
+        themesArray.append(t);
+        anySuccess = true;
+    }
+
+    if (!anySuccess) return false;
+
+    themeObj["themes"] = themesArray;
+    
+    QJsonDocument doc(themeObj);
+    if (!writeToFile(themePath, doc.toJson(QJsonDocument::Indented))) {
+         return false;
+    }
+    
+    QString settingsPath = QDir::homePath() + "/.config/zed/settings.json";
+    QFile file(settingsPath);
+    QString content = "{}";
+    if (file.exists()) {
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            content = file.readAll();
+            file.close();
+        }
+    }
+    
+    backupFile(settingsPath);
+    
+    QRegularExpression themeRegex(R"("theme"\s*:\s*(?:"[^"]*"|\{[^{}]*\}))", QRegularExpression::DotMatchesEverythingOption);
+    QString newThemeBlock = R"("theme": {
+    "mode": "system",
+    "light": "Plasma Master Light",
+    "dark": "Plasma Master Dark"
+  })";
+
+    if (content.contains(themeRegex)) {
+        content.replace(themeRegex, newThemeBlock);
+    } else {
+        int lastBrace = content.lastIndexOf('}');
+        if (lastBrace != -1) {
+            QString beforeBrace = content.left(lastBrace);
+            // Replace trailing comma with nothing (if it exists immediately before the brace area)
+            // But realistically just inserting before the brace is fine.
+            bool isEmpty = beforeBrace.trimmed() == "{";
+            
+            // Clean up trailing whitespace and comma for clean insertion
+            beforeBrace = beforeBrace.trimmed();
+            if (beforeBrace.endsWith(",")) {
+                beforeBrace.chop(1);
+            }
+            
+            content = beforeBrace + (isEmpty ? "\n  " : ",\n  ") + newThemeBlock + "\n}\n";
+        } else {
+            content = "{\n  " + newThemeBlock + "\n}\n";
+        }
+    }
+    
+    QSaveFile saveFile(settingsPath);
+    if (saveFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+         QTextStream out(&saveFile);
+         out << content;
+         if (saveFile.commit()) {
+             Logger::log("Exported layout to Zed: " + settingsPath, Logger::Info);
+             return true;
+         }
+    }
+    return false;
+}
+
+bool UniversalThemeExporter::restoreZed() {
+    bool restored = false;
+    QString themePath = QDir::homePath() + "/.config/zed/themes/plasma-master.json";
+    
+    if (QFile::exists(themePath) && QFile::remove(themePath)) restored = true;
+    
+    if (restored) {
+         Logger::log("Removed Zed themes.", Logger::Info);
+    }
+    
+    QString settingsPath = QDir::homePath() + "/.config/zed/settings.json";
+    if (restoreFile(settingsPath)) restored = true;
+    
+    return restored;
 }
 

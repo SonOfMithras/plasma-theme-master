@@ -141,6 +141,17 @@ void UniversalThemePage::setupUi() {
     });
     addRow(m_vicinaeCheck, m_vicinaeRestoreBtn);
 
+    // Zed
+    m_zedCheck = new QCheckBox("Zed Editor (Theme JSON)", this);
+    m_zedRestoreBtn = new QPushButton(this);
+    connect(m_zedRestoreBtn, &QPushButton::clicked, [this]() {
+        if (QMessageBox::question(this, "Restore Zed", "Remove Plasma Master theme from Zed?") == QMessageBox::Yes) {
+            UniversalThemeExporter::restoreZed();
+            QMessageBox::information(this, "Done", "Removed Zed config.");
+        }
+    });
+    addRow(m_zedCheck, m_zedRestoreBtn);
+
     // Obsidian
     m_obsidianCheck = new QCheckBox("Obsidian (Vault Snippet)", this);
     m_obsidianRestoreBtn = new QPushButton(this);
@@ -190,6 +201,7 @@ void UniversalThemePage::setupUi() {
     connect(m_vencordCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_btopCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_vicinaeCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_zedCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
 
     connect(m_obsidianCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianPathEdit, &QLineEdit::editingFinished, this, &UniversalThemePage::saveSettings);
@@ -205,6 +217,7 @@ void UniversalThemePage::loadSettings() {
     m_vencordCheck->setChecked(Config::isVencordSyncEnabled());
     m_btopCheck->setChecked(Config::isBtopSyncEnabled());
     m_vicinaeCheck->setChecked(Config::isVicinaeSyncEnabled());
+    m_zedCheck->setChecked(Config::isZedSyncEnabled());
 
     
     m_obsidianCheck->setChecked(Config::isObsidianSyncEnabled());
@@ -223,6 +236,7 @@ void UniversalThemePage::saveSettings() {
     Config::setVencordSyncEnabled(m_vencordCheck->isChecked());
     Config::setBtopSyncEnabled(m_btopCheck->isChecked());
     Config::setVicinaeSyncEnabled(m_vicinaeCheck->isChecked());
+    Config::setZedSyncEnabled(m_zedCheck->isChecked());
 
     
     Config::setObsidianSyncEnabled(m_obsidianCheck->isChecked());
@@ -365,6 +379,11 @@ void UniversalThemePage::syncNow() {
         if (m_vicinaeCheck->isChecked()) {
             bool ok = UniversalThemeExporter::exportToVicinae(palette);
             results << QString("Vicinae: %1").arg(ok ? "OK" : "Failed");
+        }
+        
+        if (m_zedCheck->isChecked()) {
+            bool ok = UniversalThemeExporter::exportToZed(palette);
+            results << QString("Zed: %1").arg(ok ? "OK" : "Failed");
         }
         
         if (m_obsidianCheck->isChecked()) {
