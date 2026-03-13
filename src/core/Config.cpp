@@ -84,6 +84,21 @@ void Config::setMaterialYouOverrideEnabled(bool enabled) {
     KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouOverride", enabled); c.sync();
 }
 
+double Config::materialYouChroma() { return KConfig(CONFIG_FILE).group("General").readEntry("MaterialYouChroma", 1.0); }
+void Config::setMaterialYouChroma(double chroma) {
+    KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouChroma", chroma); c.sync();
+}
+
+double Config::materialYouTone() { return KConfig(CONFIG_FILE).group("General").readEntry("MaterialYouTone", 1.0); }
+void Config::setMaterialYouTone(double tone) {
+    KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouTone", tone); c.sync();
+}
+
+int Config::materialYouSchemeVariant() { return KConfig(CONFIG_FILE).group("General").readEntry("MaterialYouSchemeVariant", 5); }
+void Config::setMaterialYouSchemeVariant(int variant) {
+    KConfig c(CONFIG_FILE); c.group("General").writeEntry("MaterialYouSchemeVariant", variant); c.sync();
+}
+
 QString Config::obsidianVaultPath() { return KConfig(CONFIG_FILE).group(GROUP_UNIVERSAL).readEntry("ObsidianVaultPath", ""); }
 void Config::setObsidianVaultPath(const QString &path) {
     KConfig c(CONFIG_FILE); c.group(GROUP_UNIVERSAL).writeEntry("ObsidianVaultPath", path); c.sync();

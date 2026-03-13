@@ -41,6 +41,15 @@ public:
     static bool isMaterialYouOverrideEnabled();
     static void setMaterialYouOverrideEnabled(bool enabled);
 
+    static double materialYouChroma();
+    static void setMaterialYouChroma(double chroma);
+
+    static double materialYouTone();
+    static void setMaterialYouTone(double tone);
+
+    static int materialYouSchemeVariant();
+    static void setMaterialYouSchemeVariant(int variant);
+
     static QString obsidianVaultPath();
     static void setObsidianVaultPath(const QString &path);
     static bool isObsidianSyncEnabled();

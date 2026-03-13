@@ -380,7 +380,6 @@ void ThemeWriter::syncMaterialYouIcons(bool force) {
     QString nightIcon = GlobalThemeManager::getIconThemeFromGlobal(nightTheme);
     
     QStringList args;
-    args << "-a"; // Ensure it autostarts
     if (!dayIcon.isEmpty()) {
         args << "--iconslight" << dayIcon;
     }
@@ -388,11 +387,22 @@ void ThemeWriter::syncMaterialYouIcons(bool force) {
         args << "--iconsdark" << nightIcon;
     }
     
+    args << "--chroma-multiplier" << QString::number(Config::materialYouChroma());
+    args << "--tone-multiplier" << QString::number(Config::materialYouTone());
+    args << "--scheme-variant" << QString::number(Config::materialYouSchemeVariant());
+    
     QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
     if (exe.isEmpty()) {
         exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
     }
 
+    // 1. Update autostart silently
+    QStringList autostartArgs = args;
+    autostartArgs.prepend("-a");
+    QProcess::startDetached(exe, autostartArgs);
+
+    // 2. Start the actual background daemon
     QProcess::startDetached(exe, args);
+    
     Logger::log("Synced Material You Icons and started process: day=" + dayIcon + ", night=" + nightIcon, Logger::Info);
 }

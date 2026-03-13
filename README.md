@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.5**
+**Version 1.1.7**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single simple application, a simple and functional gui with a cli backend supporting it. The included daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -24,14 +24,11 @@ KDE Plasma recently introduced users to a native Day/Night cycle that automatica
 
 ## Screenshots
 
-![Dashboard](screenshots/dashboard-tab.png)
-*Dashboard View*
-
-![Global Theme Editor](screenshots/global-theme-editor-tab.png)
-*Global Theme Editor*
-
-![Universal Theme Sync](screenshots/universal-sync-tab.png)
-*Universal Theme Sync*
+| Dashboard | Global Theme Editor |
+| :---: | :---: |
+| ![Dashboard](screenshots/dashboard-tab.png) | ![Global Theme Editor](screenshots/global-theme-editor-tab.png) |
+| **Material You Settings** | **Universal Theme Sync** |
+| ![Material You Editor](screenshots/material-you-tab.png) | ![Universal Theme Sync](screenshots/universal-sync-tab.png) |
 
 ## Installation
 

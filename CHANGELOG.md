@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.7] - 2026-03-11
+
+### Added
+- **Material you tab**: Added a new tab to the dashboard for Material You integration - with Chroma, Tone, and Color Scheme (Scheme Variant) settings directly from the KDE Material You Colors plasmoid.
+- **Nascent Fedora Integration**: Added support for Fedora Linux.
+
+### Fixed
+- **Theme Day/Night Sync**: Fixed an issue where the theme would not sync to the correct day or night theme despite Plasma being correct. ThanX Daylight Savings Time for the confusion. (Considering a method of increased integration witht KDE's internal day/night sync)
+- **Added new Deps to install.sh**:
+  - Added `python-pipx` to the Arch Linux dependencies.
+  - Added `python-pipx` to the Debian/Ubuntu dependencies.
+
+## [1.1.6] - 2026-03-05
 ### Added
 - **Zed Code Editor Integration**:
   - Automatically generates and applies a "Plasma Master" theme to the Zed editor (`~/.config/zed/themes/plasma-master.json`).

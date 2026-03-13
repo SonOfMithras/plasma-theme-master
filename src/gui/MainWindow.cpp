@@ -67,6 +67,7 @@ void MainWindow::setupUi() {
 
   setupDashboardTab();
   setupLogsTab();
+  setupMaterialYouTab();
 
   m_mainTabs->addTab(m_dashboardTab, tr("Dashboard"));
 
@@ -77,6 +78,9 @@ void MainWindow::setupUi() {
   // Universal Theme Tab
   m_universalTab = new UniversalThemePage(this);
   m_mainTabs->addTab(m_universalTab, tr("Universal Sync"));
+  
+  // Material You Tab
+  m_mainTabs->addTab(m_materialYouTab, tr("Material You"));
 
   // Logs Tab
   m_mainTabs->addTab(m_logsTab, tr("Logs"));
@@ -446,6 +450,130 @@ void MainWindow::setupLogsTab() {
   layout->addLayout(btnLayout);
 }
 
+void MainWindow::setupMaterialYouTab() {
+  m_materialYouTab = new QWidget(this);
+  QVBoxLayout *layout = new QVBoxLayout(m_materialYouTab);
+  layout->setContentsMargins(20, 20, 20, 20);
+  layout->setSpacing(15);
+
+  QLabel *header = new QLabel("<h2><b>Material You Settings</b></h2>", m_materialYouTab);
+  layout->addWidget(header);
+
+  // Scheme Variant
+  QGroupBox *variantGroup = new QGroupBox(tr("Color Scheme"), m_materialYouTab);
+  QHBoxLayout *variantLayout = new QHBoxLayout(variantGroup);
+  m_schemeVariantCombo = new QComboBox(m_materialYouTab);
+  m_schemeVariantCombo->addItems({"Content", "Expressive", "Fidelity", "Monochrome", "Neutral", "TonalSpot", "Vibrant", "Rainbow", "FruitSalad"});
+  variantLayout->addWidget(m_schemeVariantCombo);
+  layout->addWidget(variantGroup);
+
+  // Chroma (Colorfulness)
+  QGroupBox *chromaGroup = new QGroupBox(tr("Colorfulness (Chroma Multiplier)"), m_materialYouTab);
+  QHBoxLayout *chromaLayout = new QHBoxLayout(chromaGroup);
+  
+  m_chromaSlider = new QSlider(Qt::Horizontal, m_materialYouTab);
+  m_chromaSlider->setRange(5, 100); // 0.5 to 10.0 (multiplier x 10)
+  m_chromaSpinBox = new QDoubleSpinBox(m_materialYouTab);
+  m_chromaSpinBox->setRange(0.5, 10.0);
+  m_chromaSpinBox->setSingleStep(0.1);
+  m_chromaSpinBox->setDecimals(1);
+  
+  chromaLayout->addWidget(m_chromaSlider);
+  chromaLayout->addWidget(m_chromaSpinBox);
+  layout->addWidget(chromaGroup);
+
+  // Tone (Brightness)
+  QGroupBox *toneGroup = new QGroupBox(tr("Brightness (Tone Multiplier)"), m_materialYouTab);
+  QHBoxLayout *toneLayout = new QHBoxLayout(toneGroup);
+  
+  m_toneSlider = new QSlider(Qt::Horizontal, m_materialYouTab);
+  m_toneSlider->setRange(0, 15); // 0.0 to 1.5 (multiplier x 10)
+  m_toneSpinBox = new QDoubleSpinBox(m_materialYouTab);
+  m_toneSpinBox->setRange(0.0, 1.5);
+  m_toneSpinBox->setSingleStep(0.1);
+  m_toneSpinBox->setDecimals(1);
+  
+  toneLayout->addWidget(m_toneSlider);
+  toneLayout->addWidget(m_toneSpinBox);
+  layout->addWidget(toneGroup);
+
+  // Apply Button
+  QHBoxLayout *btnLayout = new QHBoxLayout();
+  m_myApplyBtn = new QPushButton(tr("Apply Variables to Daemon"), m_materialYouTab);
+  m_myApplyBtn->setEnabled(false);
+  btnLayout->addStretch();
+  btnLayout->addWidget(m_myApplyBtn);
+  layout->addLayout(btnLayout);
+
+  layout->addStretch();
+
+  // Connections
+  connect(m_chromaSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double val) {
+      if (!m_chromaSlider->signalsBlocked()) {
+          m_chromaSlider->blockSignals(true);
+          m_chromaSlider->setValue(val * 10);
+          m_chromaSlider->blockSignals(false);
+      }
+      onMaterialYouSettingsChanged();
+  });
+  
+  connect(m_chromaSlider, &QSlider::valueChanged, this, [this](int val) {
+      if (!m_chromaSpinBox->signalsBlocked()) {
+          m_chromaSpinBox->blockSignals(true);
+          m_chromaSpinBox->setValue(val / 10.0);
+          m_chromaSpinBox->blockSignals(false);
+      }
+      onMaterialYouSettingsChanged();
+  });
+
+  connect(m_toneSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double val) {
+      if (!m_toneSlider->signalsBlocked()) {
+          m_toneSlider->blockSignals(true);
+          m_toneSlider->setValue(val * 10);
+          m_toneSlider->blockSignals(false);
+      }
+      onMaterialYouSettingsChanged();
+  });
+
+  connect(m_toneSlider, &QSlider::valueChanged, this, [this](int val) {
+      if (!m_toneSpinBox->signalsBlocked()) {
+          m_toneSpinBox->blockSignals(true);
+          m_toneSpinBox->setValue(val / 10.0);
+          m_toneSpinBox->blockSignals(false);
+      }
+      onMaterialYouSettingsChanged();
+  });
+
+  connect(m_schemeVariantCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onMaterialYouSettingsChanged);
+
+  connect(m_myApplyBtn, &QPushButton::clicked, this, &MainWindow::applyMaterialYouSettings);
+}
+
+void MainWindow::onMaterialYouSettingsChanged() {
+    double savedChroma = Config::materialYouChroma();
+    double savedTone = Config::materialYouTone();
+    int savedVariant = Config::materialYouSchemeVariant();
+    
+    bool changed = (qAbs(m_chromaSpinBox->value() - savedChroma) > 0.01) ||
+                   (qAbs(m_toneSpinBox->value() - savedTone) > 0.01) ||
+                   (m_schemeVariantCombo->currentIndex() != savedVariant);
+                   
+    m_myApplyBtn->setEnabled(changed);
+}
+
+void MainWindow::applyMaterialYouSettings() {
+    Config::setMaterialYouChroma(m_chromaSpinBox->value());
+    Config::setMaterialYouTone(m_toneSpinBox->value());
+    Config::setMaterialYouSchemeVariant(m_schemeVariantCombo->currentIndex());
+    
+    m_myApplyBtn->setEnabled(false);
+    
+    if (Config::isMaterialYouOverrideEnabled()) {
+        QProcess::execute("killall", QStringList() << "kde-material-you-colors");
+        ThemeWriter::syncMaterialYouIcons(true);
+    }
+}
+
 void MainWindow::updateLogs() {
   if (m_mainTabs->currentWidget() != m_logsTab)
     return; 
@@ -528,6 +656,30 @@ void MainWindow::loadSettings() {
   // Auto Switch
   m_autoCheck->setChecked(ThemeReader::isAutoLookAndFeel());
   m_materialYouCheck->setChecked(Config::isMaterialYouOverrideEnabled());
+  
+  // Material You Sliders/SpinBoxes/ComboBox
+  bool bC = m_chromaSpinBox->blockSignals(true);
+  bool bT = m_toneSpinBox->blockSignals(true);
+  bool bV = m_schemeVariantCombo->blockSignals(true);
+  double savedChroma = Config::materialYouChroma();
+  double savedTone = Config::materialYouTone();
+  int savedVariant = Config::materialYouSchemeVariant();
+  
+  m_chromaSpinBox->setValue(savedChroma);
+  m_chromaSlider->setValue(qRound(savedChroma * 10));
+  
+  m_toneSpinBox->setValue(savedTone);
+  m_toneSlider->setValue(qRound(savedTone * 10));
+
+  if (savedVariant >= 0 && savedVariant < m_schemeVariantCombo->count()) {
+      m_schemeVariantCombo->setCurrentIndex(savedVariant);
+  }
+  
+  m_chromaSpinBox->blockSignals(bC);
+  m_toneSpinBox->blockSignals(bT);
+  m_schemeVariantCombo->blockSignals(bV);
+
+  m_myApplyBtn->setEnabled(false);
 
   m_autoCheck->blockSignals(bA);
   m_materialYouCheck->blockSignals(bM);
@@ -546,14 +698,6 @@ void MainWindow::saveSettings() {
   Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
   if (m_materialYouCheck->isChecked()) {
       QProcess::execute("killall", QStringList() << "kde-material-you-colors");
-      
-      QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
-      if (exe.isEmpty()) {
-          exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
-      }
-      QProcess::startDetached(exe, QStringList());
-      Logger::log("Started kde-material-you-colors background process.", Logger::Info);
-      
       ThemeWriter::syncMaterialYouIcons(true);
   } else {
       QProcess::execute("killall", QStringList() << "kde-material-you-colors");

@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSlider>
+#include <QDoubleSpinBox>
 #include <QTabWidget>
 #include <QTextEdit>
 #include <QTimer>
@@ -64,6 +65,8 @@ private Q_SLOTS:
   void upgradeMaterialYou();
   void toggleMaterialYouAutostart(bool checked);
   void promptMaterialYouInstall();
+  void applyMaterialYouSettings();
+  void onMaterialYouSettingsChanged();
 
 private:
   void setupUi();
@@ -72,11 +75,13 @@ private:
   void loadSettings();
   void setupDashboardTab();
   void setupLogsTab(); // Tabs
+  void setupMaterialYouTab();
   QTabWidget *m_mainTabs;
   QWidget *m_dashboardTab;
   QWidget *m_logsTab;
   GlobalThemeEditor *m_globalEditorTab;
-  QWidget *m_universalTab; // We'll instantiate the class as a widget
+  QWidget *m_universalTab; 
+  QWidget *m_materialYouTab;
 
 
   QAction *m_daemonAction;
@@ -107,6 +112,14 @@ private:
   QPushButton *m_applyNightBtn;
   QPushButton *m_applyTargetBtn;
   QPushButton *m_refreshButton;
+
+  // --- Material You Tab Widgets ---
+  QComboBox *m_schemeVariantCombo;
+  QSlider *m_chromaSlider;
+  QDoubleSpinBox *m_chromaSpinBox;
+  QSlider *m_toneSlider;
+  QDoubleSpinBox *m_toneSpinBox;
+  QPushButton *m_myApplyBtn;
 
   // --- Log Widgets ---
   QTextEdit *m_logViewer;

@@ -147,7 +147,6 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     out << "Day Start: " << dayStartStr << "\n";
     out << "Night Start: " << dayEndStr << "\n";
 
-    // Add Flatpak status to general status
     out << "\n[Flatpak]\n";
     out << "Status: " << FlatpakManager::flatpakStatus() << "\n";
 
@@ -586,9 +585,10 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         }
         
         // Flatpak (Independent configuration)
+        QString targetFlatpak;
         if (!ThemeReader::flatpakFollowsGtk()) {
              QString currentFlatpak = FlatpakManager::getFlatpakGtkTheme();
-             QString targetFlatpak = isDay ? ThemeReader::dayFlatpakTheme() : ThemeReader::nightFlatpakTheme();
+             targetFlatpak = isDay ? ThemeReader::dayFlatpakTheme() : ThemeReader::nightFlatpakTheme();
              
              if (!targetFlatpak.isEmpty() && currentFlatpak != targetFlatpak) {
                  Logger::log("Daemon: Flatpak theme mismatch detected. Applying " + targetFlatpak, Logger::Info);
@@ -601,7 +601,23 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         // technically not change but good to be sure)
         if (needUpdate) {
           ThemeWriter::setAutoLookAndFeel(true);
-          UniversalThemeExporter::syncAll();
+          
+          // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
+          QTimer::singleShot(2000, qApp, [targetGlobal, targetKvantum, targetGtk, targetKlassy, targetFlatpak, isDay]() {
+              Logger::log("Daemon: Performing second pass to fix contrast issues...", Logger::Info);
+              if (!targetGlobal.isEmpty()) {
+                  ThemeWriter::applyGlobalTheme(targetGlobal, true);
+                  if (Config::isMaterialYouOverrideEnabled()) {
+                      ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark", true);
+                  }
+              }
+              if (!targetKvantum.isEmpty()) ThemeWriter::setKvantumTheme(targetKvantum, true);
+              if (!targetGtk.isEmpty()) ThemeWriter::setGtkTheme(targetGtk, true);
+              if (!targetKlassy.isEmpty()) ThemeWriter::setKlassyPreset(targetKlassy, true);
+              if (!targetFlatpak.isEmpty()) FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
+              
+              UniversalThemeExporter::syncAll();
+          });
         }
       }
     };

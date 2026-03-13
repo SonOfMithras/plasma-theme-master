@@ -95,14 +95,18 @@ QPair<QDateTime, QDateTime> Solar::calculateSunTimes(double lat, double lon, con
         if (UT < 0) UT += 24.0;
         
         // Convert to QDateTime (UTC)
-        int totalSeconds = static_cast<int>(UT * 3600.0);
-        QTime time(0, 0, 0);
-        time = time.addSecs(totalSeconds);
-        
-        QDateTime dt(date, time, QTimeZone::utc());
+        // We use addSecs on a base datetime to handle UT > 24 or UT < 0 correctly
+        QDateTime dt(date, QTime(0, 0, 0), QTimeZone::utc());
+        dt = dt.addSecs(static_cast<qint64>(UT * 3600.0));
         
         if (event == "sunrise") sunrise = dt;
         else sunset = dt;
+    }
+
+    // Sanity check: Sunset must be after sunrise.
+    // In western timezones, sunset can often be after midnight UTC of the next day.
+    if (sunrise.isValid() && sunset.isValid() && sunset < sunrise) {
+        sunset = sunset.addDays(1);
     }
     
     return qMakePair(sunrise, sunset);

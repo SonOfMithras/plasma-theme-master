@@ -58,7 +58,7 @@ check_dependencies() {
             fi
         fi
         
-        DEPENDENCIES="build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev libkf6config-dev libkf6coreaddons-dev"
+        DEPENDENCIES="build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev libkf6config-dev libkf6coreaddons-dev libkf6colorscheme-dev pipx"
         MISSING_DEPS=""
 
         for dep in $DEPENDENCIES; do
@@ -83,9 +83,8 @@ check_dependencies() {
     elif command -v pacman >/dev/null 2>&1; then
         print_info "Detected Arch-based system (pacman found)."
         
-        # Check standard dependencies
-        # Updated to use 'kconfig' and 'kcoreaddons' as requested
-        ARCH_DEPENDENCIES="base-devel cmake extra-cmake-modules qt6-base qt6-declarative kconfig kcoreaddons"
+        # Check ARCH dependencies
+        ARCH_DEPENDENCIES="base-devel cmake extra-cmake-modules qt6-base qt6-declarative kconfig kcoreaddons kcolorscheme python-pipx"
         MISSING_ARCH_DEPS=""
         
         for dep in $ARCH_DEPENDENCIES; do
@@ -130,6 +129,40 @@ check_dependencies() {
                  else
                      print_error "No AUR helper (yay/paru) found. Please install 'libadwaita-without-adwaita' manually."
                  fi
+             fi
+        fi
+    elif command -v dnf >/dev/null 2>&1; then
+        print_info "Detected Fedora-based system (dnf found)."
+        
+        FEDORA_DEPENDENCIES="gcc-c++ cmake extra-cmake-modules qt6-qtbase-devel qt6-qtdeclarative-devel kf6-kconfig-devel kf6-kcoreaddons-devel kf6-kcolorscheme-devel pipx"
+        MISSING_FEDORA_DEPS=""
+        
+        for dep in $FEDORA_DEPENDENCIES; do
+            if ! dnf info installed "$dep" >/dev/null 2>&1; then
+                MISSING_FEDORA_DEPS="$MISSING_FEDORA_DEPS $dep"
+            fi
+        done
+        
+        if [ -n "$MISSING_FEDORA_DEPS" ]; then
+             print_warning "The following dependencies are missing: $MISSING_FEDORA_DEPS"
+             if ask_confirm "Do you want to install them now?"; then
+                 print_info "Installing dependencies (requires sudo)..."
+                 sudo dnf install -y $MISSING_FEDORA_DEPS
+                 print_success "Dependencies installed."
+             else
+                 print_warning "Build may fail without these dependencies."
+             fi
+        else
+            print_success "All standard dependencies appear to be installed."
+        fi
+
+        # Check for Kvantum Manager
+        if ! command -v kvantummanager >/dev/null 2>&1; then
+             print_warning "Kvantum Manager is not installed."
+             if ask_confirm "Would you like to install Kvantum Manager (available in standard repo)?"; then
+                 print_info "Installing Kvantum Manager..."
+                 sudo dnf install -y kvantum
+                 print_success "Kvantum Manager installed."
              fi
         fi
     fi
