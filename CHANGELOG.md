@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.8] - 2026-03-18
+
+### Added
+- **Native KWin Night Light Integration**:
+  - The application now natively reads KDE Plasma's Night Color settings directly via D-Bus instead of relying exclusively on calculating sunrise/sunset times using location coordinates.
+  - Location calculation acts as a smooth fallback system.
+- **Improved Day/Night Cycle Configuration**:
+  - Respect Native Plasma Day-Night Cycle setting (Currently works for Custom Long & Lat as well as setting Custom Times)
+  - Added new intuitive sliders for configuring global Day and Night Color Temperatures. 
+  - Added a button to natively launch KDE's System Settings for Day-Night Cycle directly from the application.
+
+### Fixed
+- **Universal Sync Path Resolution**: Fixed an issue where exporting themes to standalone IDEs like Antigravity failed because their local sync path was removed during recent configuration abstraction.
+- **KDE AutomaticLookAndFeel Desynchronization**: Resolved a significant defect where pressing "Apply Target" or letting the daemon re-apply themes would permanently sever KDE's native `AutomaticLookAndFeel` property, preventing further time-based transitions.
+- **Double Pass Stability**: Refactored the delayed second-pass execution pipeline into a stable single-pass loop, improving system response stability and preventing unintended race conditions.
+
 ## [1.1.7] - 2026-03-11
 
 ### Added

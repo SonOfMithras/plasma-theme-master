@@ -255,6 +255,7 @@ bool UniversalThemeExporter::exportToVSCode(const UniversalPalette &palette) {
       QDir::homePath() + "/.config/Code/User/settings.json",
       QDir::homePath() + "/.config/Code - OSS/User/settings.json",
       QDir::homePath() + "/.config/VSCodium/User/settings.json",
+      QDir::homePath() + "/.config/Antigravity/User/settings.json",
       QDir::currentPath() + "/.vscode/settings.json"};
 
   bool anySuccess = false;

@@ -1,21 +1,21 @@
 #include "CLIHandler.h"
+#include "Config.h"
 #include "FlatpakManager.h"
 #include "GlobalThemeManager.h"
 #include "Logger.h"
 #include "Solar.h"
 #include "ThemeReader.h"
-#include "UniversalThemeExporter.h"
 #include "ThemeWriter.h"
-#include "Config.h"
+#include "UniversalThemeExporter.h"
 #include <QCoreApplication>
-#include <QDir>
 #include <QDateTime>
 #include <QDebug>
+#include <QDir>
+#include <QFileSystemWatcher>
 #include <QProcessEnvironment>
 #include <QTextStream>
 #include <QThread>
 #include <QTimer>
-#include <QFileSystemWatcher>
 #include <iostream>
 
 // Forward declaration if needed, or include appropriate headers
@@ -78,7 +78,8 @@ void CLIHandler::printHelp() {
       << "  sync-universal (or sync-now)\n"
       << "                Sync enabled universal apps immediately.\n\n"
       << "  sync-enable <app>\n"
-      << "                Enable universal sync for an app (vscode, firefox, discord, kitty, obsidian, zed).\n"
+      << "                Enable universal sync for an app (vscode, firefox, "
+         "discord, kitty, obsidian, zed).\n"
       << "                WARNING: backups will be created.\n\n"
       << "  sync-disable <app>\n"
       << "                Disable universal sync for an app.\n\n"
@@ -138,8 +139,15 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     out << "GTK Light: " << ThemeReader::dayGtkTheme() << "\n";
     out << "Klassy Day Preset: " << ThemeReader::dayKlassyPreset() << "\n";
     out << "Klassy Night Preset: " << ThemeReader::nightKlassyPreset() << "\n";
-    out << "Last Applied Klassy: " << ThemeReader::lastAppliedKlassyPreset() << "\n";
-    out << "\n[Solar]\n";
+    out << "Last Applied Klassy: " << ThemeReader::lastAppliedKlassyPreset()
+        << "\n";
+    out << "\n[Night Color]\n";
+    out << "KWin Driving State: "
+        << (ThemeReader::isKWinDaytime() ? "Day" : "Night") << "\n";
+    out << "Day Temperature: " << ThemeReader::kwinDayTemperature() << "\n";
+    out << "Night Temperature: " << ThemeReader::kwinNightTemperature() << "\n";
+
+    out << "\n[Solar Backup]\n";
     out << "Location: " << lat << ", " << lon << "\n";
     out << "Sunrise: " << sunriseStr << "\n";
     out << "Sunset: " << sunsetStr << "\n";
@@ -233,10 +241,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
     if (enabled) {
       // 1. Calculate correct theme
-      double lat = ThemeReader::nativeLatitude();
-      double lon = ThemeReader::nativeLongitude();
-      int offset = ThemeReader::solarPadding();
-      bool isDay = Solar::isDaytime(lat, lon, offset);
+      bool isDay = ThemeReader::isKWinDaytime();
 
       QString targetGlobal;
       QString targetKvantum;
@@ -254,7 +259,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                   << "): " << qPrintable(targetGlobal) << "\n";
         ThemeWriter::applyGlobalTheme(targetGlobal);
         if (Config::isMaterialYouOverrideEnabled()) {
-             ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+          ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
+                                              : "MaterialYouDark");
         }
         // Kvantum might be reset by Global Theme, so always apply it AFTER
       }
@@ -274,7 +280,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         ThemeWriter::setGtkTheme(targetGtk);
       }
 
-      // Enable Auto AFTER applying themes, as applyGlobalTheme might reset it.
+      // Enable Auto AFTER applying themes
+      ThemeWriter::enforceKWinNightColorActive();
       ThemeWriter::setAutoLookAndFeel(true);
       UniversalThemeExporter::syncAll();
       std::cout << "AutomaticLookAndFeel set to: True\n";
@@ -401,21 +408,21 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cerr << "Warning: No Default Dark Global Theme.\n";
 
     ThemeWriter::setAutoLookAndFeel(false);
-    
+
     auto applyTheme = [&]() {
-        if (!global.isEmpty()) {
-            ThemeWriter::applyGlobalTheme(global, true);
-            if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouDark", true);
-            }
+      if (!global.isEmpty()) {
+        ThemeWriter::applyGlobalTheme(global, true);
+        if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme("MaterialYouDark", true);
         }
-        if (!kvantum.isEmpty()) {
-          ThemeWriter::setKvantumTheme(kvantum, true);
-        }
-        QString gtk = ThemeReader::nightGtkTheme();
-        if (!gtk.isEmpty()) {
-          ThemeWriter::setGtkTheme(gtk, true);
-        }
+      }
+      if (!kvantum.isEmpty()) {
+        ThemeWriter::setKvantumTheme(kvantum, true);
+      }
+      QString gtk = ThemeReader::nightGtkTheme();
+      if (!gtk.isEmpty()) {
+        ThemeWriter::setGtkTheme(gtk, true);
+      }
     };
 
     std::cout << "Applying Default Dark Themes...\n";
@@ -425,10 +432,10 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     QEventLoop loop;
     QTimer::singleShot(2000, &loop, &QEventLoop::quit);
     loop.exec();
-    
+
     UniversalThemeExporter::syncAll();
     std::cout << "Done.\n";
-    
+
     return 0;
   } else if (command == "set-static-light") {
     QString global = ThemeReader::defaultLightTheme();
@@ -438,21 +445,21 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cerr << "Warning: No Default Light Global Theme.\n";
 
     ThemeWriter::setAutoLookAndFeel(false);
-    
+
     auto applyTheme = [&]() {
-        if (!global.isEmpty()) {
-            ThemeWriter::applyGlobalTheme(global, true);
-            if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouLight", true);
-            }
+      if (!global.isEmpty()) {
+        ThemeWriter::applyGlobalTheme(global, true);
+        if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme("MaterialYouLight", true);
         }
-        if (!kvantum.isEmpty()) {
-          ThemeWriter::setKvantumTheme(kvantum, true);
-        }
-        QString gtk = ThemeReader::dayGtkTheme();
-        if (!gtk.isEmpty()) {
-          ThemeWriter::setGtkTheme(gtk, true);
-        }
+      }
+      if (!kvantum.isEmpty()) {
+        ThemeWriter::setKvantumTheme(kvantum, true);
+      }
+      QString gtk = ThemeReader::dayGtkTheme();
+      if (!gtk.isEmpty()) {
+        ThemeWriter::setGtkTheme(gtk, true);
+      }
     };
 
     std::cout << "Applying Default Light Themes...\n";
@@ -462,7 +469,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     QEventLoop loop;
     QTimer::singleShot(2000, &loop, &QEventLoop::quit);
     loop.exec();
-    
+
     UniversalThemeExporter::syncAll();
     std::cout << "Done.\n";
 
@@ -495,44 +502,46 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
     // Monitor setup for automatic theme switching and universal sync triggers
     QTimer *solarTimer = new QTimer(qApp);
-    
+
     // We create a separate debounce timer for file watcher events
     QTimer *syncDebounceTimer = new QTimer(qApp);
     syncDebounceTimer->setSingleShot(true);
     syncDebounceTimer->setInterval(2000); // 2000ms debounce
-    
+
     QObject::connect(syncDebounceTimer, &QTimer::timeout, qApp, []() {
-        Logger::log("Daemon: Triggering syncAll due to kdeglobals change (MaterialYou/Color sync)", Logger::Info);
-        UniversalThemeExporter::syncAll();
+      Logger::log("Daemon: Triggering syncAll due to kdeglobals change "
+                  "(MaterialYou/Color sync)",
+                  Logger::Info);
+      UniversalThemeExporter::syncAll();
     });
 
     QFileSystemWatcher *watcher = new QFileSystemWatcher(qApp);
     QString kdeGlobalsFile = QDir::homePath() + "/.config/kdeglobals";
     // Add the file to watch for changes
     if (QFile::exists(kdeGlobalsFile)) {
-        watcher->addPath(kdeGlobalsFile);
+      watcher->addPath(kdeGlobalsFile);
     }
-    
-    QObject::connect(watcher, &QFileSystemWatcher::fileChanged, syncDebounceTimer, [watcher, kdeGlobalsFile, syncDebounceTimer](const QString &path) {
-        (void)path;
-        // Restart the timer. If it receives multiple signals quickly, it will only fire once after 2 seconds.
-        syncDebounceTimer->start();
-        
-        // Qt sometimes removes a watched file if it's replaced (like some text editors do).
-        // Let's ensure it's re-added if it was removed.
-        if (!watcher->files().contains(kdeGlobalsFile) && QFile::exists(kdeGlobalsFile)) {
-             watcher->addPath(kdeGlobalsFile);
-        }
-    });
+
+    QObject::connect(
+        watcher, &QFileSystemWatcher::fileChanged, syncDebounceTimer,
+        [watcher, kdeGlobalsFile, syncDebounceTimer](const QString &path) {
+          (void)path;
+          // Restart the timer. If it receives multiple signals quickly, it will
+          // only fire once after 2 seconds.
+          syncDebounceTimer->start();
+
+          // Qt sometimes removes a watched file if it's replaced (like some
+          // text editors do). Let's ensure it's re-added if it was removed.
+          if (!watcher->files().contains(kdeGlobalsFile) &&
+              QFile::exists(kdeGlobalsFile)) {
+            watcher->addPath(kdeGlobalsFile);
+          }
+        });
 
     auto performSolarCheck = []() {
       // 1. Check if Auto is enabled
       if (ThemeReader::isAutoLookAndFeel()) {
-        double lat = ThemeReader::nativeLatitude();
-        double lon = ThemeReader::nativeLongitude();
-        int offset = ThemeReader::solarPadding();
-
-        bool isDay = Solar::isDaytime(lat, lon, offset);
+        bool isDay = ThemeReader::isKWinDaytime();
 
         QString currentGlobal = ThemeReader::currentGlobalTheme();
         QString targetGlobal = isDay ? ThemeReader::defaultLightTheme()
@@ -546,7 +555,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                       Logger::Info);
           ThemeWriter::applyGlobalTheme(targetGlobal);
           if (Config::isMaterialYouOverrideEnabled()) {
-               ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark");
+            ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
+                                                : "MaterialYouDark");
           }
           needUpdate = true;
         }
@@ -577,36 +587,70 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
         // Klassy Window Decorations
         QString currentKlassy = ThemeReader::lastAppliedKlassyPreset();
-        QString targetKlassy = isDay ? ThemeReader::dayKlassyPreset() : ThemeReader::nightKlassyPreset();
+        QString targetKlassy = isDay ? ThemeReader::dayKlassyPreset()
+                                     : ThemeReader::nightKlassyPreset();
         if (!targetKlassy.isEmpty() && currentKlassy != targetKlassy) {
-            Logger::log("Daemon: Klassy preset mismatch detected. Applying " + targetKlassy, Logger::Info);
-            ThemeWriter::setKlassyPreset(targetKlassy);
-            needUpdate = true;
+          Logger::log("Daemon: Klassy preset mismatch detected. Applying " +
+                          targetKlassy,
+                      Logger::Info);
+          ThemeWriter::setKlassyPreset(targetKlassy);
+          needUpdate = true;
         }
-        
+
         // Flatpak (Independent configuration)
         QString targetFlatpak;
         if (!ThemeReader::flatpakFollowsGtk()) {
-             QString currentFlatpak = FlatpakManager::getFlatpakGtkTheme();
-             targetFlatpak = isDay ? ThemeReader::dayFlatpakTheme() : ThemeReader::nightFlatpakTheme();
-             
-             if (!targetFlatpak.isEmpty() && currentFlatpak != targetFlatpak) {
-                 Logger::log("Daemon: Flatpak theme mismatch detected. Applying " + targetFlatpak, Logger::Info);
-                 FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
-                 // No need to set needUpdate=true as this doesn't affect system auto l&f state directly
-             }
+          QString currentFlatpak = FlatpakManager::getFlatpakGtkTheme();
+          targetFlatpak = isDay ? ThemeReader::dayFlatpakTheme()
+                                : ThemeReader::nightFlatpakTheme();
+
+          if (!targetFlatpak.isEmpty() && currentFlatpak != targetFlatpak) {
+            Logger::log("Daemon: Flatpak theme mismatch detected. Applying " +
+                            targetFlatpak,
+                        Logger::Info);
+            FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
+            // No need to set needUpdate=true as this doesn't affect system auto
+            // l&f state directly
+          }
         }
 
-        // If we updated anything, ensure Auto flag remains True (it might
-        // technically not change but good to be sure)
+        // If we updated anything, ensure Auto flag remains True
         if (needUpdate) {
+          ThemeWriter::enforceKWinNightColorActive();
           ThemeWriter::setAutoLookAndFeel(true);
-          
-          // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
+
+          // Double-pass: Solid delay to let first pass settle, then apply again
+          // to fix contrast issues
+          QTimer::singleShot(
+              2000, qApp,
+              [targetGlobal, targetKvantum, targetGtk, targetKlassy,
+               targetFlatpak, isDay]() {
+                Logger::log(
+                    "Daemon: Performing second pass to fix contrast issues...",
+                    Logger::Info);
+                if (!targetGlobal.isEmpty()) {
+                  ThemeWriter::applyGlobalTheme(targetGlobal, true);
+                  ThemeWriter::setAutoLookAndFeel(true);
+                  if (Config::isMaterialYouOverrideEnabled()) {
+                    ThemeWriter::applyColorScheme(
+                        isDay ? "MaterialYouLight" : "MaterialYouDark", true);
+                  }
+                }
+                if (!targetKvantum.isEmpty())
+                  ThemeWriter::setKvantumTheme(targetKvantum, true);
+                if (!targetGtk.isEmpty())
+                  ThemeWriter::setGtkTheme(targetGtk, true);
+                if (!targetKlassy.isEmpty())
+                  ThemeWriter::setKlassyPreset(targetKlassy, true);
+                if (!targetFlatpak.isEmpty())
+                  FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
+
+                // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
           QTimer::singleShot(2000, qApp, [targetGlobal, targetKvantum, targetGtk, targetKlassy, targetFlatpak, isDay]() {
               Logger::log("Daemon: Performing second pass to fix contrast issues...", Logger::Info);
               if (!targetGlobal.isEmpty()) {
                   ThemeWriter::applyGlobalTheme(targetGlobal, true);
+                  ThemeWriter::setAutoLookAndFeel(true);
                   if (Config::isMaterialYouOverrideEnabled()) {
                       ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark", true);
                   }
@@ -618,15 +662,16 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
               
               UniversalThemeExporter::syncAll();
           });
+              });
         }
       }
     };
 
     QObject::connect(solarTimer, &QTimer::timeout, qApp, performSolarCheck);
-    
+
     // Perform initial check immediately
     performSolarCheck();
-    
+
     // Start interval timer
     solarTimer->start(60000); // 60 seconds
 
@@ -637,106 +682,148 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     return WEXITSTATUS(ret);
   } else if (command == "sync-universal" || command == "sync-now") {
     std::cout << "Syncing universal theme to configured apps...\n";
-    
+
     // 1. Run standard sync for all enabled apps
     UniversalThemeExporter::syncAll();
 
     // 2. Extra CLI-only Check: Workspace
     if (Config::isVSCodeSyncEnabled()) {
-        QDir currentDir = QDir::current();
-        QStringList workspaceFiles = currentDir.entryList(QStringList() << "*.code-workspace", QDir::Files);
-        if (currentDir.exists(".vscode") || currentDir.exists("CMakeLists.txt") || currentDir.exists("package.json") || !workspaceFiles.isEmpty()) {
-             UniversalPalette palette = UniversalThemeExporter::extractColors();
-             QString workspaceSettings = currentDir.absolutePath() + "/.vscode/settings.json";
-             UniversalThemeExporter::exportToVSCodeJSON(workspaceSettings, palette);
-             Logger::log("Detected workspace, exported to: " + workspaceSettings, Logger::Info);
-        }
+      QDir currentDir = QDir::current();
+      QStringList workspaceFiles = currentDir.entryList(
+          QStringList() << "*.code-workspace", QDir::Files);
+      if (currentDir.exists(".vscode") || currentDir.exists("CMakeLists.txt") ||
+          currentDir.exists("package.json") || !workspaceFiles.isEmpty()) {
+        UniversalPalette palette = UniversalThemeExporter::extractColors();
+        QString workspaceSettings =
+            currentDir.absolutePath() + "/.vscode/settings.json";
+        UniversalThemeExporter::exportToVSCodeJSON(workspaceSettings, palette);
+        Logger::log("Detected workspace, exported to: " + workspaceSettings,
+                    Logger::Info);
+      }
     }
-    
+
     std::cout << "Sync completed. Check logs for details.\n";
-    
+
     return 0;
   } else if (command == "sync-enable") {
-      if (args.size() < 2) { std::cerr << "Usage: sync-enable <app>\n"; return 1; }
-      QString app = args.at(1).toLower();
-      if (app == "vscode") {
-          std::cout << "Enabling VS Code Sync. WARNING: modification of settings.json. Backups will be created.\n";
-          Config::setVSCodeSyncEnabled(true);
-      } else if (app == "firefox") {
-          std::cout << "Enabling Firefox Sync. WARNING: modification of userChrome.css. Backups will be created.\n";
-          Config::setFirefoxSyncEnabled(true);
-      } else if (app == "discord") {
-          std::cout << "Enabling BetterDiscord Sync. WARNING: modification of theme css.\n";
-          Config::setBetterDiscordSyncEnabled(true);
-      } else if (app == "kitty") {
-          std::cout << "Enabling Kitty Sync. WARNING: modification of kitty.conf include.\n";
-          Config::setKittySyncEnabled(true);
-      } else if (app == "obsidian") {
-           std::cout << "Enabling Obsidian Sync.\n";
-           Config::setObsidianSyncEnabled(true);
-      } else if (app == "zed") {
-           std::cout << "Enabling Zed Sync. WARNING: modification of Zed settings.json and themes.\n";
-           Config::setZedSyncEnabled(true);
-      } else {
-          std::cerr << "Unknown app: " << qPrintable(app) << "\n";
-          return 1;
-      }
-      std::cout << "Enabled sync for " << qPrintable(app) << "\n";
-      return 0;
+    if (args.size() < 2) {
+      std::cerr << "Usage: sync-enable <app>\n";
+      return 1;
+    }
+    QString app = args.at(1).toLower();
+    if (app == "vscode") {
+      std::cout << "Enabling VS Code Sync. WARNING: modification of "
+                   "settings.json. Backups will be created.\n";
+      Config::setVSCodeSyncEnabled(true);
+    } else if (app == "firefox") {
+      std::cout << "Enabling Firefox Sync. WARNING: modification of "
+                   "userChrome.css. Backups will be created.\n";
+      Config::setFirefoxSyncEnabled(true);
+    } else if (app == "discord") {
+      std::cout << "Enabling BetterDiscord Sync. WARNING: modification of "
+                   "theme css.\n";
+      Config::setBetterDiscordSyncEnabled(true);
+    } else if (app == "kitty") {
+      std::cout << "Enabling Kitty Sync. WARNING: modification of kitty.conf "
+                   "include.\n";
+      Config::setKittySyncEnabled(true);
+    } else if (app == "obsidian") {
+      std::cout << "Enabling Obsidian Sync.\n";
+      Config::setObsidianSyncEnabled(true);
+    } else if (app == "zed") {
+      std::cout << "Enabling Zed Sync. WARNING: modification of Zed "
+                   "settings.json and themes.\n";
+      Config::setZedSyncEnabled(true);
+    } else {
+      std::cerr << "Unknown app: " << qPrintable(app) << "\n";
+      return 1;
+    }
+    std::cout << "Enabled sync for " << qPrintable(app) << "\n";
+    return 0;
   } else if (command == "sync-disable") {
-      if (args.size() < 2) { std::cerr << "Usage: sync-disable <app>\n"; return 1; }
-      QString app = args.at(1).toLower();
-      if (app == "vscode") Config::setVSCodeSyncEnabled(false);
-      else if (app == "firefox") Config::setFirefoxSyncEnabled(false);
-      else if (app == "discord") Config::setBetterDiscordSyncEnabled(false);
-      else if (app == "kitty") Config::setKittySyncEnabled(false);
-      else if (app == "obsidian") Config::setObsidianSyncEnabled(false);
-      else if (app == "zed") Config::setZedSyncEnabled(false);
-      else { std::cerr << "Unknown app: " << qPrintable(app) << "\n"; return 1; }
-      std::cout << "Disabled sync for " << qPrintable(app) << "\n";
-      return 0;
-   } else if (command == "sync-list") {
-       std::cout << "Universal Sync Status:\n";
-       std::cout << "  VS Code: " << (Config::isVSCodeSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  Firefox: " << (Config::isFirefoxSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  BetterDiscord: " << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  Kitty: " << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  Obsidian: " << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       std::cout << "  Zed: " << (Config::isZedSyncEnabled() ? "Enabled" : "Disabled") << "\n";
-       return 0;
-    } else if (command == "sync-restore") {
-        if (args.size() < 2) { std::cerr << "Usage: sync-restore <app>\n"; return 1; }
-        QString app = args.at(1).toLower();
-        bool success = false;
-        
-        if (app == "vscode") {
-            std::cout << "Restoring VS Code settings...\n";
-            success = UniversalThemeExporter::restoreVSCode();
-        } else if (app == "firefox") {
-             std::cout << "Restoring Firefox (Partial)...\n";
-             success = UniversalThemeExporter::restoreFirefox();
-        } else if (app == "discord") {
-             std::cout << "Restoring BetterDiscord...\n";
-             success = UniversalThemeExporter::restoreBetterDiscord();
-        } else if (app == "kitty") {
-            std::cout << "Restoring Kitty config...\n";
-            success = UniversalThemeExporter::restoreKitty();
-        } else if (app == "obsidian") {
-            std::cout << "Restoring Obsidian snippet...\n";
-            success = UniversalThemeExporter::restoreObsidian();
-        } else if (app == "zed") {
-            std::cout << "Restoring Zed config...\n";
-            success = UniversalThemeExporter::restoreZed();
-        } else {
-            std::cout << "Unknown app or restore not supported: " << qPrintable(app) << "\n";
-            return 1;
-        }
-        
-        if (success) std::cout << "Restore successful.\n";
-        else std::cout << "Restore finished (some files may not have existed or failed).\n";
-        
-        return 0;
-   } else if (command == "clone-global") {
+    if (args.size() < 2) {
+      std::cerr << "Usage: sync-disable <app>\n";
+      return 1;
+    }
+    QString app = args.at(1).toLower();
+    if (app == "vscode")
+      Config::setVSCodeSyncEnabled(false);
+    else if (app == "firefox")
+      Config::setFirefoxSyncEnabled(false);
+    else if (app == "discord")
+      Config::setBetterDiscordSyncEnabled(false);
+    else if (app == "kitty")
+      Config::setKittySyncEnabled(false);
+    else if (app == "obsidian")
+      Config::setObsidianSyncEnabled(false);
+    else if (app == "zed")
+      Config::setZedSyncEnabled(false);
+    else {
+      std::cerr << "Unknown app: " << qPrintable(app) << "\n";
+      return 1;
+    }
+    std::cout << "Disabled sync for " << qPrintable(app) << "\n";
+    return 0;
+  } else if (command == "sync-list") {
+    std::cout << "Universal Sync Status:\n";
+    std::cout << "  VS Code: "
+              << (Config::isVSCodeSyncEnabled() ? "Enabled" : "Disabled")
+              << "\n";
+    std::cout << "  Firefox: "
+              << (Config::isFirefoxSyncEnabled() ? "Enabled" : "Disabled")
+              << "\n";
+    std::cout << "  BetterDiscord: "
+              << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled")
+              << "\n";
+    std::cout << "  Kitty: "
+              << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled")
+              << "\n";
+    std::cout << "  Obsidian: "
+              << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled")
+              << "\n";
+    std::cout << "  Zed: "
+              << (Config::isZedSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+    return 0;
+  } else if (command == "sync-restore") {
+    if (args.size() < 2) {
+      std::cerr << "Usage: sync-restore <app>\n";
+      return 1;
+    }
+    QString app = args.at(1).toLower();
+    bool success = false;
+
+    if (app == "vscode") {
+      std::cout << "Restoring VS Code settings...\n";
+      success = UniversalThemeExporter::restoreVSCode();
+    } else if (app == "firefox") {
+      std::cout << "Restoring Firefox (Partial)...\n";
+      success = UniversalThemeExporter::restoreFirefox();
+    } else if (app == "discord") {
+      std::cout << "Restoring BetterDiscord...\n";
+      success = UniversalThemeExporter::restoreBetterDiscord();
+    } else if (app == "kitty") {
+      std::cout << "Restoring Kitty config...\n";
+      success = UniversalThemeExporter::restoreKitty();
+    } else if (app == "obsidian") {
+      std::cout << "Restoring Obsidian snippet...\n";
+      success = UniversalThemeExporter::restoreObsidian();
+    } else if (app == "zed") {
+      std::cout << "Restoring Zed config...\n";
+      success = UniversalThemeExporter::restoreZed();
+    } else {
+      std::cout << "Unknown app or restore not supported: " << qPrintable(app)
+                << "\n";
+      return 1;
+    }
+
+    if (success)
+      std::cout << "Restore successful.\n";
+    else
+      std::cout
+          << "Restore finished (some files may not have existed or failed).\n";
+
+    return 0;
+  } else if (command == "clone-global") {
     if (args.size() < 2) {
       std::cout << "Usage: plasma-theme-master clone-global <source> <dest>\n";
       return 1;

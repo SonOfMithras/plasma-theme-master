@@ -6,6 +6,10 @@
 class ThemeWriter {
 public:
   static void setAutoLookAndFeel(bool enabled);
+  
+  // KWin Night Color Interaction
+  static void enforceKWinNightColorActive();
+  static void setKWinTemperatures(int dayTemp, int nightTemp);
   static bool setKvantumTheme(const QString &themeName, bool force = false);
   static bool setGtkTheme(const QString &themeName, bool force = false);
 

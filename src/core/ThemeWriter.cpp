@@ -1,25 +1,72 @@
 #include "ThemeWriter.h"
-#include "ThemeReader.h"
+#include "Config.h"
 #include "FlatpakManager.h"
+#include "GlobalThemeManager.h"
 #include "Logger.h"
+#include "ThemeReader.h"
 #include <KConfig>
 #include <KConfigGroup>
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusMessage>
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QProcess>
 #include <QSettings>
 #include <QStandardPaths>
-#include "GlobalThemeManager.h"
-#include "Config.h"
-#include <QDir>
 
 void ThemeWriter::setAutoLookAndFeel(bool enabled) {
   KConfig config(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
   KConfigGroup group = config.group(QStringLiteral("KDE"));
-  group.writeEntry(QStringLiteral("AutomaticLookAndFeel"), enabled);
+  group.writeEntry("AutomaticLookAndFeel", enabled);
+  config.sync();
+  Logger::log("System AutomaticLookAndFeel set to " +
+                  QString(enabled ? "true" : "false"),
+              Logger::Info);
+}
+
+void ThemeWriter::enforceKWinNightColorActive() {
+  KConfig config(QStringLiteral("kwinrc"), KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("NightColor"));
+  group.writeEntry("Active", true);
   config.sync();
 
-  qDebug() << "Set AutomaticLookAndFeel to" << enabled;
+  // Tell KWin to reconfigure
+  QDBusMessage message = QDBusMessage::createMethodCall(
+      QStringLiteral("org.kde.KWin"), QStringLiteral("/KWin"),
+      QStringLiteral("org.kde.KWin"), QStringLiteral("reconfigure"));
+  QDBusConnection::sessionBus().send(message);
+  Logger::log("Enforced KWin NightColor Active=true and reconfigured KWin.",
+              Logger::Info);
+}
+
+void ThemeWriter::setKWinTemperatures(int dayTemp, int nightTemp) {
+  if (dayTemp < 1000)
+    dayTemp = 1000;
+  if (dayTemp > 6500)
+    dayTemp = 6500;
+  if (nightTemp < 1000)
+    nightTemp = 1000;
+  if (nightTemp > 6500)
+    nightTemp = 6500;
+
+  KConfig config(QStringLiteral("kwinrc"), KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("NightColor"));
+  group.writeEntry("DayTemperature", dayTemp);
+  group.writeEntry("NightTemperature", nightTemp);
+  config.sync();
+
+  // Tell KWin to reconfigure
+  QDBusMessage message = QDBusMessage::createMethodCall(
+      QStringLiteral("org.kde.KWin"), QStringLiteral("/KWin"),
+      QStringLiteral("org.kde.KWin"), QStringLiteral("reconfigure"));
+  QDBusConnection::sessionBus().send(message);
+  Logger::log(
+      QString("Updated KWin NightColor temperatures (Day: %1, Night: %2)")
+          .arg(dayTemp)
+          .arg(nightTemp),
+      Logger::Info);
 }
 
 bool ThemeWriter::setKvantumTheme(const QString &themeName, bool force) {
@@ -27,8 +74,9 @@ bool ThemeWriter::setKvantumTheme(const QString &themeName, bool force) {
     return false;
 
   if (!force && ThemeReader::currentKvantumTheme() == themeName) {
-      Logger::log("Kvantum theme is already \"" + themeName + "\", skipping.", Logger::Info);
-      return true;
+    Logger::log("Kvantum theme is already \"" + themeName + "\", skipping.",
+                Logger::Info);
+    return true;
   }
 
   // Method 1: kvantummanager
@@ -90,8 +138,9 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
     return false;
 
   if (!force && ThemeReader::currentGlobalTheme() == themeName) {
-      Logger::log("Global theme is already \"" + themeName + "\", skipping.", Logger::Info);
-      return true;
+    Logger::log("Global theme is already \"" + themeName + "\", skipping.",
+                Logger::Info);
+    return true;
   }
 
   QString tool =
@@ -101,8 +150,8 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
     return false;
   }
 
-  // Force reset widget style to Breeze to ensure Kvantum themes reload correctly
-  // when the target theme (which likely uses Kvantum) is applied.
+  // Force reset widget style to Breeze to ensure Kvantum themes reload
+  // correctly when the target theme (which likely uses Kvantum) is applied.
   KConfig kdeglobals(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
   KConfigGroup kdeGroup = kdeglobals.group(QStringLiteral("KDE"));
   kdeGroup.writeEntry(QStringLiteral("widgetStyle"), QStringLiteral("Breeze"));
@@ -112,14 +161,16 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
   process.start(tool, QStringList() << QStringLiteral("-a") << themeName);
   process.waitForFinished();
 
-  QString stdoutStr = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
-  QString stderrStr = QString::fromUtf8(process.readAllStandardError()).trimmed();
+  QString stdoutStr =
+      QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+  QString stderrStr =
+      QString::fromUtf8(process.readAllStandardError()).trimmed();
 
   if (!stdoutStr.isEmpty()) {
-      Logger::log("lookandfeeltool output: " + stdoutStr, Logger::Info);
+    Logger::log("lookandfeeltool output: " + stdoutStr, Logger::Info);
   }
   if (!stderrStr.isEmpty()) {
-      Logger::log("lookandfeeltool error: " + stderrStr, Logger::Warning);
+    Logger::log("lookandfeeltool error: " + stderrStr, Logger::Warning);
   }
 
   if (process.exitCode() == 0) {
@@ -137,12 +188,13 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
     return false;
 
   if (!force && ThemeReader::currentColorScheme() == schemeName) {
-      Logger::log("Color scheme is already \"" + schemeName + "\", skipping.", Logger::Info);
-      return true;
+    Logger::log("Color scheme is already \"" + schemeName + "\", skipping.",
+                Logger::Info);
+    return true;
   }
 
-  QString tool =
-      QStandardPaths::findExecutable(QStringLiteral("plasma-apply-colorscheme"));
+  QString tool = QStandardPaths::findExecutable(
+      QStringLiteral("plasma-apply-colorscheme"));
   if (tool.isEmpty()) {
     Logger::log("plasma-apply-colorscheme not found!", Logger::Warning);
     return false;
@@ -152,14 +204,17 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
   process.start(tool, QStringList() << schemeName);
   process.waitForFinished();
 
-  QString stdoutStr = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
-  QString stderrStr = QString::fromUtf8(process.readAllStandardError()).trimmed();
+  QString stdoutStr =
+      QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+  QString stderrStr =
+      QString::fromUtf8(process.readAllStandardError()).trimmed();
 
   if (!stdoutStr.isEmpty()) {
-      Logger::log("plasma-apply-colorscheme output: " + stdoutStr, Logger::Info);
+    Logger::log("plasma-apply-colorscheme output: " + stdoutStr, Logger::Info);
   }
   if (!stderrStr.isEmpty()) {
-      Logger::log("plasma-apply-colorscheme error: " + stderrStr, Logger::Warning);
+    Logger::log("plasma-apply-colorscheme error: " + stderrStr,
+                Logger::Warning);
   }
 
   if (process.exitCode() == 0) {
@@ -210,8 +265,9 @@ bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
     return false;
 
   if (!force && ThemeReader::currentGtkTheme() == themeName) {
-      Logger::log("GTK theme is already \"" + themeName + "\", skipping.", Logger::Info);
-      return true;
+    Logger::log("GTK theme is already \"" + themeName + "\", skipping.",
+                Logger::Info);
+    return true;
   }
 
   // Path 1: GTK 3
@@ -229,20 +285,21 @@ bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
   gtk4Settings.setValue(QStringLiteral("Settings/gtk-theme-name"), themeName);
 
   // Path 3: GSettings (for running apps)
-  QString gsettingsExe = QStandardPaths::findExecutable(QStringLiteral("gsettings"));
+  QString gsettingsExe =
+      QStandardPaths::findExecutable(QStringLiteral("gsettings"));
   if (!gsettingsExe.isEmpty()) {
-      QProcess process;
-      process.start(gsettingsExe, QStringList() 
-          << QStringLiteral("set") 
-          << QStringLiteral("org.gnome.desktop.interface") 
-          << QStringLiteral("gtk-theme") 
-          << themeName);
-      process.waitForFinished();
-      if (process.exitCode() == 0) {
-           Logger::log("Applied GTK theme via gsettings: \"" + themeName + "\"", Logger::Info);
-      } else {
-           Logger::log("Failed to set gsettings GTK theme.", Logger::Warning);
-      }
+    QProcess process;
+    process.start(gsettingsExe,
+                  QStringList() << QStringLiteral("set")
+                                << QStringLiteral("org.gnome.desktop.interface")
+                                << QStringLiteral("gtk-theme") << themeName);
+    process.waitForFinished();
+    if (process.exitCode() == 0) {
+      Logger::log("Applied GTK theme via gsettings: \"" + themeName + "\"",
+                  Logger::Info);
+    } else {
+      Logger::log("Failed to set gsettings GTK theme.", Logger::Warning);
+    }
   }
 
   Logger::log("Applied GTK theme: \"" + themeName + "\"", Logger::Info);
@@ -316,93 +373,104 @@ void ThemeWriter::setNightGtkTheme(const QString &themeName) {
   qDebug() << "Set NightGtkTheme to" << themeName;
 }
 
-
 // Klassy Day & Night
 void ThemeWriter::setKlassyPreset(const QString &presetName, bool force) {
-    if (presetName.isEmpty()) return;
+  if (presetName.isEmpty())
+    return;
 
-    if (!force && ThemeReader::lastAppliedKlassyPreset() == presetName) {
-        Logger::log("Klassy preset is already \"" + presetName + "\", skipping.", Logger::Info);
-        return;
-    }
+  if (!force && ThemeReader::lastAppliedKlassyPreset() == presetName) {
+    Logger::log("Klassy preset is already \"" + presetName + "\", skipping.",
+                Logger::Info);
+    return;
+  }
 
-    QString tool = QStandardPaths::findExecutable("klassy-settings");
-    if (tool.isEmpty()) {
-        Logger::log("klassy-settings executable not found.", Logger::Warning);
-        return;
-    }
+  QString tool = QStandardPaths::findExecutable("klassy-settings");
+  if (tool.isEmpty()) {
+    Logger::log("klassy-settings executable not found.", Logger::Warning);
+    return;
+  }
 
-    QProcess process;
-    process.start(tool, QStringList() << "-w" << presetName);
-    process.waitForFinished();
+  QProcess process;
+  process.start(tool, QStringList() << "-w" << presetName);
+  process.waitForFinished();
 
-    if (process.exitCode() == 0) {
-        Logger::log("Applied Klassy preset: \"" + presetName + "\"", Logger::Info);
-        
-        // Save state
-        QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
-        KConfig config(path, KConfig::SimpleConfig);
-        KConfigGroup group = config.group("State");
-        group.writeEntry("LastAppliedKlassyPreset", presetName);
-        config.sync();
-        
-    } else {
-        QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
-        Logger::log("Failed to set Klassy preset: " + err, Logger::Error);
-    }
+  if (process.exitCode() == 0) {
+    Logger::log("Applied Klassy preset: \"" + presetName + "\"", Logger::Info);
+
+    // Save state
+    QString path =
+        QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+        "/plasma-theme-masterrc";
+    KConfig config(path, KConfig::SimpleConfig);
+    KConfigGroup group = config.group("State");
+    group.writeEntry("LastAppliedKlassyPreset", presetName);
+    config.sync();
+
+  } else {
+    QString err = QString::fromUtf8(process.readAllStandardError()).trimmed();
+    Logger::log("Failed to set Klassy preset: " + err, Logger::Error);
+  }
 }
 
 void ThemeWriter::setDayKlassyPreset(const QString &presetName) {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
-    KConfig config(path, KConfig::SimpleConfig);
-    KConfigGroup group = config.group("General");
-    group.writeEntry("DayKlassyPreset", presetName);
-    config.sync();
-    Logger::log("Set DayKlassyPreset to \"" + presetName + "\"", Logger::Info);
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      "/plasma-theme-masterrc";
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group("General");
+  group.writeEntry("DayKlassyPreset", presetName);
+  config.sync();
+  Logger::log("Set DayKlassyPreset to \"" + presetName + "\"", Logger::Info);
 }
 
 void ThemeWriter::setNightKlassyPreset(const QString &presetName) {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-masterrc";
-    KConfig config(path, KConfig::SimpleConfig);
-    KConfigGroup group = config.group("General");
-    group.writeEntry("NightKlassyPreset", presetName);
-    config.sync();
-    Logger::log("Set NightKlassyPreset to \"" + presetName + "\"", Logger::Info);
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      "/plasma-theme-masterrc";
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group("General");
+  group.writeEntry("NightKlassyPreset", presetName);
+  config.sync();
+  Logger::log("Set NightKlassyPreset to \"" + presetName + "\"", Logger::Info);
 }
 
 void ThemeWriter::syncMaterialYouIcons(bool force) {
-    if (!force && !Config::isMaterialYouOverrideEnabled()) return;
+  if (!force && !Config::isMaterialYouOverrideEnabled())
+    return;
 
-    QString dayTheme = ThemeReader::defaultLightTheme();
-    QString nightTheme = ThemeReader::defaultDarkTheme();
-    
-    QString dayIcon = GlobalThemeManager::getIconThemeFromGlobal(dayTheme);
-    QString nightIcon = GlobalThemeManager::getIconThemeFromGlobal(nightTheme);
-    
-    QStringList args;
-    if (!dayIcon.isEmpty()) {
-        args << "--iconslight" << dayIcon;
-    }
-    if (!nightIcon.isEmpty()) {
-        args << "--iconsdark" << nightIcon;
-    }
-    
-    args << "--chroma-multiplier" << QString::number(Config::materialYouChroma());
-    args << "--tone-multiplier" << QString::number(Config::materialYouTone());
-    args << "--scheme-variant" << QString::number(Config::materialYouSchemeVariant());
-    
-    QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
-    if (exe.isEmpty()) {
-        exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
-    }
+  QString dayTheme = ThemeReader::defaultLightTheme();
+  QString nightTheme = ThemeReader::defaultDarkTheme();
 
-    // 1. Update autostart silently
-    QStringList autostartArgs = args;
-    autostartArgs.prepend("-a");
-    QProcess::startDetached(exe, autostartArgs);
+  QString dayIcon = GlobalThemeManager::getIconThemeFromGlobal(dayTheme);
+  QString nightIcon = GlobalThemeManager::getIconThemeFromGlobal(nightTheme);
 
-    // 2. Start the actual background daemon
-    QProcess::startDetached(exe, args);
-    
-    Logger::log("Synced Material You Icons and started process: day=" + dayIcon + ", night=" + nightIcon, Logger::Info);
+  QStringList args;
+  if (!dayIcon.isEmpty()) {
+    args << "--iconslight" << dayIcon;
+  }
+  if (!nightIcon.isEmpty()) {
+    args << "--iconsdark" << nightIcon;
+  }
+
+  args << "--chroma-multiplier" << QString::number(Config::materialYouChroma());
+  args << "--tone-multiplier" << QString::number(Config::materialYouTone());
+  args << "--scheme-variant"
+       << QString::number(Config::materialYouSchemeVariant());
+
+  QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
+  if (exe.isEmpty()) {
+    exe = QDir::homePath() + "/.local/bin/kde-material-you-colors";
+  }
+
+  // 1. Update autostart silently
+  QStringList autostartArgs = args;
+  autostartArgs.prepend("-a");
+  QProcess::startDetached(exe, autostartArgs);
+
+  // 2. Start the actual background daemon
+  QProcess::startDetached(exe, args);
+
+  Logger::log("Synced Material You Icons and started process: day=" + dayIcon +
+                  ", night=" + nightIcon,
+              Logger::Info);
 }

@@ -1,11 +1,10 @@
 
 #include "MainWindow.h"
+#include "../core/Config.h"
 #include "../core/Solar.h"
 #include "../core/ThemeReader.h"
 #include "../core/ThemeWriter.h"
-#include "../core/ThemeWriter.h"
 #include "../core/UniversalThemeExporter.h"
-#include "../core/Config.h"
 #include "GlobalThemeEditor.h"
 #include "UniversalThemePage.h"
 #include "core/Logger.h"
@@ -35,16 +34,16 @@
 #include <QVBoxLayout>
 
 #include "../core/FlatpakManager.h"
-#include <QInputDialog>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setupUi();
   populateThemes();
   loadSettings();
-  
-  checkDaemonStatus(); 
+
+  checkDaemonStatus();
   refreshStatus();
 
   if (FlatpakManager::isFlatpakInstalled()) {
@@ -78,7 +77,7 @@ void MainWindow::setupUi() {
   // Universal Theme Tab
   m_universalTab = new UniversalThemePage(this);
   m_mainTabs->addTab(m_universalTab, tr("Universal Sync"));
-  
+
   // Material You Tab
   m_mainTabs->addTab(m_materialYouTab, tr("Material You"));
 
@@ -135,21 +134,25 @@ void MainWindow::setupMenuBar() {
 
   QMenu *materialMenu = helpMenu->addMenu(tr("Material You Colors"));
   QAction *installAction = new QAction(tr("Install dependencies (pipx)"), this);
-  connect(installAction, &QAction::triggered, this, &MainWindow::installMaterialYou);
+  connect(installAction, &QAction::triggered, this,
+          &MainWindow::installMaterialYou);
   materialMenu->addAction(installAction);
 
   QAction *upgradeAction = new QAction(tr("Upgrade"), this);
-  connect(upgradeAction, &QAction::triggered, this, &MainWindow::upgradeMaterialYou);
+  connect(upgradeAction, &QAction::triggered, this,
+          &MainWindow::upgradeMaterialYou);
   materialMenu->addAction(upgradeAction);
 
   m_myAutostartAction = new QAction(tr("Autostart on Login"), this);
   m_myAutostartAction->setCheckable(true);
-  
+
   // Check if autostart file exists
-  QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
+  QString autostartPath =
+      QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
   m_myAutostartAction->setChecked(QFile::exists(autostartPath));
 
-  connect(m_myAutostartAction, &QAction::toggled, this, &MainWindow::toggleMaterialYouAutostart);
+  connect(m_myAutostartAction, &QAction::toggled, this,
+          &MainWindow::toggleMaterialYouAutostart);
   materialMenu->addAction(m_myAutostartAction);
 
   helpMenu->addSeparator();
@@ -201,7 +204,8 @@ void MainWindow::setupMenuBar() {
 
 void MainWindow::showAbout() {
   QString version = QString::fromLatin1(TOSTRING(PROJECT_VERSION));
-  QString repoUrl = "https://github.com/SonOfMithras/plasma-theme-master/releases";
+  QString repoUrl =
+      "https://github.com/SonOfMithras/plasma-theme-master/releases";
   QString supportUrl = "https://ko-fi.com/sonofmithras";
 
   QDialog aboutDialog(this);
@@ -216,7 +220,9 @@ void MainWindow::showAbout() {
       tr("<h2>Plasma Theme Master</h2>"
          "<h3>Version %1</h3>"
          "<p><b>Author:</b> Ammar Al-Riyamy</p>"
-         "<p><a href='https://github.com/SonOfMithras/plasma-theme-master'>GitHub Repo</a></p>"
+         "<p><a "
+         "href='https://github.com/SonOfMithras/plasma-theme-master'>GitHub "
+         "Repo</a></p>"
          "<br>"
          "<p>Automatic Day/Night Theme Switcher for KDE Plasma.</p>"
          "<br>"
@@ -229,16 +235,18 @@ void MainWindow::showAbout() {
          "</ul>"
          "<p>Redesigned in C++ for efficiency.</p>")
           .arg(version));
-  infoLabel->setOpenExternalLinks(true); 
+  infoLabel->setOpenExternalLinks(true);
 
   mainLayout->addWidget(infoLabel);
   mainLayout->addSpacing(10);
 
   // Custom Action Buttons
   QHBoxLayout *actionLayout = new QHBoxLayout();
-  QPushButton *updateBtn = new QPushButton(tr("Check for Updates"), &aboutDialog);
-  QPushButton *supportBtn = new QPushButton(tr("Support the Dev!"), &aboutDialog);
-  
+  QPushButton *updateBtn =
+      new QPushButton(tr("Check for Updates"), &aboutDialog);
+  QPushButton *supportBtn =
+      new QPushButton(tr("Support the Dev!"), &aboutDialog);
+
   actionLayout->addStretch();
   actionLayout->addWidget(updateBtn);
   actionLayout->addWidget(supportBtn);
@@ -246,16 +254,16 @@ void MainWindow::showAbout() {
 
   mainLayout->addLayout(actionLayout);
 
-  QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok, &aboutDialog);
+  QDialogButtonBox *buttonBox =
+      new QDialogButtonBox(QDialogButtonBox::Ok, &aboutDialog);
   buttonBox->setCenterButtons(true);
-  connect(buttonBox, &QDialogButtonBox::accepted, &aboutDialog, &QDialog::accept);
-  
-  connect(updateBtn, &QPushButton::clicked, [repoUrl]() {
-      QDesktopServices::openUrl(QUrl(repoUrl));
-  });
-  connect(supportBtn, &QPushButton::clicked, [supportUrl]() {
-      QDesktopServices::openUrl(QUrl(supportUrl));
-  });
+  connect(buttonBox, &QDialogButtonBox::accepted, &aboutDialog,
+          &QDialog::accept);
+
+  connect(updateBtn, &QPushButton::clicked,
+          [repoUrl]() { QDesktopServices::openUrl(QUrl(repoUrl)); });
+  connect(supportBtn, &QPushButton::clicked,
+          [supportUrl]() { QDesktopServices::openUrl(QUrl(supportUrl)); });
 
   mainLayout->addWidget(buttonBox);
 
@@ -280,18 +288,22 @@ void MainWindow::setupDashboardTab() {
 
   // --- Status Section ---
   QGroupBox *statusGroup = new QGroupBox(dashboardContent);
-  QVBoxLayout *statusLayout = new QVBoxLayout(statusGroup);
+  QVBoxLayout *statusMainLayout = new QVBoxLayout(statusGroup);
 
   QLabel *statusHeader =
       new QLabel("<h2><b>System Status</b></h2>", dashboardContent);
-  statusLayout->addWidget(statusHeader);
+  statusMainLayout->addWidget(statusHeader);
 
+  QHBoxLayout *statusColumnsLayout = new QHBoxLayout();
   m_statusLabel = new QLabel(dashboardContent);
+  m_statusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   m_sunInfoLabel = new QLabel(dashboardContent);
+  m_sunInfoLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
-  statusLayout->addWidget(m_statusLabel);
-  statusLayout->addSpacing(15);
-  statusLayout->addWidget(m_sunInfoLabel);
+  statusColumnsLayout->addWidget(m_statusLabel);
+  statusColumnsLayout->addWidget(m_sunInfoLabel);
+
+  statusMainLayout->addLayout(statusColumnsLayout);
 
   layout->addWidget(statusGroup);
 
@@ -309,10 +321,16 @@ void MainWindow::setupDashboardTab() {
   solarLayout->addWidget(m_offsetSlider);
   solarLayout->addWidget(m_offsetValueLabel);
 
+  m_kcmNightColorBtn = new QPushButton(tr("Configure Day-Night Cycle"), this);
+  solarLayout->addWidget(m_kcmNightColorBtn);
+
   connect(m_offsetSlider, &QSlider::valueChanged, this,
           &MainWindow::onOffsetChanged);
   connect(m_offsetSlider, &QSlider::sliderReleased, this,
           &MainWindow::saveSettings);
+
+  connect(m_kcmNightColorBtn, &QPushButton::clicked, this,
+          []() { QProcess::startDetached("kcmshell6", {"kcm_nighttime"}); });
 
   layout->addWidget(solarGroup);
 
@@ -390,9 +408,9 @@ void MainWindow::setupDashboardTab() {
 
   m_refreshButton = new QPushButton(tr("Refresh"), this);
   connect(m_refreshButton, &QPushButton::clicked, this, [this]() {
-      populateThemes();
-      loadSettings();
-      refreshStatus();
+    populateThemes();
+    loadSettings();
+    refreshStatus();
   });
 
   autoLayout->addWidget(m_autoCheck);
@@ -400,14 +418,66 @@ void MainWindow::setupDashboardTab() {
   autoLayout->addWidget(m_refreshButton);
   autoMainLayout->addLayout(autoLayout);
 
-  m_materialYouCheck = new QCheckBox(tr("Override color scheme with Material You"), this);
+  m_materialYouCheck =
+      new QCheckBox(tr("Override color scheme with Material You"), this);
   connect(m_materialYouCheck, &QCheckBox::toggled, this, [this](bool checked) {
-      if (checked) promptMaterialYouInstall();
-      saveSettings();
+    if (checked)
+      promptMaterialYouInstall();
+    saveSettings();
   });
   autoMainLayout->addWidget(m_materialYouCheck);
 
   layout->addWidget(autoGroup);
+
+  // --- Night Color Settings ---
+  QGroupBox *ncGroup = new QGroupBox(tr("Night Color Settings"), this);
+  QVBoxLayout *ncLayout = new QVBoxLayout(ncGroup);
+
+  QHBoxLayout *tempLayout = new QHBoxLayout();
+
+  // Day
+  QVBoxLayout *dayTempLayout = new QVBoxLayout();
+  dayTempLayout->addWidget(new QLabel(tr("Day Temp (K):")));
+  m_dayTempSlider = new QSlider(Qt::Horizontal, this);
+  m_dayTempSlider->setRange(1000, 6500);
+  m_dayTempSpinBox = new QSpinBox(this);
+  m_dayTempSpinBox->setRange(1000, 6500);
+  dayTempLayout->addWidget(m_dayTempSlider);
+  dayTempLayout->addWidget(m_dayTempSpinBox);
+  tempLayout->addLayout(dayTempLayout);
+
+  // Night
+  QVBoxLayout *nightTempLayout = new QVBoxLayout();
+  nightTempLayout->addWidget(new QLabel(tr("Night Temp (K):")));
+  m_nightTempSlider = new QSlider(Qt::Horizontal, this);
+  m_nightTempSlider->setRange(1000, 6500);
+  m_nightTempSpinBox = new QSpinBox(this);
+  m_nightTempSpinBox->setRange(1000, 6500);
+  nightTempLayout->addWidget(m_nightTempSlider);
+  nightTempLayout->addWidget(m_nightTempSpinBox);
+  tempLayout->addLayout(nightTempLayout);
+
+  ncLayout->addLayout(tempLayout);
+
+  connect(m_dayTempSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+          m_dayTempSlider, &QSlider::setValue);
+  connect(m_dayTempSlider, &QSlider::valueChanged, m_dayTempSpinBox,
+          &QSpinBox::setValue);
+  connect(m_nightTempSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+          m_nightTempSlider, &QSlider::setValue);
+  connect(m_nightTempSlider, &QSlider::valueChanged, m_nightTempSpinBox,
+          &QSpinBox::setValue);
+
+  connect(m_dayTempSlider, &QSlider::sliderReleased, this,
+          &MainWindow::saveSettings);
+  connect(m_nightTempSlider, &QSlider::sliderReleased, this,
+          &MainWindow::saveSettings);
+  connect(m_dayTempSpinBox, &QSpinBox::editingFinished, this,
+          &MainWindow::saveSettings);
+  connect(m_nightTempSpinBox, &QSpinBox::editingFinished, this,
+          &MainWindow::saveSettings);
+
+  layout->addWidget(ncGroup);
 
   // --- Manual Overrides ---
   QGroupBox *manualGroup = new QGroupBox(tr("Manual Override"), this);
@@ -421,7 +491,8 @@ void MainWindow::setupDashboardTab() {
           &MainWindow::applyStaticNight);
 
   m_applyTargetBtn = new QPushButton(tr("Apply Target"), this);
-  connect(m_applyTargetBtn, &QPushButton::clicked, this, &MainWindow::applyCurrentTarget);
+  connect(m_applyTargetBtn, &QPushButton::clicked, this,
+          &MainWindow::applyCurrentTarget);
 
   manualLayout->addWidget(m_applyDayBtn);
   manualLayout->addWidget(m_applyTargetBtn);
@@ -456,50 +527,56 @@ void MainWindow::setupMaterialYouTab() {
   layout->setContentsMargins(20, 20, 20, 20);
   layout->setSpacing(15);
 
-  QLabel *header = new QLabel("<h2><b>Material You Settings</b></h2>", m_materialYouTab);
+  QLabel *header =
+      new QLabel("<h2><b>Material You Settings</b></h2>", m_materialYouTab);
   layout->addWidget(header);
 
   // Scheme Variant
   QGroupBox *variantGroup = new QGroupBox(tr("Color Scheme"), m_materialYouTab);
   QHBoxLayout *variantLayout = new QHBoxLayout(variantGroup);
   m_schemeVariantCombo = new QComboBox(m_materialYouTab);
-  m_schemeVariantCombo->addItems({"Content", "Expressive", "Fidelity", "Monochrome", "Neutral", "TonalSpot", "Vibrant", "Rainbow", "FruitSalad"});
+  m_schemeVariantCombo->addItems({"Content", "Expressive", "Fidelity",
+                                  "Monochrome", "Neutral", "TonalSpot",
+                                  "Vibrant", "Rainbow", "FruitSalad"});
   variantLayout->addWidget(m_schemeVariantCombo);
   layout->addWidget(variantGroup);
 
   // Chroma (Colorfulness)
-  QGroupBox *chromaGroup = new QGroupBox(tr("Colorfulness (Chroma Multiplier)"), m_materialYouTab);
+  QGroupBox *chromaGroup =
+      new QGroupBox(tr("Colorfulness (Chroma Multiplier)"), m_materialYouTab);
   QHBoxLayout *chromaLayout = new QHBoxLayout(chromaGroup);
-  
+
   m_chromaSlider = new QSlider(Qt::Horizontal, m_materialYouTab);
   m_chromaSlider->setRange(5, 100); // 0.5 to 10.0 (multiplier x 10)
   m_chromaSpinBox = new QDoubleSpinBox(m_materialYouTab);
   m_chromaSpinBox->setRange(0.5, 10.0);
   m_chromaSpinBox->setSingleStep(0.1);
   m_chromaSpinBox->setDecimals(1);
-  
+
   chromaLayout->addWidget(m_chromaSlider);
   chromaLayout->addWidget(m_chromaSpinBox);
   layout->addWidget(chromaGroup);
 
   // Tone (Brightness)
-  QGroupBox *toneGroup = new QGroupBox(tr("Brightness (Tone Multiplier)"), m_materialYouTab);
+  QGroupBox *toneGroup =
+      new QGroupBox(tr("Brightness (Tone Multiplier)"), m_materialYouTab);
   QHBoxLayout *toneLayout = new QHBoxLayout(toneGroup);
-  
+
   m_toneSlider = new QSlider(Qt::Horizontal, m_materialYouTab);
   m_toneSlider->setRange(0, 15); // 0.0 to 1.5 (multiplier x 10)
   m_toneSpinBox = new QDoubleSpinBox(m_materialYouTab);
   m_toneSpinBox->setRange(0.0, 1.5);
   m_toneSpinBox->setSingleStep(0.1);
   m_toneSpinBox->setDecimals(1);
-  
+
   toneLayout->addWidget(m_toneSlider);
   toneLayout->addWidget(m_toneSpinBox);
   layout->addWidget(toneGroup);
 
   // Apply Button
   QHBoxLayout *btnLayout = new QHBoxLayout();
-  m_myApplyBtn = new QPushButton(tr("Apply Variables to Daemon"), m_materialYouTab);
+  m_myApplyBtn =
+      new QPushButton(tr("Apply Variables to Daemon"), m_materialYouTab);
   m_myApplyBtn->setEnabled(false);
   btnLayout->addStretch();
   btnLayout->addWidget(m_myApplyBtn);
@@ -508,75 +585,80 @@ void MainWindow::setupMaterialYouTab() {
   layout->addStretch();
 
   // Connections
-  connect(m_chromaSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double val) {
-      if (!m_chromaSlider->signalsBlocked()) {
-          m_chromaSlider->blockSignals(true);
-          m_chromaSlider->setValue(val * 10);
-          m_chromaSlider->blockSignals(false);
-      }
-      onMaterialYouSettingsChanged();
-  });
-  
+  connect(m_chromaSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+          this, [this](double val) {
+            if (!m_chromaSlider->signalsBlocked()) {
+              m_chromaSlider->blockSignals(true);
+              m_chromaSlider->setValue(val * 10);
+              m_chromaSlider->blockSignals(false);
+            }
+            onMaterialYouSettingsChanged();
+          });
+
   connect(m_chromaSlider, &QSlider::valueChanged, this, [this](int val) {
-      if (!m_chromaSpinBox->signalsBlocked()) {
-          m_chromaSpinBox->blockSignals(true);
-          m_chromaSpinBox->setValue(val / 10.0);
-          m_chromaSpinBox->blockSignals(false);
-      }
-      onMaterialYouSettingsChanged();
+    if (!m_chromaSpinBox->signalsBlocked()) {
+      m_chromaSpinBox->blockSignals(true);
+      m_chromaSpinBox->setValue(val / 10.0);
+      m_chromaSpinBox->blockSignals(false);
+    }
+    onMaterialYouSettingsChanged();
   });
 
-  connect(m_toneSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double val) {
-      if (!m_toneSlider->signalsBlocked()) {
-          m_toneSlider->blockSignals(true);
-          m_toneSlider->setValue(val * 10);
-          m_toneSlider->blockSignals(false);
-      }
-      onMaterialYouSettingsChanged();
-  });
+  connect(m_toneSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+          this, [this](double val) {
+            if (!m_toneSlider->signalsBlocked()) {
+              m_toneSlider->blockSignals(true);
+              m_toneSlider->setValue(val * 10);
+              m_toneSlider->blockSignals(false);
+            }
+            onMaterialYouSettingsChanged();
+          });
 
   connect(m_toneSlider, &QSlider::valueChanged, this, [this](int val) {
-      if (!m_toneSpinBox->signalsBlocked()) {
-          m_toneSpinBox->blockSignals(true);
-          m_toneSpinBox->setValue(val / 10.0);
-          m_toneSpinBox->blockSignals(false);
-      }
-      onMaterialYouSettingsChanged();
+    if (!m_toneSpinBox->signalsBlocked()) {
+      m_toneSpinBox->blockSignals(true);
+      m_toneSpinBox->setValue(val / 10.0);
+      m_toneSpinBox->blockSignals(false);
+    }
+    onMaterialYouSettingsChanged();
   });
 
-  connect(m_schemeVariantCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onMaterialYouSettingsChanged);
+  connect(m_schemeVariantCombo,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &MainWindow::onMaterialYouSettingsChanged);
 
-  connect(m_myApplyBtn, &QPushButton::clicked, this, &MainWindow::applyMaterialYouSettings);
+  connect(m_myApplyBtn, &QPushButton::clicked, this,
+          &MainWindow::applyMaterialYouSettings);
 }
 
 void MainWindow::onMaterialYouSettingsChanged() {
-    double savedChroma = Config::materialYouChroma();
-    double savedTone = Config::materialYouTone();
-    int savedVariant = Config::materialYouSchemeVariant();
-    
-    bool changed = (qAbs(m_chromaSpinBox->value() - savedChroma) > 0.01) ||
-                   (qAbs(m_toneSpinBox->value() - savedTone) > 0.01) ||
-                   (m_schemeVariantCombo->currentIndex() != savedVariant);
-                   
-    m_myApplyBtn->setEnabled(changed);
+  double savedChroma = Config::materialYouChroma();
+  double savedTone = Config::materialYouTone();
+  int savedVariant = Config::materialYouSchemeVariant();
+
+  bool changed = (qAbs(m_chromaSpinBox->value() - savedChroma) > 0.01) ||
+                 (qAbs(m_toneSpinBox->value() - savedTone) > 0.01) ||
+                 (m_schemeVariantCombo->currentIndex() != savedVariant);
+
+  m_myApplyBtn->setEnabled(changed);
 }
 
 void MainWindow::applyMaterialYouSettings() {
-    Config::setMaterialYouChroma(m_chromaSpinBox->value());
-    Config::setMaterialYouTone(m_toneSpinBox->value());
-    Config::setMaterialYouSchemeVariant(m_schemeVariantCombo->currentIndex());
-    
-    m_myApplyBtn->setEnabled(false);
-    
-    if (Config::isMaterialYouOverrideEnabled()) {
-        QProcess::execute("killall", QStringList() << "kde-material-you-colors");
-        ThemeWriter::syncMaterialYouIcons(true);
-    }
+  Config::setMaterialYouChroma(m_chromaSpinBox->value());
+  Config::setMaterialYouTone(m_toneSpinBox->value());
+  Config::setMaterialYouSchemeVariant(m_schemeVariantCombo->currentIndex());
+
+  m_myApplyBtn->setEnabled(false);
+
+  if (Config::isMaterialYouOverrideEnabled()) {
+    QProcess::execute("killall", QStringList() << "kde-material-you-colors");
+    ThemeWriter::syncMaterialYouIcons(true);
+  }
 }
 
 void MainWindow::updateLogs() {
   if (m_mainTabs->currentWidget() != m_logsTab)
-    return; 
+    return;
 
   QStringList logs = Logger::readLogs(200, false);
   QString reversedContent;
@@ -645,8 +727,10 @@ void MainWindow::loadSettings() {
   // Klassy Defaults
   QString kDayP = ThemeReader::dayKlassyPreset();
   QString kNightP = ThemeReader::nightKlassyPreset();
-  if (!kDayP.isEmpty()) m_klassyDayCombo->setCurrentText(kDayP);
-  if (!kNightP.isEmpty()) m_klassyNightCombo->setCurrentText(kNightP);
+  if (!kDayP.isEmpty())
+    m_klassyDayCombo->setCurrentText(kDayP);
+  if (!kNightP.isEmpty())
+    m_klassyNightCombo->setCurrentText(kNightP);
 
   // Solar Padding
   int padding = ThemeReader::solarPadding();
@@ -656,7 +740,26 @@ void MainWindow::loadSettings() {
   // Auto Switch
   m_autoCheck->setChecked(ThemeReader::isAutoLookAndFeel());
   m_materialYouCheck->setChecked(Config::isMaterialYouOverrideEnabled());
-  
+
+  // Night Color Temps
+  bool bDayS = m_dayTempSlider->blockSignals(true);
+  bool bDayB = m_dayTempSpinBox->blockSignals(true);
+  bool bNitS = m_nightTempSlider->blockSignals(true);
+  bool bNitB = m_nightTempSpinBox->blockSignals(true);
+
+  int dTemp = ThemeReader::kwinDayTemperature();
+  int nTemp = ThemeReader::kwinNightTemperature();
+
+  m_dayTempSlider->setValue(dTemp);
+  m_dayTempSpinBox->setValue(dTemp);
+  m_nightTempSlider->setValue(nTemp);
+  m_nightTempSpinBox->setValue(nTemp);
+
+  m_dayTempSlider->blockSignals(bDayS);
+  m_dayTempSpinBox->blockSignals(bDayB);
+  m_nightTempSlider->blockSignals(bNitS);
+  m_nightTempSpinBox->blockSignals(bNitB);
+
   // Material You Sliders/SpinBoxes/ComboBox
   bool bC = m_chromaSpinBox->blockSignals(true);
   bool bT = m_toneSpinBox->blockSignals(true);
@@ -664,17 +767,17 @@ void MainWindow::loadSettings() {
   double savedChroma = Config::materialYouChroma();
   double savedTone = Config::materialYouTone();
   int savedVariant = Config::materialYouSchemeVariant();
-  
+
   m_chromaSpinBox->setValue(savedChroma);
   m_chromaSlider->setValue(qRound(savedChroma * 10));
-  
+
   m_toneSpinBox->setValue(savedTone);
   m_toneSlider->setValue(qRound(savedTone * 10));
 
   if (savedVariant >= 0 && savedVariant < m_schemeVariantCombo->count()) {
-      m_schemeVariantCombo->setCurrentIndex(savedVariant);
+    m_schemeVariantCombo->setCurrentIndex(savedVariant);
   }
-  
+
   m_chromaSpinBox->blockSignals(bC);
   m_toneSpinBox->blockSignals(bT);
   m_schemeVariantCombo->blockSignals(bV);
@@ -697,11 +800,14 @@ void MainWindow::saveSettings() {
   ThemeWriter::setSolarPadding(m_offsetSlider->value());
   Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
   if (m_materialYouCheck->isChecked()) {
-      QProcess::execute("killall", QStringList() << "kde-material-you-colors");
-      ThemeWriter::syncMaterialYouIcons(true);
+    QProcess::execute("killall", QStringList() << "kde-material-you-colors");
+    ThemeWriter::syncMaterialYouIcons(true);
   } else {
-      QProcess::execute("killall", QStringList() << "kde-material-you-colors");
+    QProcess::execute("killall", QStringList() << "kde-material-you-colors");
   }
+
+  ThemeWriter::setKWinTemperatures(m_dayTempSlider->value(),
+                                   m_nightTempSlider->value());
 
   // If Auto is enabled, re-apply logic immediately to reflect changes
   if (m_autoCheck->isChecked()) {
@@ -714,44 +820,46 @@ void MainWindow::saveSettings() {
 void MainWindow::toggleAuto(bool checked) {
   if (checked) {
     auto applyAction = [this]() {
-        double lat = ThemeReader::nativeLatitude();
-        double lon = ThemeReader::nativeLongitude();
-        int offset = ThemeReader::solarPadding();
-        bool isDay = Solar::isDaytime(lat, lon, offset);
+      bool isDay = ThemeReader::isKWinDaytime();
 
-        QString global = isDay ? m_globalDayCombo->currentText()
-                               : m_globalNightCombo->currentText();
-        QString kvantum = isDay ? m_kvantumDayCombo->currentText()
-                                : m_kvantumNightCombo->currentText();
+      QString global = isDay ? m_globalDayCombo->currentText()
+                             : m_globalNightCombo->currentText();
+      QString kvantum = isDay ? m_kvantumDayCombo->currentText()
+                              : m_kvantumNightCombo->currentText();
 
-        if (!global.isEmpty()) {
-          ThemeWriter::applyGlobalTheme(global, true);
-          if (Config::isMaterialYouOverrideEnabled()) {
-              ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark", true);
-          }
+      if (!global.isEmpty()) {
+        ThemeWriter::applyGlobalTheme(global, true);
+        if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme(
+              isDay ? "MaterialYouLight" : "MaterialYouDark", true);
         }
-        if (!kvantum.isEmpty())
-          ThemeWriter::setKvantumTheme(kvantum, true);
+      }
+      if (!kvantum.isEmpty())
+        ThemeWriter::setKvantumTheme(kvantum, true);
 
-        QString gtk =
-            isDay ? m_gtkDayCombo->currentText() : m_gtkNightCombo->currentText();
-        if (!gtk.isEmpty())
-          ThemeWriter::setGtkTheme(gtk, true);
+      QString gtk =
+          isDay ? m_gtkDayCombo->currentText() : m_gtkNightCombo->currentText();
+      if (!gtk.isEmpty())
+        ThemeWriter::setGtkTheme(gtk, true);
 
-        QString klassy = isDay ? m_klassyDayCombo->currentText() : m_klassyNightCombo->currentText();
-        if (!klassy.isEmpty()) ThemeWriter::setKlassyPreset(klassy, true);
+      QString klassy = isDay ? m_klassyDayCombo->currentText()
+                             : m_klassyNightCombo->currentText();
+      if (!klassy.isEmpty())
+        ThemeWriter::setKlassyPreset(klassy, true);
 
-        ThemeWriter::setAutoLookAndFeel(true);
+      ThemeWriter::enforceKWinNightColorActive();
+      ThemeWriter::setAutoLookAndFeel(true);
     };
 
     applyAction();
-    
-    // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
-    QTimer::singleShot(2000, this, [this, applyAction](){
-        applyAction();
-        if (m_autoCheck->isChecked()) {
-            UniversalThemeExporter::syncAll();
-        }
+
+    // Double-pass: Solid delay to let first pass settle, then apply again to
+    // fix contrast issues
+    QTimer::singleShot(2000, this, [this, applyAction]() {
+      applyAction();
+      if (m_autoCheck->isChecked()) {
+        UniversalThemeExporter::syncAll();
+      }
     });
 
   } else {
@@ -766,25 +874,26 @@ void MainWindow::applyStaticDay() {
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
-      ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
-      if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouLight", true);
-      }
-      ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
-      ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
-      ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
+    ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
+    if (Config::isMaterialYouOverrideEnabled()) {
+      ThemeWriter::applyColorScheme("MaterialYouLight", true);
+    }
+    ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
+    ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
+    ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
   };
 
   applyAction();
-  
-  // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
-  QTimer::singleShot(2000, this, [this, applyAction](){
-      applyAction();
-      if (!m_autoCheck->isChecked()) {
-          UniversalThemeExporter::syncAll();
-      }
+
+  // Double-pass: Solid delay to let first pass settle, then apply again to fix
+  // contrast issues
+  QTimer::singleShot(2000, this, [this, applyAction]() {
+    applyAction();
+    if (!m_autoCheck->isChecked()) {
+      UniversalThemeExporter::syncAll();
+    }
   });
-  
+
   refreshStatus();
 }
 
@@ -792,71 +901,74 @@ void MainWindow::applyStaticNight() {
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
-      ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
-      if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouDark", true);
-      }
-      ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
-      ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
-      ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
+    ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
+    if (Config::isMaterialYouOverrideEnabled()) {
+      ThemeWriter::applyColorScheme("MaterialYouDark", true);
+    }
+    ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
+    ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
+    ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
   };
 
   applyAction();
 
-  // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
-  QTimer::singleShot(2000, this, [this, applyAction](){
-      applyAction();
-      if (!m_autoCheck->isChecked()) {
-          UniversalThemeExporter::syncAll();
-      }
+  // Double-pass: Solid delay to let first pass settle, then apply again to fix
+  // contrast issues
+  QTimer::singleShot(2000, this, [this, applyAction]() {
+    applyAction();
+    if (!m_autoCheck->isChecked()) {
+      UniversalThemeExporter::syncAll();
+    }
   });
 
   refreshStatus();
 }
 
 void MainWindow::applyCurrentTarget() {
-    bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
+  bool wasAuto = m_autoCheck->isChecked(); // Capture current auto state
 
-    auto applyAction = [this]() {
-        double lat = ThemeReader::nativeLatitude();
-        double lon = ThemeReader::nativeLongitude();
-        int offset = m_offsetSlider->value();
-        bool isDay = Solar::isDaytime(lat, lon, offset);
-        
-        // Apply target themes
-        if (isDay) {
-            ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
-            if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouLight", true);
-            }
-            ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
-            ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true); 
-            ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
-        } else {
-            ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
-            if (Config::isMaterialYouOverrideEnabled()) {
-                ThemeWriter::applyColorScheme("MaterialYouDark", true);
-            }
-            ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
-            ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
-            ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
-        }
-    };
+  auto applyAction = [this]() {
+    bool isDay = ThemeReader::isKWinDaytime();
 
-    applyAction();
-
-    // Restore auto state if it was enabled (as applyGlobalTheme might have disabled it)
-    if (wasAuto) {
-        ThemeWriter::setAutoLookAndFeel(true);
+    // Apply target themes
+    if (isDay) {
+      ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
+      if (Config::isMaterialYouOverrideEnabled()) {
+        ThemeWriter::applyColorScheme("MaterialYouLight", true);
+      }
+      ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
+      ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
+      ThemeWriter::setKlassyPreset(m_klassyDayCombo->currentText(), true);
+    } else {
+      ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
+      if (Config::isMaterialYouOverrideEnabled()) {
+        ThemeWriter::applyColorScheme("MaterialYouDark", true);
+      }
+      ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
+      ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
+      ThemeWriter::setKlassyPreset(m_klassyNightCombo->currentText(), true);
     }
-    
-    // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
-    QTimer::singleShot(2000, this, [this, applyAction](){
-        applyAction();
-        UniversalThemeExporter::syncAll();
-    });
+  };
 
-    refreshStatus();
+  applyAction();
+
+  // Restore auto state if it was enabled (as applyGlobalTheme might have
+  // disabled it)
+  if (wasAuto) {
+    ThemeWriter::setAutoLookAndFeel(true);
+  }
+
+  // Double-pass: Solid delay to let first pass settle, then apply again to fix
+  // contrast issues
+  QTimer::singleShot(2000, this, [this, applyAction, wasAuto]() {
+    applyAction();
+    if (wasAuto) {
+      ThemeWriter::setAutoLookAndFeel(true);
+    }
+    UniversalThemeExporter::syncAll();
+  });
+
+  refreshStatus();
 }
 
 void MainWindow::onOffsetChanged(int value) {
@@ -880,12 +992,12 @@ void MainWindow::refreshStatus() {
   double lon = ThemeReader::nativeLongitude();
   int offset = m_offsetSlider->value();
 
-  bool isDay = Solar::isDaytime(lat, lon, offset);
+  bool isDay = ThemeReader::isKWinDaytime();
   QString target = isDay ? "Day" : "Night";
 
   m_statusLabel->setText(
       tr("<b>Global:</b> %1<br><b>Kvantum:</b> %2<br><b>GTK:</b> "
-         "%3<br><b>Auto:</b> %4<br><br><b>Current target:</b> %5")
+         "%3<br><b>Auto:</b> %4<br><br><b>KWin State:</b> %5")
           .arg(global, kvantum, gtk, autoLabel, target));
 
   QPair<QDateTime, QDateTime> times =
@@ -908,9 +1020,18 @@ void MainWindow::refreshStatus() {
       start.isValid() ? start.toLocalTime().toString("HH:mm") : "N/A";
   QString endStr = end.isValid() ? end.toLocalTime().toString("HH:mm") : "N/A";
 
+  int dayTemp = ThemeReader::kwinDayTemperature();
+  int nightTemp = ThemeReader::kwinNightTemperature();
+
   m_sunInfoLabel->setText(
-      tr("<b>Location:</b> %1, %2<br><b>Sunrise:</b> %3 <b>Sunset:</b> %4<br>"
-         "<b>Day Start:</b> %5 <b>Night Start:</b> %6")
+      tr("<b><u>KWin Night Color</u></b><br>"
+         "<b>Day Temp:</b> %1 K<br><b>Night Temp:</b> %2 K<br><br>"
+         "<b><u>Solar Settings</u></b><br>"
+         "<b>Location:</b> %3, %4<br>"
+         "<b>Sunrise:</b> %5 &nbsp;&nbsp;<b>Sunset:</b> %6<br>"
+         "<b>Day Start:</b> %7 &nbsp;&nbsp;<b>Night Start:</b> %8")
+          .arg(dayTemp)
+          .arg(nightTemp)
           .arg(lat)
           .arg(lon)
           .arg(sr, ss, startStr, endStr));
@@ -957,7 +1078,8 @@ void MainWindow::openGtkThemesFolder() {
 void MainWindow::openAppConfigFolder() {
   // Open the folder containing the config file.
   QString path =
-      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/plasma-theme-master";
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      "/plasma-theme-master";
   QDir().mkpath(path); // Ensure it exists
   QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
@@ -1019,9 +1141,6 @@ void MainWindow::triggerUninstall() {
   }
 }
 
-
-
-
 void MainWindow::refreshPlasma() {
   QMessageBox::StandardButton res = QMessageBox::warning(
       this, tr("Restart Plasma Shell"),
@@ -1032,156 +1151,179 @@ void MainWindow::refreshPlasma() {
       QMessageBox::Yes | QMessageBox::No);
 
   if (res == QMessageBox::Yes) {
-      QProcess::startDetached("plasmashell", QStringList() << "--replace");
+    QProcess::startDetached("plasmashell", QStringList() << "--replace");
   }
 }
 
 void MainWindow::checkDaemonStatus() {
-    int ret = QProcess::execute("systemctl", QStringList() << "--user" << "is-active" << "plasma-theme-master.service");
-    // 0 = active, otherwise inactive
-    bool isActive = (ret == 0);
-    
-    // Block signals to avoid triggering toggleDaemon
-    bool blocked = m_daemonAction->blockSignals(true);
-    m_daemonAction->setChecked(isActive);
-    m_daemonAction->blockSignals(blocked);
+  int ret = QProcess::execute("systemctl",
+                              QStringList() << "--user" << "is-active"
+                                            << "plasma-theme-master.service");
+  // 0 = active, otherwise inactive
+  bool isActive = (ret == 0);
+
+  // Block signals to avoid triggering toggleDaemon
+  bool blocked = m_daemonAction->blockSignals(true);
+  m_daemonAction->setChecked(isActive);
+  m_daemonAction->blockSignals(blocked);
 }
 
 void MainWindow::toggleDaemon(bool checked) {
-    QStringList args;
-    args << "--user";
-    if (checked) {
-        args << "enable" << "--now" << "plasma-theme-master.service";
-    } else {
-        // Disable and stop
-        args << "disable" << "--now" << "plasma-theme-master.service";
-    }
-    
-    QProcess::startDetached("systemctl", args);
+  QStringList args;
+  args << "--user";
+  if (checked) {
+    args << "enable" << "--now" << "plasma-theme-master.service";
+  } else {
+    // Disable and stop
+    args << "disable" << "--now" << "plasma-theme-master.service";
+  }
+
+  QProcess::startDetached("systemctl", args);
 }
 
 void MainWindow::showFlatpakSettings() {
-    QDialog dialog(this);
-    dialog.setWindowTitle(tr("Flatpak Settings"));
-    dialog.resize(400, 300);
-    
-    QVBoxLayout *layout = new QVBoxLayout(&dialog);
-    
-    // Status Section
-    QGroupBox *statusGroup = new QGroupBox(tr("Status"), &dialog);
-    QVBoxLayout *statusLayout = new QVBoxLayout(statusGroup);
-    QLabel *statusLabel = new QLabel(FlatpakManager::flatpakStatus(), statusGroup);
-    statusLayout->addWidget(statusLabel);
-    
-    QPushButton *permsBtn = new QPushButton(tr("Re-apply Permissions"), statusGroup);
-    statusLayout->addWidget(permsBtn);
-    layout->addWidget(statusGroup);
-    
-    connect(permsBtn, &QPushButton::clicked, [&]() {
-        if (FlatpakManager::setupFlatpakEnvironment()) {
-            QMessageBox::information(&dialog, tr("Success"), tr("Permissions granted successfully."));
-            statusLabel->setText(FlatpakManager::flatpakStatus());
-        } else {
-            QMessageBox::critical(&dialog, tr("Error"), tr("Failed to setup Flatpak environment. Check logs."));
-        }
-    });
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Flatpak Settings"));
+  dialog.resize(400, 300);
 
-    // Theme Configuration
-    QGroupBox *configGroup = new QGroupBox(tr("Theme Configuration"), &dialog);
-    QFormLayout *formLayout = new QFormLayout(configGroup);
-    
-    QCheckBox *followCheck = new QCheckBox(tr("Follow System GTK Theme"), configGroup);
-    followCheck->setChecked(ThemeReader::flatpakFollowsGtk());
-    
-    QComboBox *dayCombo = new QComboBox(configGroup);
-    QComboBox *nightCombo = new QComboBox(configGroup);
-    
-    QStringList themes = ThemeReader::listGtkThemes();
-    dayCombo->addItems(themes);
-    nightCombo->addItems(themes);
-    
-    dayCombo->setCurrentText(ThemeReader::dayFlatpakTheme());
-    nightCombo->setCurrentText(ThemeReader::nightFlatpakTheme());
-    
-    formLayout->addRow(followCheck);
-    formLayout->addRow(tr("Day Theme:"), dayCombo);
-    formLayout->addRow(tr("Night Theme:"), nightCombo);
-    
-    // Logic to disable combos if Follow is checked
-    auto updateState = [&](int state) {
-        bool custom = (state == Qt::Unchecked);
-        dayCombo->setEnabled(custom);
-        nightCombo->setEnabled(custom);
-    };
-    connect(followCheck, &QCheckBox::checkStateChanged, updateState);
-    updateState(followCheck->isChecked() ? Qt::Checked : Qt::Unchecked);
-    
-    layout->addWidget(configGroup);
-    
-    // Buttons
-    QDialogButtonBox *btnBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
-    layout->addWidget(btnBox);
-    connect(btnBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-    connect(btnBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-    
-    if (dialog.exec() == QDialog::Accepted) {
-        // Save Settings
-        ThemeWriter::setFlatpakFollowsGtk(followCheck->isChecked());
-        if (!followCheck->isChecked()) {
-            ThemeWriter::setDayFlatpakTheme(dayCombo->currentText());
-            ThemeWriter::setNightFlatpakTheme(nightCombo->currentText());
-        }
-        
-        // Apply immediately
-        if (followCheck->isChecked()) {
-            FlatpakManager::setFlatpakGtkTheme(ThemeReader::currentGtkTheme());
-        } else {
-             // Calculate target
-             double lat = ThemeReader::nativeLatitude();
-             double lon = ThemeReader::nativeLongitude();
-             int offset = ThemeReader::solarPadding();
-             bool isDay = Solar::isDaytime(lat, lon, offset);
-             QString target = isDay ? dayCombo->currentText() : nightCombo->currentText();
-             if (!target.isEmpty()) {
-                 FlatpakManager::setFlatpakGtkTheme(target);
-             }
-        }
-        
-        QMessageBox::information(this, tr("Saved"), tr("Flatpak settings saved and applied."));
+  QVBoxLayout *layout = new QVBoxLayout(&dialog);
+
+  // Status Section
+  QGroupBox *statusGroup = new QGroupBox(tr("Status"), &dialog);
+  QVBoxLayout *statusLayout = new QVBoxLayout(statusGroup);
+  QLabel *statusLabel =
+      new QLabel(FlatpakManager::flatpakStatus(), statusGroup);
+  statusLayout->addWidget(statusLabel);
+
+  QPushButton *permsBtn =
+      new QPushButton(tr("Re-apply Permissions"), statusGroup);
+  statusLayout->addWidget(permsBtn);
+  layout->addWidget(statusGroup);
+
+  connect(permsBtn, &QPushButton::clicked, [&]() {
+    if (FlatpakManager::setupFlatpakEnvironment()) {
+      QMessageBox::information(&dialog, tr("Success"),
+                               tr("Permissions granted successfully."));
+      statusLabel->setText(FlatpakManager::flatpakStatus());
+    } else {
+      QMessageBox::critical(
+          &dialog, tr("Error"),
+          tr("Failed to setup Flatpak environment. Check logs."));
     }
+  });
+
+  // Theme Configuration
+  QGroupBox *configGroup = new QGroupBox(tr("Theme Configuration"), &dialog);
+  QFormLayout *formLayout = new QFormLayout(configGroup);
+
+  QCheckBox *followCheck =
+      new QCheckBox(tr("Follow System GTK Theme"), configGroup);
+  followCheck->setChecked(ThemeReader::flatpakFollowsGtk());
+
+  QComboBox *dayCombo = new QComboBox(configGroup);
+  QComboBox *nightCombo = new QComboBox(configGroup);
+
+  QStringList themes = ThemeReader::listGtkThemes();
+  dayCombo->addItems(themes);
+  nightCombo->addItems(themes);
+
+  dayCombo->setCurrentText(ThemeReader::dayFlatpakTheme());
+  nightCombo->setCurrentText(ThemeReader::nightFlatpakTheme());
+
+  formLayout->addRow(followCheck);
+  formLayout->addRow(tr("Day Theme:"), dayCombo);
+  formLayout->addRow(tr("Night Theme:"), nightCombo);
+
+  // Logic to disable combos if Follow is checked
+  auto updateState = [&](int state) {
+    bool custom = (state == Qt::Unchecked);
+    dayCombo->setEnabled(custom);
+    nightCombo->setEnabled(custom);
+  };
+  connect(followCheck, &QCheckBox::checkStateChanged, updateState);
+  updateState(followCheck->isChecked() ? Qt::Checked : Qt::Unchecked);
+
+  layout->addWidget(configGroup);
+
+  // Buttons
+  QDialogButtonBox *btnBox = new QDialogButtonBox(
+      QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+  layout->addWidget(btnBox);
+  connect(btnBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(btnBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  if (dialog.exec() == QDialog::Accepted) {
+    // Save Settings
+    ThemeWriter::setFlatpakFollowsGtk(followCheck->isChecked());
+    if (!followCheck->isChecked()) {
+      ThemeWriter::setDayFlatpakTheme(dayCombo->currentText());
+      ThemeWriter::setNightFlatpakTheme(nightCombo->currentText());
+    }
+
+    // Apply immediately
+    if (followCheck->isChecked()) {
+      FlatpakManager::setFlatpakGtkTheme(ThemeReader::currentGtkTheme());
+    } else {
+      // Calculate target
+      bool isDay = ThemeReader::isKWinDaytime();
+      QString target =
+          isDay ? dayCombo->currentText() : nightCombo->currentText();
+      if (!target.isEmpty()) {
+        FlatpakManager::setFlatpakGtkTheme(target);
+      }
+    }
+
+    QMessageBox::information(this, tr("Saved"),
+                             tr("Flatpak settings saved and applied."));
+  }
 }
 
 void MainWindow::installMaterialYou() {
-    QMessageBox::information(this, tr("Install Material You"), tr("A terminal window will open to install the required python packages. Press OK to proceed."));
-    QProcess::startDetached("konsole", QStringList() << "-e" << "bash" << "-c" << "pipx install kde-material-you-colors && pipx inject kde-material-you-colors pywal16 && pipx install pywal16; echo 'Press Enter to close'; read");
+  QMessageBox::information(
+      this, tr("Install Material You"),
+      tr("A terminal window will open to install the required python packages. "
+         "Press OK to proceed."));
+  QProcess::startDetached(
+      "konsole", QStringList()
+                     << "-e" << "bash" << "-c"
+                     << "pipx install kde-material-you-colors && pipx inject "
+                        "kde-material-you-colors pywal16 && pipx install "
+                        "pywal16; echo 'Press Enter to close'; read");
 }
 
 void MainWindow::upgradeMaterialYou() {
-    QProcess::startDetached("konsole", QStringList() << "-e" << "bash" << "-c" << "pipx upgrade kde-material-you-colors; echo 'Press Enter to close'; read");
+  QProcess::startDetached(
+      "konsole", QStringList() << "-e" << "bash" << "-c"
+                               << "pipx upgrade kde-material-you-colors; echo "
+                                  "'Press Enter to close'; read");
 }
 
 void MainWindow::toggleMaterialYouAutostart(bool checked) {
-    if (checked) {
-        QProcess::startDetached("kde-material-you-colors", QStringList() << "-a");
-        Logger::log("Added kde-material-you-colors to autostart.", Logger::Info);
-    } else {
-        QString autostartPath = QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
-        if (QFile::exists(autostartPath)) {
-            QFile::remove(autostartPath);
-            Logger::log("Removed kde-material-you-colors from autostart.", Logger::Info);
-        }
+  if (checked) {
+    QProcess::startDetached("kde-material-you-colors", QStringList() << "-a");
+    Logger::log("Added kde-material-you-colors to autostart.", Logger::Info);
+  } else {
+    QString autostartPath =
+        QDir::homePath() + "/.config/autostart/kde-material-you-colors.desktop";
+    if (QFile::exists(autostartPath)) {
+      QFile::remove(autostartPath);
+      Logger::log("Removed kde-material-you-colors from autostart.",
+                  Logger::Info);
     }
+  }
 }
 
 void MainWindow::promptMaterialYouInstall() {
-    QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
-    if (exe.isEmpty()) {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, tr("Missing Dependency"), 
-                tr("kde-material-you-colors is not installed. Would you like to install it now via pipx?"),
-                QMessageBox::Yes | QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-            installMaterialYou();
-        }
+  QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
+  if (exe.isEmpty()) {
+    QMessageBox::StandardButton reply;
+    reply =
+        QMessageBox::question(this, tr("Missing Dependency"),
+                              tr("kde-material-you-colors is not installed. "
+                                 "Would you like to install it now via pipx?"),
+                              QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+      installMaterialYou();
     }
+  }
 }

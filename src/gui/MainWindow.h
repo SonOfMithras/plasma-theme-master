@@ -112,6 +112,13 @@ private:
   QPushButton *m_applyNightBtn;
   QPushButton *m_applyTargetBtn;
   QPushButton *m_refreshButton;
+  QPushButton *m_kcmNightColorBtn;
+
+  // --- Night Color Settings ---
+  QSlider *m_dayTempSlider;
+  QSpinBox *m_dayTempSpinBox;
+  QSlider *m_nightTempSlider;
+  QSpinBox *m_nightTempSpinBox;
 
   // --- Material You Tab Widgets ---
   QComboBox *m_schemeVariantCombo;

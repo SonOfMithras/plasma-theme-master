@@ -11,6 +11,11 @@ public:
   static QString currentKvantumTheme();
   static QString currentGtkTheme();
   static bool isAutoLookAndFeel();
+  
+  // KWin Night Color DBus & Config
+  static bool isKWinDaytime();
+  static int kwinDayTemperature();
+  static int kwinNightTemperature();
 
   // Native Day-Night Location
   static double nativeLatitude();

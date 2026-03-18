@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.7**
+**Version 1.1.8**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -11,7 +11,8 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 ## Features
 
 - **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Flatpak themes, Klassy Window Decorations, and Material You Color Schemes.
-- **Solar Calculation**: Automatically calculates sunrise and sunset times based on the long and lat provided to vial plasma's integrated day/night cycle.
+- **Native Night Color Integration**: Automatically reads KDE Plasma's Night Color settings directly via D-Bus for perfectly synchronized Day/Night transitions.
+- **Solar Calculation Fallback**: Acts as a smooth fallback system, automatically calculating sunrise and sunset times based on longitude and latitude if Night Color is inactive.
 - **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
 - **Klassy Integration**: Apply window decoration presets (Day/Night) automatically.
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.

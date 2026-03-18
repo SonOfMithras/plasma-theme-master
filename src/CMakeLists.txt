@@ -17,6 +17,7 @@ add_executable(plasma-theme-master
 target_link_libraries(plasma-theme-master
     Qt6::Core
     Qt6::Widgets
+    Qt6::DBus
     KF6::ConfigCore
     KF6::CoreAddons
     KF6::ColorScheme
