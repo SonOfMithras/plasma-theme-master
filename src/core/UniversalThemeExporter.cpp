@@ -256,7 +256,25 @@ bool UniversalThemeExporter::exportToVSCode(const UniversalPalette &palette) {
       QDir::homePath() + "/.config/Code - OSS/User/settings.json",
       QDir::homePath() + "/.config/VSCodium/User/settings.json",
       QDir::homePath() + "/.config/Antigravity/User/settings.json",
+      QDir::homePath() + "/.config/antigravity/User/settings.json",
+      QDir::homePath() + "/.antigravity/User/settings.json",
       QDir::currentPath() + "/.vscode/settings.json"};
+
+  // Recursive search for project root's .vscode/settings.json
+  QDir currentDir(QDir::currentPath());
+  int maxDepth = 10;
+  while (maxDepth-- > 0) {
+    QString workspacePath = currentDir.absoluteFilePath(".vscode/settings.json");
+    if (QFile::exists(workspacePath) && !paths.contains(workspacePath)) {
+      paths << workspacePath;
+    }
+    if (currentDir.exists(".git") || currentDir.isRoot()) {
+      break;
+    }
+    if (!currentDir.cdUp()) {
+      break;
+    }
+  }
 
   bool anySuccess = false;
   for (const QString &path : paths) {
@@ -862,6 +880,9 @@ bool UniversalThemeExporter::restoreVSCode() {
       QDir::homePath() + "/.config/Code/User/settings.json",
       QDir::homePath() + "/.config/Code - OSS/User/settings.json",
       QDir::homePath() + "/.config/VSCodium/User/settings.json",
+      QDir::homePath() + "/.config/Antigravity/User/settings.json",
+      QDir::homePath() + "/.config/antigravity/User/settings.json",
+      QDir::homePath() + "/.antigravity/User/settings.json",
       QDir::currentPath() + "/.vscode/settings.json"};
   bool anySuccess = false;
   for (const auto &p : paths) {
@@ -1253,8 +1274,8 @@ bool UniversalThemeExporter::exportToVicinae(const UniversalPalette &palette) {
           "version = 1\n"
           "name = \"Plasma Theme Master\"\n"
           "description = \"Dynamically generated theme matching KDE Plasma\"\n"
-          "variant = \"%8\"\n"
-          "inherits = \"%9\"\n\n"
+          "variant = \"%7\"\n"
+          "inherits = \"%8\"\n\n"
           "[colors.core]\n"
           "accent = \"%1\"\n"
           "accent_foreground = \"%2\"\n"
@@ -1264,16 +1285,15 @@ bool UniversalThemeExporter::exportToVicinae(const UniversalPalette &palette) {
           "border = \"%6\"\n\n"
           "[colors.accents]\n"
           "blue = \"%1\"\n"
-          "green = \"%10\"\n"
-          "red = \"%11\"\n"
-          "yellow = \"%12\"\n")
+          "green = \"%9\"\n"
+          "red = \"%10\"\n"
+          "yellow = \"%11\"\n")
           .arg(colorToHex(palette.accent))
           .arg(colorToHex(palette.viewBg))
           .arg(colorToHex(palette.windowBg))
           .arg(colorToHex(palette.viewFg))
           .arg(colorToHex(palette.windowBg.darker(110)))
           .arg(colorToHex(palette.windowBg.darker(120)))
-          .arg(colorToHex(palette.windowBg))
           .arg(isDark)
           .arg(inherits)
           .arg(colorToHex(palette.success))

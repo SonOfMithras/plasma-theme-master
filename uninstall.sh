@@ -1,8 +1,21 @@
 #!/bin/bash
 
 APP_NAME="plasma-theme-master"
-BINARY_PATH="/usr/bin/$APP_NAME"
-DESKTOP_FILE="/usr/share/applications/$APP_NAME.desktop"
+
+# Dynamic path discovery
+# Try to find the binary in the system path
+BINARY_PATH=$(command -v $APP_NAME 2>/dev/null || echo "/usr/bin/$APP_NAME")
+
+# Derive the installation prefix (e.g., /usr/bin/app -> /usr)
+# This allows the uninstaller to work regardless of where CMake installed it
+PREFIX=$(dirname "$(dirname "$BINARY_PATH")")
+
+# Handle cases where the binary might be in /bin instead of /usr/bin
+if [ "$PREFIX" = "/" ]; then
+    PREFIX=""
+fi
+
+DESKTOP_FILE="$PREFIX/share/applications/$APP_NAME.desktop"
 SERVICE_FILE="$HOME/.config/systemd/user/$APP_NAME.service"
 CONFIG_FILE="$HOME/.config/plasma-theme-masterrc"
 DATA_DIR="$HOME/.local/share/plasma-theme-master"
