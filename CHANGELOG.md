@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-03-26
+
+### Added
+
+- **Template-Based Universal Theming** (matugen-style):
+  - All theme export logic replaced with a data-driven `.tpl` file system. Templates live in `/usr/share/plasma-theme-master/templates/` and can be freely customized.
+  - New `config.toml` at `~/.config/plasma-theme-master/config.toml` is the single source of truth for which apps are enabled, their output paths, and palette variant (`day` / `night` / `current`).
+  - `post_hook` field available in `config.toml` for user-defined custom template entries. Built-in apps run their hooks automatically — no manual configuration required.
+- **New Template Files** — shipped for all supported apps:
+  - `kitty_light.tpl`, `kitty_dark.tpl` (separate day/night palette resolution)
+  - `btop.tpl`, `vicinae.tpl`, `firefox.css.tpl`, `obsidian.css.tpl`
+  - `betterdiscord/theme.css.tpl`, `vencord/theme.css.tpl`
+  - `zed/theme.json.tpl` (full light + dark theme in one file)
+  - `konsole/colorscheme.tpl`
+- **Helper Binaries** — small compiled C++ utilities for apps requiring structural logic beyond simple substitution:
+  - `plasma-theme-master-helper-vscode` — merges `workbench.colorCustomizations` into VS Code / VSCodium / Antigravity `settings.json`
+  - `plasma-theme-master-helper-zed` — patches `~/.config/zed/settings.json` to reference the generated theme
+  - `plasma-theme-master-helper-firefox` — discovers all Firefox / Zen profile directories and injects `plasma-colors.css` + `userChrome.css` import
+  - `plasma-theme-master-helper-konsole` — generates `PlasmaMaster.profile` and sets it as the default Konsole profile
+- **TemplateEngine** — header-only `{{VARIABLE}}` substitution engine. Provides hex and RGB variants of all ANSI colors, semantic palette colors, and derived shades from a single `UniversalPalette`.
+- **TemplateConfig** — reads and writes `config.toml` using the bundled `toml++` v3.4.0 (header-only, no new runtime dependency).
+- **Separate `[discord.*]` Sections** — BetterDiscord and Vencord import configuration (Midnight toggle, custom import URLs) live in their own `[discord.betterdiscord]` / `[discord.vencord]` sections, separate from the template entries. GUI dialogs write directly to these sections.
+- **Custom Template Support** — add any `[templates.myapp]` entry to `config.toml` and it will be rendered and written automatically, with an optional `post_hook` for reload commands.
+
+### Changed
+
+- **Universal Theme Sync completely rewritten**. The monolithic `UniversalThemeExporter.cpp` (1700+ lines of hardcoded string literals) has been replaced by `syncTemplates()` which iterates `config.toml` entries.
+- **GUI toggles write directly to `config.toml`** via `TemplateConfig::setEnabled()` instead of `KConfig`. The legacy `plasma-theme-masterrc` sync toggle keys are removed.
+- **CLI `sync-enable` / `sync-disable` / `sync-list` / `sync-restore`** updated to operate on `config.toml` template entries. The app list now includes `konsole`, `btop`, `vicinae`, and `vencord` in addition to the previous set.
+- **Built-in post-hooks are hardcoded in C++** for all known apps. Users do not need to know or configure hook commands — the app always knows what each built-in app needs.
+- **install.sh**: Copies `config.toml.default` → `~/.config/plasma-theme-master/config.toml` on first install. Skips copy if an existing config is present (preserving user settings on upgrades).
+- **uninstall.sh**: Now also removes helper binaries, the system data directory (`/usr/share/plasma-theme-master/`), and optionally the user `config.toml`.
+
+### Removed
+
+- All individual `exportToX()` / `restoreX()` static methods from `UniversalThemeExporter` (VSCode, Firefox, BetterDiscord, Kitty, Konsole, Btop, Vicinae, Zed, Obsidian, Vencord) — the GUI restore buttons remain and now call `restoreFile()` using the output path from `config.toml`.
+- All universal-theme sync methods from `Config` (`isVSCodeSyncEnabled()`, `setKittySyncEnabled()`, etc.) — replaced by `TemplateConfig`.
+
 ## [1.1.8] - 2026-03-18
 
 ### Added

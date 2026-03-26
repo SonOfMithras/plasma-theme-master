@@ -4,6 +4,7 @@
 #include "GlobalThemeManager.h"
 #include "Logger.h"
 #include "Solar.h"
+#include "TemplateConfig.h"
 #include "ThemeReader.h"
 #include "ThemeWriter.h"
 #include "UniversalThemeExporter.h"
@@ -682,28 +683,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     return WEXITSTATUS(ret);
   } else if (command == "sync-universal" || command == "sync-now") {
     std::cout << "Syncing universal theme to configured apps...\n";
-
-    // 1. Run standard sync for all enabled apps
     UniversalThemeExporter::syncAll();
-
-    // 2. Extra CLI-only Check: Workspace
-    if (Config::isVSCodeSyncEnabled()) {
-      QDir currentDir = QDir::current();
-      QStringList workspaceFiles = currentDir.entryList(
-          QStringList() << "*.code-workspace", QDir::Files);
-      if (currentDir.exists(".vscode") || currentDir.exists("CMakeLists.txt") ||
-          currentDir.exists("package.json") || !workspaceFiles.isEmpty()) {
-        UniversalPalette palette = UniversalThemeExporter::extractColors();
-        QString workspaceSettings =
-            currentDir.absolutePath() + "/.vscode/settings.json";
-        UniversalThemeExporter::exportToVSCodeJSON(workspaceSettings, palette);
-        Logger::log("Detected workspace, exported to: " + workspaceSettings,
-                    Logger::Info);
-      }
-    }
-
     std::cout << "Sync completed. Check logs for details.\n";
-
     return 0;
   } else if (command == "sync-enable") {
     if (args.size() < 2) {
@@ -711,33 +692,20 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    if (app == "vscode") {
-      std::cout << "Enabling VS Code Sync. WARNING: modification of "
-                   "settings.json. Backups will be created.\n";
-      Config::setVSCodeSyncEnabled(true);
-    } else if (app == "firefox") {
-      std::cout << "Enabling Firefox Sync. WARNING: modification of "
-                   "userChrome.css. Backups will be created.\n";
-      Config::setFirefoxSyncEnabled(true);
-    } else if (app == "discord") {
-      std::cout << "Enabling BetterDiscord Sync. WARNING: modification of "
-                   "theme css.\n";
-      Config::setBetterDiscordSyncEnabled(true);
-    } else if (app == "kitty") {
-      std::cout << "Enabling Kitty Sync. WARNING: modification of kitty.conf "
-                   "include.\n";
-      Config::setKittySyncEnabled(true);
-    } else if (app == "obsidian") {
-      std::cout << "Enabling Obsidian Sync.\n";
-      Config::setObsidianSyncEnabled(true);
-    } else if (app == "zed") {
-      std::cout << "Enabling Zed Sync. WARNING: modification of Zed "
-                   "settings.json and themes.\n";
-      Config::setZedSyncEnabled(true);
-    } else {
+    // Map short names to template entry names
+    QMap<QString,QString> nameMap = {
+      {"vscode", "vscode"}, {"firefox", "firefox"}, {"discord", "betterdiscord"},
+      {"betterdiscord", "betterdiscord"}, {"kitty", "kitty_light"},
+      {"konsole", "konsole"}, {"btop", "btop"}, {"vicinae", "vicinae"},
+      {"obsidian", "obsidian"}, {"zed", "zed"}, {"vencord", "vencord"}
+    };
+    if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
     }
+    QString tmplName = nameMap[app];
+    TemplateConfig::setEnabled(tmplName, true);
+    if (tmplName == "kitty_light") TemplateConfig::setEnabled("kitty_dark", true);
     std::cout << "Enabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-disable") {
@@ -746,43 +714,28 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    if (app == "vscode")
-      Config::setVSCodeSyncEnabled(false);
-    else if (app == "firefox")
-      Config::setFirefoxSyncEnabled(false);
-    else if (app == "discord")
-      Config::setBetterDiscordSyncEnabled(false);
-    else if (app == "kitty")
-      Config::setKittySyncEnabled(false);
-    else if (app == "obsidian")
-      Config::setObsidianSyncEnabled(false);
-    else if (app == "zed")
-      Config::setZedSyncEnabled(false);
-    else {
+    QMap<QString,QString> nameMap = {
+      {"vscode", "vscode"}, {"firefox", "firefox"}, {"discord", "betterdiscord"},
+      {"betterdiscord", "betterdiscord"}, {"kitty", "kitty_light"},
+      {"konsole", "konsole"}, {"btop", "btop"}, {"vicinae", "vicinae"},
+      {"obsidian", "obsidian"}, {"zed", "zed"}, {"vencord", "vencord"}
+    };
+    if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
     }
+    QString tmplName = nameMap[app];
+    TemplateConfig::setEnabled(tmplName, false);
+    if (tmplName == "kitty_light") TemplateConfig::setEnabled("kitty_dark", false);
     std::cout << "Disabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-list") {
-    std::cout << "Universal Sync Status:\n";
-    std::cout << "  VS Code: "
-              << (Config::isVSCodeSyncEnabled() ? "Enabled" : "Disabled")
-              << "\n";
-    std::cout << "  Firefox: "
-              << (Config::isFirefoxSyncEnabled() ? "Enabled" : "Disabled")
-              << "\n";
-    std::cout << "  BetterDiscord: "
-              << (Config::isBetterDiscordSyncEnabled() ? "Enabled" : "Disabled")
-              << "\n";
-    std::cout << "  Kitty: "
-              << (Config::isKittySyncEnabled() ? "Enabled" : "Disabled")
-              << "\n";
-    std::cout << "  Obsidian: "
-              << (Config::isObsidianSyncEnabled() ? "Enabled" : "Disabled")
-              << "\n";
-    std::cout << "  Zed: "
-              << (Config::isZedSyncEnabled() ? "Enabled" : "Disabled") << "\n";
+    std::cout << "Universal Sync Status (from config.toml):\n";
+    auto entries = TemplateConfig::loadTemplates();
+    for (const auto &e : entries) {
+      std::cout << "  " << qPrintable(e.name) << ": "
+                << (e.enabled ? "Enabled" : "Disabled") << "\n";
+    }
     return 0;
   } else if (command == "sync-restore") {
     if (args.size() < 2) {
@@ -790,38 +743,22 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    bool success = false;
-
-    if (app == "vscode") {
-      std::cout << "Restoring VS Code settings...\n";
-      success = UniversalThemeExporter::restoreVSCode();
-    } else if (app == "firefox") {
-      std::cout << "Restoring Firefox (Partial)...\n";
-      success = UniversalThemeExporter::restoreFirefox();
-    } else if (app == "discord") {
-      std::cout << "Restoring BetterDiscord...\n";
-      success = UniversalThemeExporter::restoreBetterDiscord();
-    } else if (app == "kitty") {
-      std::cout << "Restoring Kitty config...\n";
-      success = UniversalThemeExporter::restoreKitty();
-    } else if (app == "obsidian") {
-      std::cout << "Restoring Obsidian snippet...\n";
-      success = UniversalThemeExporter::restoreObsidian();
-    } else if (app == "zed") {
-      std::cout << "Restoring Zed config...\n";
-      success = UniversalThemeExporter::restoreZed();
-    } else {
-      std::cout << "Unknown app or restore not supported: " << qPrintable(app)
-                << "\n";
-      return 1;
+    // Restore: find the output_path for the named template and restore its .bak
+    auto entries = TemplateConfig::loadTemplates();
+    bool found = false;
+    for (const auto &e : entries) {
+      if (e.name == app || (app == "discord" && e.name == "betterdiscord")
+              || (app == "kitty" && e.name == "kitty_light")) {
+        if (!e.outputPath.isEmpty()) {
+          bool ok = UniversalThemeExporter::restoreFile(e.outputPath);
+          std::cout << (ok ? "Restored: " : "No backup for: ")
+                    << qPrintable(e.outputPath) << "\n";
+          found = true;
+        }
+      }
     }
-
-    if (success)
-      std::cout << "Restore successful.\n";
-    else
-      std::cout
-          << "Restore finished (some files may not have existed or failed).\n";
-
+    if (!found)
+      std::cout << "No template entry found for: " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "clone-global") {
     if (args.size() < 2) {

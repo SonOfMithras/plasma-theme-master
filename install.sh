@@ -203,10 +203,23 @@ systemctl --user enable $SERVICE_NAME
 print_info "Restarting service to apply changes..."
 systemctl --user restart $SERVICE_NAME
 
-# 6. Cleanup
+# 6. First-run: copy default config.toml if not already present
+USER_CONFIG="$HOME/.config/plasma-theme-master/config.toml"
+SYSTEM_DEFAULT="/usr/share/plasma-theme-master/config.toml.default"
+if [ ! -f "$USER_CONFIG" ] && [ -f "$SYSTEM_DEFAULT" ]; then
+    print_info "Installing default config.toml to $USER_CONFIG..."
+    mkdir -p "$(dirname "$USER_CONFIG")"
+    cp "$SYSTEM_DEFAULT" "$USER_CONFIG"
+    print_success "config.toml installed. Edit it to enable apps and set paths."
+elif [ -f "$USER_CONFIG" ]; then
+    print_info "Existing config.toml found at $USER_CONFIG — skipping (your settings preserved)."
+fi
+
+# 7. Cleanup
 cd ..
 print_info "Cleaning up build artifacts..."
 rm -rf build
 
 print_header "Installation Complete"
 print_success "Run '$APP_NAME status' to verify."
+print_success "Edit ~/.config/plasma-theme-master/config.toml to enable universal theming."

@@ -9,6 +9,8 @@ add_executable(plasma-theme-master
     core/GlobalThemeManager.cpp
     core/FlatpakManager.cpp
     core/UniversalThemeExporter.cpp
+    core/TemplateEngine.cpp
+    core/TemplateConfig.cpp
     gui/MainWindow.cpp
     gui/GlobalThemeEditor.cpp
     gui/UniversalThemePage.cpp
@@ -24,3 +26,5 @@ target_link_libraries(plasma-theme-master
 )
 
 install(TARGETS plasma-theme-master DESTINATION ${KDE_INSTALL_BINDIR})
+
+add_subdirectory(helpers)

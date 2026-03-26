@@ -14,49 +14,52 @@ public:
 private slots:
     void syncNow();
     void pickObsidianVault();
-    void showBDSettings(); // New slot
-    void showVencordSettings(); // New slot
+    void showBDSettings();
+    void showVencordSettings();
 
 private:
     void setupUi();
     void loadSettings();
     void saveSettings();
 
-    QCheckBox *m_vscodeCheck;
+    // Helper: create a restore button wired to a specific template name
+    QPushButton *makeRestoreBtn(const QString &templateName,
+                                const QString &displayName);
+
+    QCheckBox   *m_vscodeCheck;
     QPushButton *m_vscodeRestoreBtn;
 
-    QCheckBox *m_firefoxCheck;
+    QCheckBox   *m_firefoxCheck;
     QPushButton *m_firefoxRestoreBtn;
 
-    QCheckBox *m_discordCheck;
+    QCheckBox   *m_discordCheck;
     QPushButton *m_discordRestoreBtn;
     QPushButton *m_discordConfigBtn;
 
-    QCheckBox *m_kittyCheck;
+    QCheckBox   *m_vencordCheck;
+    QPushButton *m_vencordRestoreBtn;
+    QPushButton *m_vencordConfigBtn;
+
+    QCheckBox   *m_kittyCheck;
     QPushButton *m_kittyRestoreBtn;
 
-    QCheckBox *m_vencordCheck;
-    QCheckBox *m_btopCheck;
-    QCheckBox *m_vicinaeCheck;
-    
-    QPushButton *m_vencordRestoreBtn;
-    QPushButton *m_vencordConfigBtn; // New member
-    QPushButton *m_btopRestoreBtn;
-    QPushButton *m_vicinaeRestoreBtn;
-    
-    QCheckBox *m_zedCheck;
-    QPushButton *m_zedRestoreBtn;
-    
-    QCheckBox *m_konsoleCheck;
+    QCheckBox   *m_konsoleCheck;
     QPushButton *m_konsoleRestoreBtn;
 
+    QCheckBox   *m_btopCheck;
+    QPushButton *m_btopRestoreBtn;
 
-    QCheckBox *m_obsidianCheck;
+    QCheckBox   *m_vicinaeCheck;
+    QPushButton *m_vicinaeRestoreBtn;
+
+    QCheckBox   *m_zedCheck;
+    QPushButton *m_zedRestoreBtn;
+
+    QCheckBox   *m_obsidianCheck;
     QPushButton *m_obsidianRestoreBtn;
-    
-    QLineEdit *m_obsidianPathEdit;
-    QPushButton *m_browseObsidianBtn;
 
+    QLineEdit   *m_obsidianPathEdit;
+    QPushButton *m_browseObsidianBtn;
     QPushButton *m_syncButton;
 
     bool m_isLoading = false;

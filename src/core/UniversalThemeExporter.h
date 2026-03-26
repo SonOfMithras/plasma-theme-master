@@ -1,9 +1,9 @@
 #ifndef UNIVERSALTHEMEEXPORTER_H
 #define UNIVERSALTHEMEEXPORTER_H
 
-#include <QString>
 #include <QColor>
 #include <QMap>
+#include <QString>
 #include <KSharedConfig>
 
 struct UniversalPalette {
@@ -16,7 +16,7 @@ struct UniversalPalette {
     QColor success;
     QColor warning;
     QColor error;
-    
+
     // Derived/Extra
     QColor titleBarBg;
     QColor titleBarFg;
@@ -32,7 +32,7 @@ struct UniversalPalette {
     QColor ansiMagenta;
     QColor ansiCyan;
     QColor ansiWhite;
-    
+
     QColor ansiBlackBright;
     QColor ansiRedBright;
     QColor ansiGreenBright;
@@ -42,54 +42,33 @@ struct UniversalPalette {
     QColor ansiCyanBright;
     QColor ansiWhiteBright;
 
-    QMap<QString, QString> specialColors; // For other specific roles
+    QMap<QString, QString> specialColors;
 };
 
 class UniversalThemeExporter {
 public:
+    // Color extraction
     static UniversalPalette extractColors();
     static UniversalPalette extractColors(const QString &configPath);
+
+    // Main sync entry point — drives all template rendering
     static void syncAll();
-    
-    // Exporters
-    static bool exportToVSCode(const UniversalPalette &palette);
-    static bool exportToVSCodeJSON(const QString &path, const UniversalPalette &palette);
-    static bool exportToFirefox(const UniversalPalette &palette);
-    static bool exportToBetterDiscord(const UniversalPalette &palette);
-    static bool exportToObsidian(const UniversalPalette &palette, const QString &vaultPath);
-    static bool exportToKitty(const UniversalPalette &palette);
-    static bool exportToKonsole(const UniversalPalette &palette);
-    static bool exportToVencord(const UniversalPalette &palette);
-    static bool exportToBtop(const UniversalPalette &palette);
-    static bool exportToVicinae(const UniversalPalette &palette);
-    static bool exportToZed(const UniversalPalette &palette);
-    
-    // Restore Methods
-    static bool restoreVSCode();
-    static bool restoreFirefox();
-    static bool restoreBetterDiscord();
-    static bool restoreKitty();
-    static bool restoreKonsole();
-    static bool restoreObsidian();
-    static bool restoreVencord();
-    static bool restoreBtop();
-    static bool restoreVicinae();
-    static bool restoreZed();
+    static void syncTemplates();
 
-    // Helpers
-    static QStringList scanBetterDiscordImports();
-    static QStringList scanVencordImports();
-
+    // Backup / restore utilities (still used for legacy cleanup on restore btn)
     static bool backupFile(const QString &path);
     static bool restoreFile(const QString &path);
 
 private:
-    static QString colorToHex(const QColor &color);
-    static QString colorToRgb(const QColor &color); // "r, g, b"
-    static bool writeToFile(const QString &path, const QString &content);
-    
-    // Internal helper
     static UniversalPalette extractColorsFromConfig(KSharedConfig::Ptr config);
+
+    // Environment variable injection for helper binaries
+    static void injectPaletteEnv(const UniversalPalette &palette);
+
+    // Helpers for syncTemplates
+    static QString buildImports(const QString &appName);
+    static QMap<QString, QString> buildZedExtras(const UniversalPalette &palette);
+    static UniversalPalette paletteForEntry(const QString &paletteMode);
 };
 
 #endif // UNIVERSALTHEMEEXPORTER_H

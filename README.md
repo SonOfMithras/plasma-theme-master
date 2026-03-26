@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 1.1.8**
+**Version 2.0.0**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -18,7 +18,7 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
-- **Universal Theme Sync**: Syncs your Plasma theme colors to VS Code/Antigravity, Firefox/Zen, BetterDiscord, Kitty, Zed Editor, and Obsidian. (Sourced from Material You colors if enabled).
+- **Universal Theme Sync** (v2.0.0 — Template System): Syncs Plasma colors to other apps using a matugen-style template engine. Supports VS Code/Antigravity, Firefox/Zen, BetterDiscord, Vencord, Kitty, Konsole, Zed Editor, Btop, Vicinae, and Obsidian. Each app uses a standalone `.tpl` file — fully customizable. Custom template entries can be added freely to `config.toml`.
 - **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -112,18 +112,36 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 | `uninstall` | Remove the application and service. |
 
 ### Universal Theme Sync
-The application can inject Plasma's colors into various non-KDE applications.
-**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord` (BetterDiscord), `kitty`, `konsole`, `obsidian`, `zed`, `generic`.
+Plasma colors are injected into other apps via a template engine. Each app has a `.tpl` file and is configured in `~/.config/plasma-theme-master/config.toml`.
+
+**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`.
 
 **Setup**:
-1. Enable sync for an app: `plasma-theme-master sync-enable vscode`
-2. Run sync: `plasma-theme-master sync-universal`
+1. Enable sync for an app (writes to `config.toml`):
+   ```bash
+   plasma-theme-master sync-enable vscode
+   ```
+2. Run sync:
+   ```bash
+   plasma-theme-master sync-universal
+   ```
+   Or click **Sync Now** in the Universal Theme tab.
+
+**Custom Templates**: Add your own app to `config.toml`:
+```toml
+[templates.myapp]
+enabled = true
+input_path = '~/.config/plasma-theme-master/templates/myapp.tpl'
+output_path = '~/.config/myapp/colors.conf'
+palette = 'current'
+post_hook = 'myapp --reload'
+```
 
 **Troubleshooting**:
-- **VS Code**: Requires reloading the window. Backups are stored as `settings.json.bak`.
+- **VS Code**: Set WindowAutofdetect color scheme to 'enabled' in settings. Backups stored as `settings.json.bak`.
 - **Firefox/Zen**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config`.
-- **BetterDiscord**: Requires the BetterDiscord extension, and enable the Plasma theme master theme under the BetterDiscord theme settings.
-- **Obsidian**: Requires "Plasma Master" snippet to be enabled in Appearance settings.
+- **BetterDiscord/Vencord**: Enable the "PlasmaMaster" theme under BetterDiscord theme settings.
+- **Obsidian**: Enable the "Plasma Master" snippet in Appearance settings.
 
 ## Tips & Tricks
 
@@ -173,6 +191,7 @@ This project integrates with or was inspired by the following awesome projects:
 - **BetterDiscord**: [https://betterdiscord.app/](https://betterdiscord.app/)
 - **Vencord**: [https://vencord.dev/](https://vencord.dev/)
 - **Koi** (KDE Day/Night Cycle concept inspiration): [https://github.com/baduhai/Koi](https://github.com/baduhai/Koi)
+- **Matugen** (Material You Colors inspiration): [https://github.com/InioX/matugen](https://github.com/InioX/matugen)
 - **Kvantum**: [https://github.com/tsujan/Kvantum/tree/master/Kvantum](https://github.com/tsujan/Kvantum/tree/master/Kvantum)
 - **kde-material-you-colors**: [https://github.com/luisbocanegra/kde-material-you-colors](https://github.com/luisbocanegra/kde-material-you-colors)
 - **Klassy**: [https://github.com/paulmcauley/klassy](https://github.com/paulmcauley/klassy)
