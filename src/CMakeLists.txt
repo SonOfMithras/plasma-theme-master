@@ -14,6 +14,7 @@ add_executable(plasma-theme-master
     gui/MainWindow.cpp
     gui/GlobalThemeEditor.cpp
     gui/UniversalThemePage.cpp
+    gui/ColorSwatchPicker.cpp
 )
 
 target_link_libraries(plasma-theme-master

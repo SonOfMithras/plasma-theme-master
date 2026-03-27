@@ -23,3 +23,8 @@ target_link_libraries(plasma-theme-master-helper-konsole
     KF6::ConfigCore
 )
 install(TARGETS plasma-theme-master-helper-konsole DESTINATION ${KDE_INSTALL_BINDIR})
+
+# Kitty helper
+add_executable(plasma-theme-master-helper-kitty kitty_helper.cpp)
+target_link_libraries(plasma-theme-master-helper-kitty Qt6::Core)
+install(TARGETS plasma-theme-master-helper-kitty DESTINATION ${KDE_INSTALL_BINDIR})

@@ -22,6 +22,9 @@ public:
 
     static int materialYouSchemeVariant();
     static void setMaterialYouSchemeVariant(int variant);
+
+    static int materialYouNColor();
+    static void setMaterialYouNColor(int ncolor);
 };
 
 #endif // CONFIG_H

@@ -56,3 +56,10 @@ int Config::materialYouSchemeVariant() {
 void Config::setMaterialYouSchemeVariant(int variant) {
     KConfig c(CONFIG_FILE); c.group(GROUP_GENERAL).writeEntry("MaterialYouSchemeVariant", variant); c.sync();
 }
+
+int Config::materialYouNColor() {
+    return KConfig(CONFIG_FILE).group(GROUP_GENERAL).readEntry("MaterialYouNColor", 0);
+}
+void Config::setMaterialYouNColor(int ncolor) {
+    KConfig c(CONFIG_FILE); c.group(GROUP_GENERAL).writeEntry("MaterialYouNColor", ncolor); c.sync();
+}

@@ -325,7 +325,10 @@ void UniversalThemeExporter::syncTemplates() {
         {"zed",          "plasma-theme-master-helper-zed"},
         {"vscode",       "plasma-theme-master-helper-vscode"},
         {"konsole",      "plasma-theme-master-helper-konsole"},
-        // kitty, betterdiscord, vencord: no post-hook needed
+        {"kitty",        "plasma-theme-master-helper-kitty"},
+        {"kitty_dark",   "plasma-theme-master-helper-kitty"},
+        {"kitty_light",  "plasma-theme-master-helper-kitty"},
+        // betterdiscord, vencord: no post-hook needed
     };
 
     for (const TemplateEntry &entry : entries) {

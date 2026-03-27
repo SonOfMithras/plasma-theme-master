@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 2.0.0**
+**Version 2.0.1**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 

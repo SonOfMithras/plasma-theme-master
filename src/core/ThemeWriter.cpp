@@ -456,6 +456,7 @@ void ThemeWriter::syncMaterialYouIcons(bool force) {
   args << "--tone-multiplier" << QString::number(Config::materialYouTone());
   args << "--scheme-variant"
        << QString::number(Config::materialYouSchemeVariant());
+  args << "--ncolor" << QString::number(Config::materialYouNColor());
 
   QString exe = QStandardPaths::findExecutable("kde-material-you-colors");
   if (exe.isEmpty()) {

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-03-27
+
+### Added
+
+- **Material You: Dominant Seed Color Picker** — The Material You tab now shows a visual row of colored swatches representing the dominant colors extracted from the current wallpaper (read from the kde-material-you-colors daemon JSON). Clicking a swatch selects it as the seed color and passes `--ncolor N` to the daemon on apply.
+- **`plasma-theme-master-helper-kitty`** — New dedicated C++ helper for Kitty terminal that:
+  - Copies the correct day/night auto theme conf to `~/.config/kitty/current-theme.conf`
+  - Idempotently adds `include ./current-theme.conf` to `kitty.conf` on first run
+  - Sends `SIGUSR1` to all running kitty instances via `/proc` enumeration so colours reload live
+
+### Fixed
+
+- **Kitty hook name mismatch** — Built-in hook now correctly triggers for template names `kitty`, `kitty_dark`, and `kitty_light` (previously only `kitty` was registered, so the hook was silently skipped for the default `kitty_dark` / `kitty_light` config entries).
+
 ## [2.0.0] - 2026-03-26
 
 ### Added

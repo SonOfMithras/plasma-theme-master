@@ -7,6 +7,7 @@
 #include "../core/UniversalThemeExporter.h"
 #include "GlobalThemeEditor.h"
 #include "UniversalThemePage.h"
+#include "ColorSwatchPicker.h"
 #include "core/Logger.h"
 #include <QAction>
 #include <QDesktopServices>
@@ -573,7 +574,24 @@ void MainWindow::setupMaterialYouTab() {
   toneLayout->addWidget(m_toneSpinBox);
   layout->addWidget(toneGroup);
 
-  // Apply Button
+  // Dominant Seed Color (ncolor)
+  QGroupBox *seedGroup =
+      new QGroupBox(tr("Dominant Seed Color"), m_materialYouTab);
+  QVBoxLayout *seedLayout = new QVBoxLayout(seedGroup);
+
+  QLabel *seedHint = new QLabel(
+      tr("Colors extracted from your current wallpaper. "
+         "Click a swatch to use it as the scheme seed."),
+      m_materialYouTab);
+  seedHint->setWordWrap(true);
+  seedHint->setEnabled(false); // muted appearance
+  seedLayout->addWidget(seedHint);
+
+  m_nColorPicker = new ColorSwatchPicker(m_materialYouTab);
+  m_nColorPicker->refreshFromDaemon();
+  seedLayout->addWidget(m_nColorPicker);
+  layout->addWidget(seedGroup);
+
   QHBoxLayout *btnLayout = new QHBoxLayout();
   m_myApplyBtn =
       new QPushButton(tr("Apply Variables to Daemon"), m_materialYouTab);
@@ -627,6 +645,9 @@ void MainWindow::setupMaterialYouTab() {
           QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &MainWindow::onMaterialYouSettingsChanged);
 
+  connect(m_nColorPicker, &ColorSwatchPicker::colorSelected, this,
+          &MainWindow::onMaterialYouSettingsChanged);
+
   connect(m_myApplyBtn, &QPushButton::clicked, this,
           &MainWindow::applyMaterialYouSettings);
 }
@@ -638,7 +659,8 @@ void MainWindow::onMaterialYouSettingsChanged() {
 
   bool changed = (qAbs(m_chromaSpinBox->value() - savedChroma) > 0.01) ||
                  (qAbs(m_toneSpinBox->value() - savedTone) > 0.01) ||
-                 (m_schemeVariantCombo->currentIndex() != savedVariant);
+                 (m_schemeVariantCombo->currentIndex() != savedVariant) ||
+                 (m_nColorPicker->selectedIndex() != Config::materialYouNColor());
 
   m_myApplyBtn->setEnabled(changed);
 }
@@ -647,6 +669,7 @@ void MainWindow::applyMaterialYouSettings() {
   Config::setMaterialYouChroma(m_chromaSpinBox->value());
   Config::setMaterialYouTone(m_toneSpinBox->value());
   Config::setMaterialYouSchemeVariant(m_schemeVariantCombo->currentIndex());
+  Config::setMaterialYouNColor(m_nColorPicker->selectedIndex());
 
   m_myApplyBtn->setEnabled(false);
 
@@ -777,6 +800,10 @@ void MainWindow::loadSettings() {
   if (savedVariant >= 0 && savedVariant < m_schemeVariantCombo->count()) {
     m_schemeVariantCombo->setCurrentIndex(savedVariant);
   }
+
+  // Refresh swatches from daemon and restore saved ncolor index
+  m_nColorPicker->refreshFromDaemon();
+  m_nColorPicker->setSelectedIndex(Config::materialYouNColor());
 
   m_chromaSpinBox->blockSignals(bC);
   m_toneSpinBox->blockSignals(bT);

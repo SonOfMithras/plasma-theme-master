@@ -26,6 +26,7 @@ class QSlider;
 class QTimer;
 
 class GlobalThemeEditor; // Forward Declaration
+class ColorSwatchPicker;  // Forward Declaration
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -126,6 +127,7 @@ private:
   QDoubleSpinBox *m_chromaSpinBox;
   QSlider *m_toneSlider;
   QDoubleSpinBox *m_toneSpinBox;
+  ColorSwatchPicker *m_nColorPicker;
   QPushButton *m_myApplyBtn;
 
   // --- Log Widgets ---
