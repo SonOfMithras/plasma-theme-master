@@ -129,6 +129,7 @@ private:
   QDoubleSpinBox *m_toneSpinBox;
   ColorSwatchPicker *m_nColorPicker;
   QPushButton *m_myApplyBtn;
+  QPushButton *m_refreshSwatchesBtn;
 
   // --- Log Widgets ---
   QTextEdit *m_logViewer;

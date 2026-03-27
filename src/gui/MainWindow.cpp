@@ -587,11 +587,20 @@ void MainWindow::setupMaterialYouTab() {
   seedHint->setEnabled(false); // muted appearance
   seedLayout->addWidget(seedHint);
 
+  QHBoxLayout *swatchRowLayout = new QHBoxLayout();
   m_nColorPicker = new ColorSwatchPicker(m_materialYouTab);
   m_nColorPicker->refreshFromDaemon();
-  seedLayout->addWidget(m_nColorPicker);
+  swatchRowLayout->addWidget(m_nColorPicker);
+  swatchRowLayout->addStretch();
+
+  m_refreshSwatchesBtn = new QPushButton(tr("Refresh Colors"), m_materialYouTab);
+  m_refreshSwatchesBtn->setToolTip(tr("Re-read wallpaper colors from the running kde-material-you-colors daemon"));
+  swatchRowLayout->addWidget(m_refreshSwatchesBtn);
+  seedLayout->addLayout(swatchRowLayout);
   layout->addWidget(seedGroup);
 
+
+  // Apply Button
   QHBoxLayout *btnLayout = new QHBoxLayout();
   m_myApplyBtn =
       new QPushButton(tr("Apply Variables to Daemon"), m_materialYouTab);
@@ -647,6 +656,13 @@ void MainWindow::setupMaterialYouTab() {
 
   connect(m_nColorPicker, &ColorSwatchPicker::colorSelected, this,
           &MainWindow::onMaterialYouSettingsChanged);
+
+  connect(m_refreshSwatchesBtn, &QPushButton::clicked, this, [this]() {
+    int savedIndex = m_nColorPicker->selectedIndex();
+    m_nColorPicker->refreshFromDaemon();
+    // Restore selection if still in range, otherwise resets to 0
+    m_nColorPicker->setSelectedIndex(savedIndex);
+  });
 
   connect(m_myApplyBtn, &QPushButton::clicked, this,
           &MainWindow::applyMaterialYouSettings);
