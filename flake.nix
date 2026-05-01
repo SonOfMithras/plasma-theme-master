@@ -19,7 +19,7 @@
         {
           default = pkgs.stdenv.mkDerivation {
             pname = "plasma-theme-master";
-            version = "2.0.1";
+            version = "2.0.2";
 
             src = ./.;
 

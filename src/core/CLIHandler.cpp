@@ -540,6 +540,7 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         });
 
     auto performSolarCheck = []() {
+      static bool firstRun = true;
       // 1. Check if Auto is enabled
       if (ThemeReader::isAutoLookAndFeel()) {
         bool isDay = ThemeReader::isKWinDaytime();
@@ -550,14 +551,14 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
         bool needUpdate = false;
 
-        if (!targetGlobal.isEmpty() && currentGlobal != targetGlobal) {
-          Logger::log("Daemon: Global theme mismatch detected. Applying " +
-                          targetGlobal,
+        if (firstRun || (!targetGlobal.isEmpty() && currentGlobal != targetGlobal)) {
+          Logger::log(firstRun ? "Daemon: Enforcing global theme on boot. Applying " + targetGlobal : 
+                                 "Daemon: Global theme mismatch detected. Applying " + targetGlobal,
                       Logger::Info);
-          ThemeWriter::applyGlobalTheme(targetGlobal);
+          ThemeWriter::applyGlobalTheme(targetGlobal, firstRun);
           if (Config::isMaterialYouOverrideEnabled()) {
             ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
-                                                : "MaterialYouDark");
+                                                : "MaterialYouDark", firstRun);
           }
           needUpdate = true;
         }
@@ -665,7 +666,22 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
           });
               });
         }
+      } else {
+        if (firstRun) {
+          QString currentGlobal = ThemeReader::currentGlobalTheme();
+          bool isDayGlobal = (currentGlobal == ThemeReader::defaultLightTheme());
+          bool isNightGlobal = (currentGlobal == ThemeReader::defaultDarkTheme());
+          if (isDayGlobal || isNightGlobal) {
+            Logger::log("Daemon: Enforcing static global theme on boot: " + currentGlobal, Logger::Info);
+            ThemeWriter::applyGlobalTheme(currentGlobal, true);
+            if (Config::isMaterialYouOverrideEnabled()) {
+              ThemeWriter::applyColorScheme(isDayGlobal ? "MaterialYouLight" : "MaterialYouDark", true);
+            }
+            UniversalThemeExporter::syncAll();
+          }
+        }
       }
+      firstRun = false;
     };
 
     QObject::connect(solarTimer, &QTimer::timeout, qApp, performSolarCheck);

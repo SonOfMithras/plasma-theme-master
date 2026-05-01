@@ -692,6 +692,18 @@ void MainWindow::applyMaterialYouSettings() {
   if (Config::isMaterialYouOverrideEnabled()) {
     QProcess::execute("killall", QStringList() << "kde-material-you-colors");
     ThemeWriter::syncMaterialYouIcons(true);
+    
+    // Re-apply the overall theme to ensure Material You fully updates
+    if (m_autoCheck->isChecked()) {
+      applyCurrentTarget();
+    } else {
+      QString currentGlobal = ThemeReader::currentGlobalTheme();
+      if (currentGlobal == m_globalDayCombo->currentText()) {
+        applyStaticDay();
+      } else {
+        applyStaticNight();
+      }
+    }
   }
 }
 

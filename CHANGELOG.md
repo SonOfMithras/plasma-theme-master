@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-05-01
+
+### Fixed
+
+- **Static Global Theme Enforcement on Boot**
+  - Daemon now detects if it's running on boot (via absence of `plasma-theme-masterrc` or `TemplateConfig.toml`).
+  - If detected, it applies the static Day/Night global theme configured in Settings, overriding any transient session default.
+  - Prevents Plasma from automatically snapping back to Breeze Light on boot when Night mode is configured.
+- **Material You Daemon Integration**
+  - Configured Material You colors are now applied *after* the global theme is set, ensuring the correct seed is used.
+  - Prevents a race condition where Material You colors might be applied to the wrong base theme (e.g. Light colors on a Dark global theme).
+
 ## [2.0.1] - 2026-03-27
 
 ### Added
@@ -9,7 +21,7 @@ All notable changes to this project will be documented in this file.
 - **Material You: Dominant Seed Color Picker** — The Material You tab now shows a visual row of colored swatches representing the dominant colors extracted from the current wallpaper (read from the kde-material-you-colors daemon JSON). Clicking a swatch selects it as the seed color and passes `--ncolor N` to the daemon on apply.
 - **`plasma-theme-master-helper-kitty`** — New dedicated C++ helper for Kitty terminal that:
   - Copies the correct day/night auto theme conf to `~/.config/kitty/current-theme.conf`
-  - Idempotently adds `include ./current-theme.conf` to `kitty.conf` on first run
+  - Independently adds `include ./current-theme.conf` to `kitty.conf` on first run
   - Sends `SIGUSR1` to all running kitty instances via `/proc` enumeration so colours reload live
 
 ### Fixed
