@@ -20,7 +20,12 @@ public:
   static bool applyColorScheme(const QString &schemeName, bool force = false);
 
   // App Config (plasma-theme-masterrc)
-  static void setSolarPadding(int minutes);
+  static void setSolarDayOffset(int minutes);
+  static void setSolarNightOffset(int minutes);
+  static void setReenableAutoOnScheduledChange(bool enabled);
+  static void setTemporaryOverride(const QString &overrideMode);
+  static void clearTemporaryOverride();
+  static void setOverrideScheduledState(const QString &state);
   static void setDayKvantumTheme(const QString &themeName);
   static void setNightKvantumTheme(const QString &themeName);
   static void setDayGtkTheme(const QString &themeName);

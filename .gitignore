@@ -23,6 +23,7 @@ Makefile
 *~
 .DS_Store
 .directory
+plasma-theme-master.code-workspace
 
 # Compiled Object files
 *.o

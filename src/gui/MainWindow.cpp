@@ -310,24 +310,47 @@ void MainWindow::setupDashboardTab() {
 
   // --- Solar Settings ---
   QGroupBox *solarGroup = new QGroupBox(tr("Solar Configuration"), this);
-  QHBoxLayout *solarLayout = new QHBoxLayout(solarGroup);
-  m_offsetSlider = new QSlider(Qt::Horizontal, this);
-  m_offsetSlider->setRange(-60, 60);
-  m_offsetSlider->setTickInterval(15);
-  m_offsetSlider->setTickPosition(QSlider::TicksBelow);
-  m_offsetValueLabel = new QLabel("0 mins", this);
-  m_offsetValueLabel->setFixedWidth(60);
+  QGridLayout *solarLayout = new QGridLayout(solarGroup);
 
-  solarLayout->addWidget(new QLabel(tr("Daytime Offset:")));
-  solarLayout->addWidget(m_offsetSlider);
-  solarLayout->addWidget(m_offsetValueLabel);
+  // Day Offset
+  solarLayout->addWidget(new QLabel(tr("Daytime Offset (Sunrise):"), this), 0, 0);
+  m_dayOffsetSlider = new QSlider(Qt::Horizontal, this);
+  m_dayOffsetSlider->setRange(-60, 60);
+  m_dayOffsetSlider->setTickInterval(15);
+  m_dayOffsetSlider->setTickPosition(QSlider::TicksBelow);
+  solarLayout->addWidget(m_dayOffsetSlider, 0, 1);
+
+  m_dayOffsetValueLabel = new QLabel("0 mins", this);
+  m_dayOffsetValueLabel->setFixedWidth(60);
+  solarLayout->addWidget(m_dayOffsetValueLabel, 0, 2);
+
+  // Night Offset
+  solarLayout->addWidget(new QLabel(tr("Nighttime Offset (Sunset):"), this), 1, 0);
+  m_nightOffsetSlider = new QSlider(Qt::Horizontal, this);
+  m_nightOffsetSlider->setRange(-60, 60);
+  m_nightOffsetSlider->setTickInterval(15);
+  m_nightOffsetSlider->setTickPosition(QSlider::TicksBelow);
+  solarLayout->addWidget(m_nightOffsetSlider, 1, 1);
+
+  m_nightOffsetValueLabel = new QLabel("0 mins", this);
+  m_nightOffsetValueLabel->setFixedWidth(60);
+  solarLayout->addWidget(m_nightOffsetValueLabel, 1, 2);
+
+  // Save Offsets Button next to sliders
+  QPushButton *saveOffsetsBtn = new QPushButton(tr("Save Offsets"), this);
+  saveOffsetsBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  solarLayout->addWidget(saveOffsetsBtn, 0, 3, 2, 1);
 
   m_kcmNightColorBtn = new QPushButton(tr("Configure Day-Night Cycle"), this);
-  solarLayout->addWidget(m_kcmNightColorBtn);
+  solarLayout->addWidget(m_kcmNightColorBtn, 2, 0, 1, 4);
 
-  connect(m_offsetSlider, &QSlider::valueChanged, this,
-          &MainWindow::onOffsetChanged);
-  connect(m_offsetSlider, &QSlider::sliderReleased, this,
+  connect(m_dayOffsetSlider, &QSlider::valueChanged, this,
+          &MainWindow::onDayOffsetChanged);
+
+  connect(m_nightOffsetSlider, &QSlider::valueChanged, this,
+          &MainWindow::onNightOffsetChanged);
+
+  connect(saveOffsetsBtn, &QPushButton::clicked, this,
           &MainWindow::saveSettings);
 
   connect(m_kcmNightColorBtn, &QPushButton::clicked, this,
@@ -418,6 +441,11 @@ void MainWindow::setupDashboardTab() {
   autoLayout->addStretch();
   autoLayout->addWidget(m_refreshButton);
   autoMainLayout->addLayout(autoLayout);
+
+  m_reenableAutoCheck =
+      new QCheckBox(tr("Re-enable auto-switch at next scheduled cycle transition"), this);
+  connect(m_reenableAutoCheck, &QCheckBox::toggled, this, &MainWindow::saveSettings);
+  autoMainLayout->addWidget(m_reenableAutoCheck);
 
   m_materialYouCheck =
       new QCheckBox(tr("Override color scheme with Material You"), this);
@@ -783,13 +811,19 @@ void MainWindow::loadSettings() {
   if (!kNightP.isEmpty())
     m_klassyNightCombo->setCurrentText(kNightP);
 
-  // Solar Padding
-  int padding = ThemeReader::solarPadding();
-  m_offsetSlider->setValue(padding);
-  m_offsetValueLabel->setText(QString("%1 mins").arg(padding));
+  // Solar Offsets
+  int dayOffset = ThemeReader::solarDayOffset();
+  int nightOffset = ThemeReader::solarNightOffset();
+  m_dayOffsetSlider->setValue(-dayOffset); // Flip visually
+  m_dayOffsetValueLabel->setText(QString("%1 mins").arg(-dayOffset));
+  m_nightOffsetSlider->setValue(nightOffset);
+  m_nightOffsetValueLabel->setText(QString("%1 mins").arg(nightOffset));
 
   // Auto Switch
   m_autoCheck->setChecked(ThemeReader::isAutoLookAndFeel());
+  bool bR = m_reenableAutoCheck->blockSignals(true);
+  m_reenableAutoCheck->setChecked(ThemeReader::reenableAutoOnScheduledChange());
+  m_reenableAutoCheck->blockSignals(bR);
   m_materialYouCheck->setChecked(Config::isMaterialYouOverrideEnabled());
 
   // Night Color Temps
@@ -852,7 +886,9 @@ void MainWindow::saveSettings() {
   ThemeWriter::setNightGtkTheme(m_gtkNightCombo->currentText());
   ThemeWriter::setDayKlassyPreset(m_klassyDayCombo->currentText());
   ThemeWriter::setNightKlassyPreset(m_klassyNightCombo->currentText());
-  ThemeWriter::setSolarPadding(m_offsetSlider->value());
+  ThemeWriter::setSolarDayOffset(-m_dayOffsetSlider->value()); // Flip visually back to logical value
+  ThemeWriter::setSolarNightOffset(m_nightOffsetSlider->value());
+  ThemeWriter::setReenableAutoOnScheduledChange(m_reenableAutoCheck->isChecked());
   Config::setMaterialYouOverrideEnabled(m_materialYouCheck->isChecked());
   if (m_materialYouCheck->isChecked()) {
     QProcess::execute("killall", QStringList() << "kde-material-you-colors");
@@ -926,6 +962,12 @@ void MainWindow::toggleAuto(bool checked) {
 #include <QTimer>
 
 void MainWindow::applyStaticDay() {
+  if (ThemeReader::reenableAutoOnScheduledChange()) {
+    ThemeWriter::setTemporaryOverride("light");
+    ThemeWriter::setOverrideScheduledState(ThemeReader::isKWinDaytime() ? "day" : "night");
+  } else {
+    ThemeWriter::clearTemporaryOverride();
+  }
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
@@ -953,6 +995,12 @@ void MainWindow::applyStaticDay() {
 }
 
 void MainWindow::applyStaticNight() {
+  if (ThemeReader::reenableAutoOnScheduledChange()) {
+    ThemeWriter::setTemporaryOverride("dark");
+    ThemeWriter::setOverrideScheduledState(ThemeReader::isKWinDaytime() ? "day" : "night");
+  } else {
+    ThemeWriter::clearTemporaryOverride();
+  }
   m_autoCheck->setChecked(false); // Disables auto
 
   auto applyAction = [this]() {
@@ -1026,9 +1074,14 @@ void MainWindow::applyCurrentTarget() {
   refreshStatus();
 }
 
-void MainWindow::onOffsetChanged(int value) {
-  m_offsetValueLabel->setText(QString("%1 mins").arg(value));
-  // Don't save on every tick, handled by sliderReleased
+void MainWindow::onDayOffsetChanged(int value) {
+  m_dayOffsetValueLabel->setText(QString("%1 mins").arg(value)); // Show slider value directly
+  // Don't save on every tick, handled by Save button
+}
+
+void MainWindow::onNightOffsetChanged(int value) {
+  m_nightOffsetValueLabel->setText(QString("%1 mins").arg(value));
+  // Don't save on every tick, handled by Save button
 }
 
 void MainWindow::refreshStatus() {
@@ -1045,7 +1098,8 @@ void MainWindow::refreshStatus() {
   // Solar Info
   double lat = ThemeReader::nativeLatitude();
   double lon = ThemeReader::nativeLongitude();
-  int offset = m_offsetSlider->value();
+  int dayOffset = -m_dayOffsetSlider->value(); // Flip visually to get logical value
+  int nightOffset = m_nightOffsetSlider->value();
 
   bool isDay = ThemeReader::isKWinDaytime();
   QString target = isDay ? "Day" : "Night";
@@ -1064,12 +1118,11 @@ void MainWindow::refreshStatus() {
                    ? times.second.toLocalTime().toString("HH:mm")
                    : "N/A";
 
-  // Calculated
-  int shift = (offset * 60) / 2;
+  // Calculated using separate offsets
   QDateTime start =
-      times.first.isValid() ? times.first.addSecs(-shift) : QDateTime();
+      times.first.isValid() ? times.first.addSecs(-dayOffset * 60) : QDateTime();
   QDateTime end =
-      times.second.isValid() ? times.second.addSecs(shift) : QDateTime();
+      times.second.isValid() ? times.second.addSecs(nightOffset * 60) : QDateTime();
 
   QString startStr =
       start.isValid() ? start.toLocalTime().toString("HH:mm") : "N/A";

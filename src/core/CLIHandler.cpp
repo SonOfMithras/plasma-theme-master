@@ -42,8 +42,12 @@ void CLIHandler::printHelp() {
       << "  set-auto      Enable/Disable auto look and feel (uses Solar "
          "calculation).\n"
       << "                Example: plasma-theme-master set-auto true\n\n"
-      << "  set-offset    Set solar padding in minutes (extends the day).\n"
-      << "                Example: plasma-theme-master set-offset 30\n\n"
+      << "  set-offset-day <minutes>\n"
+      << "                Set daytime offset in minutes (sunrise shift).\n\n"
+      << "  set-offset-night <minutes>\n"
+      << "                Set nighttime offset in minutes (sunset shift).\n\n"
+      << "  set-reenable-auto <true/false>\n"
+      << "                Re-enable auto mode at the next scheduled change.\n\n"
       << "  set-kvantum   Set the active Kvantum theme immediately.\n"
       << "                Example: plasma-theme-master set-kvantum "
          "GraphiteDark\n\n"
@@ -70,6 +74,10 @@ void CLIHandler::printHelp() {
       << "                Disable auto l&f and apply defaults (Global + "
          "Kvantum + GTK).\n"
       << "                Example: plasma-theme-master set-static-light\n\n"
+      << "  day\n"
+      << "                Alias for set-static-light.\n\n"
+      << "  night\n"
+      << "                Alias for set-static-dark.\n\n"
       << "  clone-global <source> <dest>\n"
       << "                Clone a global theme to the user directory.\n"
       << "                Example: plasma-theme-master clone-global Breeze "
@@ -99,7 +107,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
     double lat = ThemeReader::nativeLatitude();
     double lon = ThemeReader::nativeLongitude();
-    int offset = ThemeReader::solarPadding();
+    int dayOffset = ThemeReader::solarDayOffset();
+    int nightOffset = ThemeReader::solarNightOffset();
 
     QDateTime nowUtc = QDateTime::currentDateTime().toUTC();
     QPair<QDateTime, QDateTime> times =
@@ -114,11 +123,12 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                             : "N/A";
 
     // Calculate effective Day Start/End with Offset
-    int shiftSecs = (offset * 60) / 2;
-    QDateTime dayStart =
-        times.first.isValid() ? times.first.addSecs(-shiftSecs) : QDateTime();
-    QDateTime dayEnd =
-        times.second.isValid() ? times.second.addSecs(shiftSecs) : QDateTime();
+    QDateTime dayStart = times.first.isValid()
+                             ? times.first.addSecs(-dayOffset * 60)
+                             : QDateTime();
+    QDateTime dayEnd = times.second.isValid()
+                           ? times.second.addSecs(nightOffset * 60)
+                           : QDateTime();
 
     QString dayStartStr =
         dayStart.isValid() ? dayStart.toLocalTime().toString("HH:mm") : "N/A";
@@ -152,9 +162,18 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     out << "Location: " << lat << ", " << lon << "\n";
     out << "Sunrise: " << sunriseStr << "\n";
     out << "Sunset: " << sunsetStr << "\n";
-    out << "Offset (Padding): " << offset << " minutes\n";
+    out << "Day Offset: " << dayOffset << " minutes\n";
+    out << "Night Offset: " << nightOffset << " minutes\n";
     out << "Day Start: " << dayStartStr << "\n";
     out << "Night Start: " << dayEndStr << "\n";
+    out << "Re-enable Auto Mode: "
+        << (ThemeReader::reenableAutoOnScheduledChange() ? "True" : "False")
+        << "\n";
+    out << "Temporary Override: "
+        << (ThemeReader::temporaryOverride().isEmpty()
+                ? "None"
+                : ThemeReader::temporaryOverride())
+        << "\n";
 
     out << "\n[Flatpak]\n";
     out << "Status: " << FlatpakManager::flatpakStatus() << "\n";
@@ -218,9 +237,9 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     bool enabled = (val == "true" || val == "on" || val == "1");
     ThemeWriter::setFlatpakFollowsGtk(enabled);
     return 0;
-  } else if (command == "set-offset") {
+  } else if (command == "set-offset-day") {
     if (args.size() < 2) {
-      std::cerr << "Error: set-offset requires a value (minutes).\n";
+      std::cerr << "Error: set-offset-day requires a value (minutes).\n";
       return 1;
     }
     bool ok;
@@ -229,7 +248,31 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       std::cerr << "Error: Invalid integer value.\n";
       return 1;
     }
-    ThemeWriter::setSolarPadding(val);
+    ThemeWriter::setSolarDayOffset(val);
+    return 0;
+  } else if (command == "set-offset-night") {
+    if (args.size() < 2) {
+      std::cerr << "Error: set-offset-night requires a value (minutes).\n";
+      return 1;
+    }
+    bool ok;
+    int val = args.at(1).toInt(&ok);
+    if (!ok) {
+      std::cerr << "Error: Invalid integer value.\n";
+      return 1;
+    }
+    ThemeWriter::setSolarNightOffset(val);
+    return 0;
+  } else if (command == "set-reenable-auto") {
+    if (args.size() < 2) {
+      std::cerr << "Error: set-reenable-auto requires a value (true/false).\n";
+      return 1;
+    }
+    QString val = args.at(1).toLower();
+    bool enabled = (val == "true" || val == "on" || val == "1");
+    ThemeWriter::setReenableAutoOnScheduledChange(enabled);
+    std::cout << "ReenableAutoOnScheduledChange set to: "
+              << (enabled ? "True" : "False") << "\n";
     return 0;
   } else if (command == "set-auto") {
     if (args.size() < 2) {
@@ -401,13 +444,20 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     ThemeWriter::setDefaultLightTheme(args.at(1));
     return 0;
-  } else if (command == "set-static-dark") {
+  } else if (command == "set-static-dark" || command == "night") {
     QString global = ThemeReader::defaultDarkTheme();
     QString kvantum = ThemeReader::nightKvantumTheme();
 
     if (global.isEmpty())
       std::cerr << "Warning: No Default Dark Global Theme.\n";
 
+    if (ThemeReader::reenableAutoOnScheduledChange()) {
+      ThemeWriter::setTemporaryOverride("dark");
+      ThemeWriter::setOverrideScheduledState(
+          ThemeReader::isKWinDaytime() ? "day" : "night");
+    } else {
+      ThemeWriter::clearTemporaryOverride();
+    }
     ThemeWriter::setAutoLookAndFeel(false);
 
     auto applyTheme = [&]() {
@@ -438,13 +488,20 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     std::cout << "Done.\n";
 
     return 0;
-  } else if (command == "set-static-light") {
+  } else if (command == "set-static-light" || command == "day") {
     QString global = ThemeReader::defaultLightTheme();
     QString kvantum = ThemeReader::dayKvantumTheme();
 
     if (global.isEmpty())
       std::cerr << "Warning: No Default Light Global Theme.\n";
 
+    if (ThemeReader::reenableAutoOnScheduledChange()) {
+      ThemeWriter::setTemporaryOverride("light");
+      ThemeWriter::setOverrideScheduledState(
+          ThemeReader::isKWinDaytime() ? "day" : "night");
+    } else {
+      ThemeWriter::clearTemporaryOverride();
+    }
     ThemeWriter::setAutoLookAndFeel(false);
 
     auto applyTheme = [&]() {
@@ -541,6 +598,26 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
     auto performSolarCheck = []() {
       static bool firstRun = true;
+
+      // Check for temporary override transition before checking
+      // isAutoLookAndFeel
+      if (!ThemeReader::isAutoLookAndFeel()) {
+        if (ThemeReader::reenableAutoOnScheduledChange() &&
+            !ThemeReader::temporaryOverride().isEmpty()) {
+          QString currentScheduled =
+              ThemeReader::isKWinDaytime() ? "day" : "night";
+          QString overrideScheduled = ThemeReader::overrideScheduledState();
+          if (currentScheduled != overrideScheduled) {
+            Logger::log("Daemon: Scheduled transition detected (from " +
+                            overrideScheduled + " to " + currentScheduled +
+                            "). Re-enabling Auto-Switch.",
+                        Logger::Info);
+            ThemeWriter::clearTemporaryOverride();
+            ThemeWriter::setAutoLookAndFeel(true);
+          }
+        }
+      }
+
       // 1. Check if Auto is enabled
       if (ThemeReader::isAutoLookAndFeel()) {
         bool isDay = ThemeReader::isKWinDaytime();
@@ -551,14 +628,18 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
 
         bool needUpdate = false;
 
-        if (firstRun || (!targetGlobal.isEmpty() && currentGlobal != targetGlobal)) {
-          Logger::log(firstRun ? "Daemon: Enforcing global theme on boot. Applying " + targetGlobal : 
-                                 "Daemon: Global theme mismatch detected. Applying " + targetGlobal,
-                      Logger::Info);
+        if (firstRun ||
+            (!targetGlobal.isEmpty() && currentGlobal != targetGlobal)) {
+          Logger::log(
+              firstRun ? "Daemon: Enforcing global theme on boot. Applying " +
+                             targetGlobal
+                       : "Daemon: Global theme mismatch detected. Applying " +
+                             targetGlobal,
+              Logger::Info);
           ThemeWriter::applyGlobalTheme(targetGlobal, firstRun);
           if (Config::isMaterialYouOverrideEnabled()) {
-            ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
-                                                : "MaterialYouDark", firstRun);
+            ThemeWriter::applyColorScheme(
+                isDay ? "MaterialYouLight" : "MaterialYouDark", firstRun);
           }
           needUpdate = true;
         }
@@ -647,35 +728,52 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                 if (!targetFlatpak.isEmpty())
                   FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
 
-                // Double-pass: Solid delay to let first pass settle, then apply again to fix contrast issues
-          QTimer::singleShot(2000, qApp, [targetGlobal, targetKvantum, targetGtk, targetKlassy, targetFlatpak, isDay]() {
-              Logger::log("Daemon: Performing second pass to fix contrast issues...", Logger::Info);
-              if (!targetGlobal.isEmpty()) {
-                  ThemeWriter::applyGlobalTheme(targetGlobal, true);
-                  ThemeWriter::setAutoLookAndFeel(true);
-                  if (Config::isMaterialYouOverrideEnabled()) {
-                      ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight" : "MaterialYouDark", true);
-                  }
-              }
-              if (!targetKvantum.isEmpty()) ThemeWriter::setKvantumTheme(targetKvantum, true);
-              if (!targetGtk.isEmpty()) ThemeWriter::setGtkTheme(targetGtk, true);
-              if (!targetKlassy.isEmpty()) ThemeWriter::setKlassyPreset(targetKlassy, true);
-              if (!targetFlatpak.isEmpty()) FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
-              
-              UniversalThemeExporter::syncAll();
-          });
+                // Double-pass: Solid delay to let first pass settle, then apply
+                // again to fix contrast issues
+                QTimer::singleShot(
+                    2000, qApp,
+                    [targetGlobal, targetKvantum, targetGtk, targetKlassy,
+                     targetFlatpak, isDay]() {
+                      Logger::log("Daemon: Performing second pass to fix "
+                                  "contrast issues...",
+                                  Logger::Info);
+                      if (!targetGlobal.isEmpty()) {
+                        ThemeWriter::applyGlobalTheme(targetGlobal, true);
+                        ThemeWriter::setAutoLookAndFeel(true);
+                        if (Config::isMaterialYouOverrideEnabled()) {
+                          ThemeWriter::applyColorScheme(
+                              isDay ? "MaterialYouLight" : "MaterialYouDark",
+                              true);
+                        }
+                      }
+                      if (!targetKvantum.isEmpty())
+                        ThemeWriter::setKvantumTheme(targetKvantum, true);
+                      if (!targetGtk.isEmpty())
+                        ThemeWriter::setGtkTheme(targetGtk, true);
+                      if (!targetKlassy.isEmpty())
+                        ThemeWriter::setKlassyPreset(targetKlassy, true);
+                      if (!targetFlatpak.isEmpty())
+                        FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
+
+                      UniversalThemeExporter::syncAll();
+                    });
               });
         }
       } else {
         if (firstRun) {
           QString currentGlobal = ThemeReader::currentGlobalTheme();
-          bool isDayGlobal = (currentGlobal == ThemeReader::defaultLightTheme());
-          bool isNightGlobal = (currentGlobal == ThemeReader::defaultDarkTheme());
+          bool isDayGlobal =
+              (currentGlobal == ThemeReader::defaultLightTheme());
+          bool isNightGlobal =
+              (currentGlobal == ThemeReader::defaultDarkTheme());
           if (isDayGlobal || isNightGlobal) {
-            Logger::log("Daemon: Enforcing static global theme on boot: " + currentGlobal, Logger::Info);
+            Logger::log("Daemon: Enforcing static global theme on boot: " +
+                            currentGlobal,
+                        Logger::Info);
             ThemeWriter::applyGlobalTheme(currentGlobal, true);
             if (Config::isMaterialYouOverrideEnabled()) {
-              ThemeWriter::applyColorScheme(isDayGlobal ? "MaterialYouLight" : "MaterialYouDark", true);
+              ThemeWriter::applyColorScheme(
+                  isDayGlobal ? "MaterialYouLight" : "MaterialYouDark", true);
             }
             UniversalThemeExporter::syncAll();
           }
@@ -709,19 +807,27 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     }
     QString app = args.at(1).toLower();
     // Map short names to template entry names
-    QMap<QString,QString> nameMap = {
-      {"vscode", "vscode"}, {"firefox", "firefox"}, {"discord", "betterdiscord"},
-      {"betterdiscord", "betterdiscord"}, {"kitty", "kitty_light"},
-      {"konsole", "konsole"}, {"btop", "btop"}, {"vicinae", "vicinae"},
-      {"obsidian", "obsidian"}, {"zed", "zed"}, {"vencord", "vencord"}
-    };
+    QMap<QString, QString> nameMap = {{"vscode", "vscode"},
+                                      {"firefox", "firefox"},
+                                      {"discord", "betterdiscord"},
+                                      {"betterdiscord", "betterdiscord"},
+                                      {"kitty", "kitty_light"},
+                                      {"konsole", "konsole"},
+                                      {"btop", "btop"},
+                                      {"vicinae", "vicinae"},
+                                      {"obsidian", "obsidian"},
+                                      {"zed", "zed"},
+                                      {"vencord", "vencord"},
+                                      {"millennium", "millennium"},
+                                      {"steam", "millennium"}};
     if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
     }
     QString tmplName = nameMap[app];
     TemplateConfig::setEnabled(tmplName, true);
-    if (tmplName == "kitty_light") TemplateConfig::setEnabled("kitty_dark", true);
+    if (tmplName == "kitty_light")
+      TemplateConfig::setEnabled("kitty_dark", true);
     std::cout << "Enabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-disable") {
@@ -730,19 +836,27 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    QMap<QString,QString> nameMap = {
-      {"vscode", "vscode"}, {"firefox", "firefox"}, {"discord", "betterdiscord"},
-      {"betterdiscord", "betterdiscord"}, {"kitty", "kitty_light"},
-      {"konsole", "konsole"}, {"btop", "btop"}, {"vicinae", "vicinae"},
-      {"obsidian", "obsidian"}, {"zed", "zed"}, {"vencord", "vencord"}
-    };
+    QMap<QString, QString> nameMap = {{"vscode", "vscode"},
+                                      {"firefox", "firefox"},
+                                      {"discord", "betterdiscord"},
+                                      {"betterdiscord", "betterdiscord"},
+                                      {"kitty", "kitty_light"},
+                                      {"konsole", "konsole"},
+                                      {"btop", "btop"},
+                                      {"vicinae", "vicinae"},
+                                      {"obsidian", "obsidian"},
+                                      {"zed", "zed"},
+                                      {"vencord", "vencord"},
+                                      {"millennium", "millennium"},
+                                      {"steam", "millennium"}};
     if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
     }
     QString tmplName = nameMap[app];
     TemplateConfig::setEnabled(tmplName, false);
-    if (tmplName == "kitty_light") TemplateConfig::setEnabled("kitty_dark", false);
+    if (tmplName == "kitty_light")
+      TemplateConfig::setEnabled("kitty_dark", false);
     std::cout << "Disabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-list") {
@@ -763,8 +877,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     auto entries = TemplateConfig::loadTemplates();
     bool found = false;
     for (const auto &e : entries) {
-      if (e.name == app || (app == "discord" && e.name == "betterdiscord")
-              || (app == "kitty" && e.name == "kitty_light")) {
+      if (e.name == app || (app == "discord" && e.name == "betterdiscord") ||
+          (app == "kitty" && e.name == "kitty_light")) {
         if (!e.outputPath.isEmpty()) {
           bool ok = UniversalThemeExporter::restoreFile(e.outputPath);
           std::cout << (ok ? "Restored: " : "No backup for: ")

@@ -103,8 +103,9 @@ bool ThemeReader::isKWinDaytime() {
   // Fallback if DBus fails
   double lat = nativeLatitude();
   double lon = nativeLongitude();
-  int offset = solarPadding();
-  return Solar::isDaytime(lat, lon, offset);
+  int dayOffset = solarDayOffset();
+  int nightOffset = solarNightOffset();
+  return Solar::isDaytime(lat, lon, dayOffset, nightOffset);
 }
 
 int ThemeReader::kwinDayTemperature() {
@@ -164,13 +165,49 @@ QString ThemeReader::defaultLightTheme() {
   return group.readEntry(QStringLiteral("DefaultLightLookAndFeel"), QString());
 }
 
-int ThemeReader::solarPadding() {
+int ThemeReader::solarDayOffset() {
   QString path =
       QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
       QStringLiteral("/plasma-theme-masterrc");
   KConfig config(path, KConfig::SimpleConfig);
   KConfigGroup group = config.group(QStringLiteral("General"));
-  return group.readEntry(QStringLiteral("SolarPadding"), 0);
+  return group.readEntry(QStringLiteral("SolarDayOffset"), 0);
+}
+
+int ThemeReader::solarNightOffset() {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("General"));
+  return group.readEntry(QStringLiteral("SolarNightOffset"), 0);
+}
+
+bool ThemeReader::reenableAutoOnScheduledChange() {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("General"));
+  return group.readEntry(QStringLiteral("ReenableAutoOnScheduledChange"), false);
+}
+
+QString ThemeReader::temporaryOverride() {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("State"));
+  return group.readEntry(QStringLiteral("TemporaryOverride"), QString());
+}
+
+QString ThemeReader::overrideScheduledState() {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("State"));
+  return group.readEntry(QStringLiteral("OverrideScheduledState"), QString());
 }
 
 QString ThemeReader::dayKvantumTheme() {

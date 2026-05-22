@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 2.0.2**
+**Version 2.0.3**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -10,10 +10,10 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 
 ## Features
 
-- **Automatic Day/Night Switching**: seamless transition of Global, Kvantum, GTK, Flatpak themes, Klassy Window Decorations, and Material You Color Schemes.
+- **Automatic Day/Night Switching**: Seamless transition of Global, Kvantum, GTK, Flatpak themes, Klassy Window Decorations, and Material You Color Schemes (with optional temporary override auto-restoration).
 - **Native Night Color Integration**: Automatically reads KDE Plasma's Night Color settings directly via D-Bus for perfectly synchronized Day/Night transitions.
 - **Solar Calculation Fallback**: Acts as a smooth fallback system, automatically calculating sunrise and sunset times based on longitude and latitude if Night Color is inactive.
-- **Solar Offset**: I noticed that plasma switched my global theme 30 mins after sunset so I added an offset to allow manual adjustment to sync with the time plasma acctually changes the theme.
+- **Independent Day/Night Solar Offsets**: Shift sunrise (Day) and sunset (Night) transitions earlier or later independently via GUI sliders or CLI (supporting negative offsets to trigger modes earlier than solar transitions).
 - **Klassy Integration**: Apply window decoration presets (Day/Night) automatically.
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
@@ -86,9 +86,12 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 
 | Command | Description |
 |---|---|
-| `status` | Show current solar times, mode, and active themes. |
-| `day` | Force switch to Day mode (applies configured Day themes). |
-| `night` | Force switch to Night mode (applies configured Night themes). |
+| `status` | Show current solar times, mode, active themes, and configured day/night offsets. |
+| `day` | Force switch to Day mode (respects temporary override auto-recovery). |
+| `night` | Force switch to Night mode (respects temporary override auto-recovery). |
+| `set-offset-day <minutes>` | Set daytime offset in minutes (sunrise shift, supporting negative values). |
+| `set-offset-night <minutes>` | Set nighttime offset in minutes (sunset shift, supporting negative values). |
+| `set-reenable-auto <bool>` | Toggle auto-restoration of auto mode at the next scheduled cycle change. |
 | `set-global-day <theme>` | Set the Global Theme for Day mode. |
 | `set-global-night <theme>` | Set the Global Theme for Night mode. |
 | `set-kvantum-day <theme>` | Set the Kvantum Theme for Day mode. |
@@ -114,7 +117,7 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 ### Universal Theme Sync
 Plasma colors are injected into other apps via a template engine. Each app has a `.tpl` file and is configured in `~/.config/plasma-theme-master/config.toml`.
 
-**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`.
+**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`, `millennium` (Steam Material-Theme).
 
 **Setup**:
 1. Enable sync for an app (writes to `config.toml`):
@@ -142,6 +145,7 @@ post_hook = 'myapp --reload'
 - **Firefox/Zen**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config`.
 - **BetterDiscord/Vencord**: Enable the "PlasmaMaster" theme under BetterDiscord theme settings.
 - **Obsidian**: Enable the "Plasma Master" snippet in Appearance settings.
+- **Millennium (Steam)**: Overwrites `blue.css` to inject dynamic accent colors. Requires the Steam client modding framework [Millennium](https://steambrew.app/) and [Material-Theme](https://steambrew.app/theme?id=ipYjqODds05KMcvh7QJn) installed. In Steam's Material-Theme settings, the **Color** scheme must be set to **"Blue"**. Note: Live reloads are not automatically triggered by Steam, so a manual theme toggle or client refresh is required in Steam settings after synchronization to apply color changes.
 
 ## Tips & Tricks
 

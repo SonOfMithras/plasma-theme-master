@@ -31,7 +31,11 @@ public:
   static QString defaultLightTheme();
 
   // App Config (plasma-theme-masterrc)
-  static int solarPadding();
+  static int solarDayOffset();
+  static int solarNightOffset();
+  static bool reenableAutoOnScheduledChange();
+  static QString temporaryOverride();
+  static QString overrideScheduledState();
   static QString dayKvantumTheme();
   static QString nightKvantumTheme();
   static QString dayGtkTheme();

@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2026-05-22
+
+### Added
+ **Independent Day/Night Solar Offsets**
+  - Replaced the single legacy `SolarPadding` logic with separate `SolarDayOffset` (shifts sunrise time) and `SolarNightOffset` (shifts sunset time) configuration keys.
+  - Allows daytime and nighttime cycles to be shifted earlier or later independently, including negative offsets (e.g. starting night mode earlier than sunset).
+  - Cleaned up all vestigial `SolarPadding` code from `ThemeReader` and command-line parser.
+- **Improved Solar Settings GUI Controls**
+  - Flipped the Daytime Offset slider mapping visually so that pulling left represents negative values (sunrise earlier) and pulling right represents positive values (sunrise later), aligning with visual and label intuition.
+  - Added a dedicated "Save Offsets" button to persist slider updates, preventing disk thrashing and improving UI responsiveness.
+- **Auto-Re-enable Automatic Theme Switching**
+  - Added a new configuration option and GUI checkbox: "Re-enable auto-switch at next scheduled cycle transition".
+  - If enabled, manually forcing static Day/Night mode (e.g. during a daytime storm) will temporarily override the theme but automatically restore automatic mode at the next scheduled sunrise/sunset transition.
+- **CLI Enhancements & Aliases**
+  - Added `day` and `night` aliases to manually trigger static light and dark overrides from the command line.
+  - Added CLI options `set-offset-day <minutes>` and `set-offset-night <minutes>` to set separate offsets.
+  - Added `set-reenable-auto <true/false>` to configure auto-restoration behavior from the terminal.
+  - Removed deprecated `set-offset` command in favor of independent day and night offset controls.
+- **Millennium Steam (Material Theme) Support**
+  - Added support for the Millennium Steam client modding framework (specifically the Material-Theme).
+  - Automatically exports space-separated dual-scheme CSS variables directly to `blue.css` (`~/.steam/steam/millennium/themes/Material-Theme/css/main/colors/blue.css`).
+  - Overwriting `blue.css` directly bypasses dynamic registration limits, enabling custom color integration when the "Blue" theme option is active inside Steam.
+  - Documented setup instructions and manual reload notes in the README.
+
+### Fixed
+
+- **Cleaned up VSCode helper** - Removed the unused `applyWorkspaceSettings()` function and all associated build flags and headers.
+
 ## [2.0.2] - 2026-05-01
 
 ### Fixed

@@ -36,6 +36,9 @@ public:
     /** Copy system default → user config if the user file doesn't exist yet. */
     static void ensureUserConfig();
 
+    /** Merge any new templates from system config.toml.default into user's config.toml */
+    static void mergeMissingTemplates();
+
     // -----------------------------------------------------------------------
     // Reading
     // -----------------------------------------------------------------------

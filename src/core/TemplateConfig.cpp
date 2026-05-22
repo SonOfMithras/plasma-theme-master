@@ -11,6 +11,8 @@
 #include <QStandardPaths>
 #include <QTextStream>
 
+static bool saveDoc(const toml::table &tbl);
+
 // ---------------------------------------------------------------------------
 // Path helpers
 // ---------------------------------------------------------------------------
@@ -38,7 +40,10 @@ QString TemplateConfig::systemConfigPath() {
 
 void TemplateConfig::ensureUserConfig() {
     QString userPath = userConfigPath();
-    if (QFile::exists(userPath)) return;
+    if (QFile::exists(userPath)) {
+        mergeMissingTemplates();
+        return;
+    }
 
     QFileInfo fi(userPath);
     QDir().mkpath(fi.absolutePath());
@@ -61,6 +66,58 @@ void TemplateConfig::ensureUserConfig() {
             << "[config]\n";
         Logger::log("TemplateConfig: Created minimal stub config at " + userPath,
                     Logger::Info);
+    }
+}
+
+void TemplateConfig::mergeMissingTemplates() {
+    QString userPath = userConfigPath();
+    QString sysPath = systemConfigPath();
+    if (!QFile::exists(userPath) || !QFile::exists(sysPath)) return;
+
+    // Load default config
+    QFile sysFile(sysPath);
+    if (!sysFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    QTextStream sysIn(&sysFile);
+    std::string sysContent = sysIn.readAll().toStdString();
+    sysFile.close();
+    auto sysResult = toml::parse(sysContent);
+    if (!sysResult) return;
+
+    // Load user config
+    QFile userFile(userPath);
+    if (!userFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    QTextStream userIn(&userFile);
+    std::string userContent = userIn.readAll().toStdString();
+    userFile.close();
+    auto userResult = toml::parse(userContent);
+    if (!userResult) return;
+
+    toml::table sysDoc = std::move(sysResult).table();
+    toml::table userDoc = std::move(userResult).table();
+
+    auto *sysTemplates = sysDoc.get_as<toml::table>("templates");
+    if (!sysTemplates) return;
+
+    if (!userDoc.contains("templates"))
+        userDoc.insert("templates", toml::table{});
+
+    auto *userTemplates = userDoc.get_as<toml::table>("templates");
+    if (!userTemplates) return;
+
+    bool modified = false;
+    for (const auto &[key, val] : *sysTemplates) {
+        if (!val.is_table()) continue;
+        std::string sKey(key);
+        if (!userTemplates->contains(sKey)) {
+            userTemplates->insert(sKey, val);
+            modified = true;
+            Logger::log("TemplateConfig: Merged missing template section: " +
+                        QString::fromStdString(sKey), Logger::Info);
+        }
+    }
+
+    if (modified) {
+        saveDoc(userDoc);
     }
 }
 

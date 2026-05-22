@@ -35,6 +35,7 @@ private:
                               const QMap<QString, QString> &vars);
     static QString colorHex(const QColor &c);
     static QString colorRgb(const QColor &c);
+    static QString colorRgbSpace(const QColor &c);
 };
 
 #endif // TEMPLATEENGINE_H

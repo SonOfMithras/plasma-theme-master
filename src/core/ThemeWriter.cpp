@@ -24,6 +24,9 @@ void ThemeWriter::setAutoLookAndFeel(bool enabled) {
   Logger::log("System AutomaticLookAndFeel set to " +
                   QString(enabled ? "true" : "false"),
               Logger::Info);
+  if (enabled) {
+    clearTemporaryOverride();
+  }
 }
 
 void ThemeWriter::enforceKWinNightColorActive() {
@@ -227,15 +230,73 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
   }
 }
 
-void ThemeWriter::setSolarPadding(int minutes) {
+void ThemeWriter::setSolarDayOffset(int minutes) {
   QString path =
       QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
       QStringLiteral("/plasma-theme-masterrc");
   KConfig config(path, KConfig::SimpleConfig);
   KConfigGroup group = config.group(QStringLiteral("General"));
-  group.writeEntry(QStringLiteral("SolarPadding"), minutes);
+  group.writeEntry(QStringLiteral("SolarDayOffset"), minutes);
   config.sync();
-  Logger::log("Set SolarPadding to " + QString::number(minutes), Logger::Info);
+  Logger::log("Set SolarDayOffset to " + QString::number(minutes), Logger::Info);
+}
+
+void ThemeWriter::setSolarNightOffset(int minutes) {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("General"));
+  group.writeEntry(QStringLiteral("SolarNightOffset"), minutes);
+  config.sync();
+  Logger::log("Set SolarNightOffset to " + QString::number(minutes), Logger::Info);
+}
+
+void ThemeWriter::setReenableAutoOnScheduledChange(bool enabled) {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("General"));
+  group.writeEntry(QStringLiteral("ReenableAutoOnScheduledChange"), enabled);
+  config.sync();
+  Logger::log("Set ReenableAutoOnScheduledChange to " +
+                  QString(enabled ? "true" : "false"),
+              Logger::Info);
+}
+
+void ThemeWriter::setTemporaryOverride(const QString &overrideMode) {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("State"));
+  group.writeEntry(QStringLiteral("TemporaryOverride"), overrideMode);
+  config.sync();
+  Logger::log("Set TemporaryOverride to " + overrideMode, Logger::Info);
+}
+
+void ThemeWriter::clearTemporaryOverride() {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("State"));
+  group.deleteEntry(QStringLiteral("TemporaryOverride"));
+  group.deleteEntry(QStringLiteral("OverrideScheduledState"));
+  config.sync();
+  Logger::log("Cleared TemporaryOverride and OverrideScheduledState", Logger::Info);
+}
+
+void ThemeWriter::setOverrideScheduledState(const QString &state) {
+  QString path =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) +
+      QStringLiteral("/plasma-theme-masterrc");
+  KConfig config(path, KConfig::SimpleConfig);
+  KConfigGroup group = config.group(QStringLiteral("State"));
+  group.writeEntry(QStringLiteral("OverrideScheduledState"), state);
+  config.sync();
+  Logger::log("Set OverrideScheduledState to " + state, Logger::Info);
 }
 
 void ThemeWriter::setDayKvantumTheme(const QString &themeName) {

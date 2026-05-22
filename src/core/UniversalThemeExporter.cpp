@@ -51,9 +51,10 @@ UniversalPalette UniversalThemeExporter::extractColors() {
                             Logger::Warning);
                 double lat = ThemeReader::nativeLatitude();
                 double lon = ThemeReader::nativeLongitude();
-                int offset = ThemeReader::solarPadding();
-                scheme = Solar::isDaytime(lat, lon, offset) ? "MaterialYouLight"
-                                                             : "MaterialYouDark";
+                int dayOffset = ThemeReader::solarDayOffset();
+                int nightOffset = ThemeReader::solarNightOffset();
+                scheme = Solar::isDaytime(lat, lon, dayOffset, nightOffset) ? "MaterialYouLight"
+                                                                            : "MaterialYouDark";
             }
         }
 

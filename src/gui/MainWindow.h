@@ -41,7 +41,8 @@ private Q_SLOTS:
   void applyStaticDay();
   void applyStaticNight();
   void applyCurrentTarget();
-  void onOffsetChanged(int value);
+  void onDayOffsetChanged(int value);
+  void onNightOffsetChanged(int value);
   void updateLogs();
   void clearLogs();
   void showAbout();
@@ -97,8 +98,11 @@ private:
   // Config
   QCheckBox *m_autoCheck;
   QCheckBox *m_materialYouCheck;
-  QSlider *m_offsetSlider;
-  QLabel *m_offsetValueLabel;
+  QCheckBox *m_reenableAutoCheck;
+  QSlider *m_dayOffsetSlider;
+  QLabel *m_dayOffsetValueLabel;
+  QSlider *m_nightOffsetSlider;
+  QLabel *m_nightOffsetValueLabel;
 
   QComboBox *m_globalDayCombo;
   QComboBox *m_globalNightCombo;

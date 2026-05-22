@@ -112,7 +112,7 @@ QPair<QDateTime, QDateTime> Solar::calculateSunTimes(double lat, double lon, con
     return qMakePair(sunrise, sunset);
 }
 
-bool Solar::isDaytime(double lat, double lon, int offsetMinutes) {
+bool Solar::isDaytime(double lat, double lon, int dayOffsetMinutes, int nightOffsetMinutes) {
     QDateTime now = QDateTime::currentDateTime().toUTC();
     QPair<QDateTime, QDateTime> times = calculateSunTimes(lat, lon, now.date());
     
@@ -124,12 +124,11 @@ bool Solar::isDaytime(double lat, double lon, int offsetMinutes) {
     QDateTime sunrise = times.first;
     QDateTime sunset = times.second;
     
-    // Apply padding/offset
-    // Offset is total expansion of day. so half at start, half at end.
-    // e.g. 30 mins -> -15 at sunrise, +15 at sunset.
-    int shiftSecs = (offsetMinutes * 60) / 2;
-    sunrise = sunrise.addSecs(-shiftSecs);
-    sunset = sunset.addSecs(shiftSecs);
+    // Apply independent day and night offsets in minutes
+    // dayOffsetMinutes shifts sunrise: positive shifts earlier (subtracts secs), negative shifts later (adds secs)
+    sunrise = sunrise.addSecs(-dayOffsetMinutes * 60);
+    // nightOffsetMinutes shifts sunset: positive shifts later (adds secs), negative shifts earlier (subtracts secs)
+    sunset = sunset.addSecs(nightOffsetMinutes * 60);
     
     return (now >= sunrise && now < sunset);
 }

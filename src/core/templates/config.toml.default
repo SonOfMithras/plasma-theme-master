@@ -120,6 +120,16 @@ output_path = ''
 palette = 'current'
 
 # ---------------------------------------------------------------------------
+# Millennium Material Theme (Steam)
+# ---------------------------------------------------------------------------
+
+[templates.millennium]
+enabled = false
+input_path = '/usr/share/plasma-theme-master/templates/millennium.tpl'
+output_path = '~/.steam/steam/millennium/themes/Material-Theme/css/main/colors/blue.css'
+palette = 'current'
+
+# ---------------------------------------------------------------------------
 # Konsole
 # ---------------------------------------------------------------------------
 
