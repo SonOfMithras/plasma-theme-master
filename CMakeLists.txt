@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(plasma-theme-master VERSION 2.0.3)
+project(plasma-theme-master VERSION 2.0.4)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -68,6 +68,7 @@ install(DIRECTORY src/core/templates/
     DESTINATION ${KDE_INSTALL_DATAROOTDIR}/plasma-theme-master/templates
     FILES_MATCHING
         PATTERN "*.tpl"
+        PATTERN "*.sh"
 )
 
 # Install default config alongside templates

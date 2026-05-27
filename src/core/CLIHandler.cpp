@@ -819,7 +819,10 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                                       {"zed", "zed"},
                                       {"vencord", "vencord"},
                                       {"millennium", "millennium"},
-                                      {"steam", "millennium"}};
+                                      {"steam", "millennium"},
+                                      {"zen", "zen_browser_chrome"},
+                                      {"zen-browser", "zen_browser_chrome"},
+                                      {"zen_browser", "zen_browser_chrome"}};
     if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
@@ -828,6 +831,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     TemplateConfig::setEnabled(tmplName, true);
     if (tmplName == "kitty_light")
       TemplateConfig::setEnabled("kitty_dark", true);
+    if (tmplName == "zen_browser_chrome")
+      TemplateConfig::setEnabled("zen_browser_content", true);
     std::cout << "Enabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-disable") {
@@ -848,7 +853,10 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                                       {"zed", "zed"},
                                       {"vencord", "vencord"},
                                       {"millennium", "millennium"},
-                                      {"steam", "millennium"}};
+                                      {"steam", "millennium"},
+                                      {"zen", "zen_browser_chrome"},
+                                      {"zen-browser", "zen_browser_chrome"},
+                                      {"zen_browser", "zen_browser_chrome"}};
     if (!nameMap.contains(app)) {
       std::cerr << "Unknown app: " << qPrintable(app) << "\n";
       return 1;
@@ -857,6 +865,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     TemplateConfig::setEnabled(tmplName, false);
     if (tmplName == "kitty_light")
       TemplateConfig::setEnabled("kitty_dark", false);
+    if (tmplName == "zen_browser_chrome")
+      TemplateConfig::setEnabled("zen_browser_content", false);
     std::cout << "Disabled sync for " << qPrintable(app) << "\n";
     return 0;
   } else if (command == "sync-list") {

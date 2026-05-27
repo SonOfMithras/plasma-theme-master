@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.4] - 2026-05-27
+
+### Added
+- **Zen Browser Theme Template**
+  - Added support for custom Zen Browser stylesheet templates (`userChrome.css.tpl` and `userContent.css.tpl`).
+  - Implemented a post-hook script (`zen-browser-apply.sh`) to automatically inject and manage these themes into Zen profiles (supporting both native and Flatpak installations) without duplicating styles.
+  - Added an intuitive parent/child checkbox configuration in the **Universal Theming** GUI: a primary "Zen Browser" parent checkbox and an indented sub-option for web settings and content pages (`userContent.css`).
+  - Added CLI support allowing the template to be enabled or disabled via `plasma-theme-master sync-enable/disable zen`.
+  - Added instructions to set `toolkit.legacyUserProfileCustomizations.stylesheets` to `true` in `about:config` and a note that browser restarts are required for color scheme changes to take full effect.
+
 ## [2.0.3] - 2026-05-22
 
 ### Added

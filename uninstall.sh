@@ -26,6 +26,7 @@ HELPERS=(
     "$PREFIX/bin/plasma-theme-master-helper-zed"
     "$PREFIX/bin/plasma-theme-master-helper-firefox"
     "$PREFIX/bin/plasma-theme-master-helper-konsole"
+    "$PREFIX/bin/plasma-theme-master-helper-kitty"
     "$PREFIX/bin/plasma-theme-master-uninstall"
 )
 

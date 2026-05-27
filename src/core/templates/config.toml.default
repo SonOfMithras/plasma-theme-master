@@ -69,6 +69,18 @@ input_path = '/usr/share/plasma-theme-master/templates/firefox.css.tpl'
 output_path = ''
 palette = 'current'
 
+[templates.zen_browser_chrome]
+enabled = false
+input_path = '/usr/share/plasma-theme-master/templates/zen-browser/userChrome.css.tpl'
+output_path = '~/.config/plasma-theme-master/zen-browser/userChrome.css'
+palette = 'current'
+
+[templates.zen_browser_content]
+enabled = false
+input_path = '/usr/share/plasma-theme-master/templates/zen-browser/userContent.css.tpl'
+output_path = '~/.config/plasma-theme-master/zen-browser/userContent.css'
+palette = 'current'
+
 # ---------------------------------------------------------------------------
 # Obsidian
 # ---------------------------------------------------------------------------

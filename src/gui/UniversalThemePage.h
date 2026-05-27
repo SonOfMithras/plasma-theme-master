@@ -32,6 +32,10 @@ private:
     QCheckBox   *m_firefoxCheck;
     QPushButton *m_firefoxRestoreBtn;
 
+    QCheckBox   *m_zenBrowserCheck;
+    QCheckBox   *m_zenBrowserContentCheck;
+    QPushButton *m_zenBrowserRestoreBtn;
+
     QCheckBox   *m_discordCheck;
     QPushButton *m_discordRestoreBtn;
     QPushButton *m_discordConfigBtn;

@@ -107,6 +107,19 @@ void UniversalThemePage::setupUi() {
     m_firefoxRestoreBtn = makeRestoreBtn("firefox", "Firefox");
     addRow(m_firefoxCheck, m_firefoxRestoreBtn);
 
+    // Zen Browser (Noctalia Community Template)
+    m_zenBrowserCheck      = new QCheckBox("Zen Browser (Noctalia Community Template)", this);
+    m_zenBrowserRestoreBtn = makeRestoreBtn("zen_browser", "Zen Browser");
+    m_zenBrowserContentCheck = new QCheckBox("Theme settings and content pages (userContent.css)", this);
+    m_zenBrowserContentCheck->setStyleSheet("margin-left: 20px;"); // Indent as sub-option
+    
+    // Wire dynamic enabling/disabling of the sub-option
+    m_zenBrowserContentCheck->setEnabled(m_zenBrowserCheck->isChecked());
+    connect(m_zenBrowserCheck, &QCheckBox::toggled, m_zenBrowserContentCheck, &QCheckBox::setEnabled);
+    
+    addRow(m_zenBrowserCheck, m_zenBrowserRestoreBtn);
+    grid->addWidget(m_zenBrowserContentCheck, row++, 0);
+
     // BetterDiscord
     m_discordCheck      = new QCheckBox("BetterDiscord (Midnight Theme CSS)", this);
     m_discordRestoreBtn = makeRestoreBtn("betterdiscord", "BetterDiscord");
@@ -187,6 +200,8 @@ void UniversalThemePage::setupUi() {
     // Auto-save on toggle — writes directly to config.toml
     connect(m_vscodeCheck,    &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_firefoxCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_zenBrowserCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_zenBrowserContentCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_discordCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_kittyCheck,     &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_konsoleCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
@@ -206,6 +221,9 @@ void UniversalThemePage::loadSettings() {
 
     m_vscodeCheck->setChecked(TemplateConfig::isEnabled("vscode"));
     m_firefoxCheck->setChecked(TemplateConfig::isEnabled("firefox"));
+    m_zenBrowserCheck->setChecked(TemplateConfig::isEnabled("zen_browser_chrome"));
+    m_zenBrowserContentCheck->setChecked(TemplateConfig::isEnabled("zen_browser_content"));
+    m_zenBrowserContentCheck->setEnabled(m_zenBrowserCheck->isChecked());
     m_discordCheck->setChecked(TemplateConfig::isEnabled("betterdiscord"));
     m_kittyCheck->setChecked(TemplateConfig::isEnabled("kitty_light"));
     m_konsoleCheck->setChecked(TemplateConfig::isEnabled("konsole"));
@@ -226,6 +244,8 @@ void UniversalThemePage::saveSettings() {
 
     TemplateConfig::setEnabled("vscode",        m_vscodeCheck->isChecked());
     TemplateConfig::setEnabled("firefox",       m_firefoxCheck->isChecked());
+    TemplateConfig::setEnabled("zen_browser_chrome",  m_zenBrowserCheck->isChecked());
+    TemplateConfig::setEnabled("zen_browser_content", m_zenBrowserCheck->isChecked() && m_zenBrowserContentCheck->isChecked());
     TemplateConfig::setEnabled("betterdiscord", m_discordCheck->isChecked());
     // Kitty drives both light and dark entries together
     TemplateConfig::setEnabled("kitty_light",   m_kittyCheck->isChecked());

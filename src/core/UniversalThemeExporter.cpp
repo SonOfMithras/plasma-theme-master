@@ -329,6 +329,8 @@ void UniversalThemeExporter::syncTemplates() {
         {"kitty",        "plasma-theme-master-helper-kitty"},
         {"kitty_dark",   "plasma-theme-master-helper-kitty"},
         {"kitty_light",  "plasma-theme-master-helper-kitty"},
+        {"zen_browser_chrome",  "bash /usr/share/plasma-theme-master/templates/zen-browser/zen-browser-apply.sh"},
+        {"zen_browser_content", "bash /usr/share/plasma-theme-master/templates/zen-browser/zen-browser-apply.sh"},
         // betterdiscord, vencord: no post-hook needed
     };
 

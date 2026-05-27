@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 2.0.3**
+**Version 2.0.4**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -142,7 +142,7 @@ post_hook = 'myapp --reload'
 
 **Troubleshooting**:
 - **VS Code**: Set WindowAutofdetect color scheme to 'enabled' in settings. Backups stored as `settings.json.bak`.
-- **Firefox/Zen**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config`.
+- **Firefox/Zen Browser**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config` for CSS themes to be loaded. Additionally, please note that browser restarts are required for color scheme changes to take full effect.
 - **BetterDiscord/Vencord**: Enable the "PlasmaMaster" theme under BetterDiscord theme settings.
 - **Obsidian**: Enable the "Plasma Master" snippet in Appearance settings.
 - **Millennium (Steam)**: Overwrites `blue.css` to inject dynamic accent colors. Requires the Steam client modding framework [Millennium](https://steambrew.app/) and [Material-Theme](https://steambrew.app/theme?id=ipYjqODds05KMcvh7QJn) installed. In Steam's Material-Theme settings, the **Color** scheme must be set to **"Blue"**. Note: Live reloads are not automatically triggered by Steam, so a manual theme toggle or client refresh is required in Steam settings after synchronization to apply color changes.
@@ -201,6 +201,7 @@ This project integrates with or was inspired by the following awesome projects:
 - **Klassy**: [https://github.com/paulmcauley/klassy](https://github.com/paulmcauley/klassy)
 - **Caelestia-dots**: [https://github.com/caelestia-dots/caelestia](https://github.com/caelestia-dots/caelestia)
 - **ML4W Dotfiles**: [https://github.com/mylinuxforwork/dotfiles](https://github.com/mylinuxforwork/dotfiles)
+- **Noctalia Community templates**: [https://github.com/noctalia-dev/community-templates](https://github.com/noctalia-dev/community-templates)
 
 ## License
 MIT License
