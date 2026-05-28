@@ -1,4 +1,5 @@
 #include "ThemeWriter.h"
+#include <QCoreApplication>
 #include "Config.h"
 #include "FlatpakManager.h"
 #include "GlobalThemeManager.h"
@@ -12,6 +13,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
 #include <QProcess>
 #include <QSettings>
 #include <QStandardPaths>
@@ -373,6 +375,25 @@ bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
   KConfigGroup group = config.group(QStringLiteral("General"));
   if (group.readEntry("FlatpakFollowsGtk", false)) {
     FlatpakManager::setFlatpakGtkTheme(themeName);
+  }
+
+  // Run GTK4 live refresh hook helper script
+  QString hookTool = QStandardPaths::findExecutable(QStringLiteral("plasma-theme-master-helper-gtk4-reload"));
+  if (hookTool.isEmpty()) {
+    // Local / development fallback
+    hookTool = QDir::homePath() + QStringLiteral("/.local/bin/plasma-theme-master-helper-gtk4-reload");
+    if (!QFile::exists(hookTool)) {
+      // Src directory development fallback
+      hookTool = QCoreApplication::applicationDirPath() + QStringLiteral("/plasma-theme-master-helper-gtk4-reload");
+      if (!QFile::exists(hookTool)) {
+        hookTool.clear();
+      }
+    }
+  }
+
+  if (!hookTool.isEmpty()) {
+    Logger::log("Running GTK4 live refresh hook: " + hookTool, Logger::Info);
+    QProcess::startDetached(hookTool);
   }
 
   return true;

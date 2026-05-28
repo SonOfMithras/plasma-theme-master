@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.6] - 2026-05-28
+
+### Added
+- **Integrated gtk4 live refresh hook**
+  - Added a bash-based post-hook script (`gtk4-reload.sh`) to force a live refresh of GTK4/Libadwaita applications.
+  - Automatically triggers when the GTK theme settings are changed, toggling the GNOME desktop `color-scheme` via `gsettings` to propagate updates seamlessly.
+
 ## [2.0.5] - 2026-05-27
 
 ### Fixed

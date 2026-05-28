@@ -1,4 +1,5 @@
 #include "UniversalThemeExporter.h"
+#include <QCoreApplication>
 #include "Config.h"
 #include "GlobalThemeManager.h"
 #include "Logger.h"
@@ -307,6 +308,23 @@ bool UniversalThemeExporter::restoreFile(const QString &path) {
 
 void UniversalThemeExporter::syncAll() {
     syncTemplates();
+
+    // Trigger GTK4 live refresh hook so GTK4/Libadwaita apps update their colors
+    QString hookTool = QStandardPaths::findExecutable(QStringLiteral("plasma-theme-master-helper-gtk4-reload"));
+    if (hookTool.isEmpty()) {
+        hookTool = QDir::homePath() + QStringLiteral("/.local/bin/plasma-theme-master-helper-gtk4-reload");
+        if (!QFile::exists(hookTool)) {
+            hookTool = QCoreApplication::applicationDirPath() + QStringLiteral("/plasma-theme-master-helper-gtk4-reload");
+            if (!QFile::exists(hookTool)) {
+                hookTool.clear();
+            }
+        }
+    }
+
+    if (!hookTool.isEmpty()) {
+        Logger::log("UniversalThemeExporter: Running GTK4 live refresh hook: " + hookTool, Logger::Info);
+        QProcess::startDetached(hookTool);
+    }
 }
 
 void UniversalThemeExporter::syncTemplates() {

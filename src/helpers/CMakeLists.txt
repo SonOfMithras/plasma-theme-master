@@ -28,3 +28,6 @@ install(TARGETS plasma-theme-master-helper-konsole DESTINATION ${KDE_INSTALL_BIN
 add_executable(plasma-theme-master-helper-kitty kitty_helper.cpp)
 target_link_libraries(plasma-theme-master-helper-kitty Qt6::Core)
 install(TARGETS plasma-theme-master-helper-kitty DESTINATION ${KDE_INSTALL_BINDIR})
+
+# GTK4 Reload helper script
+install(PROGRAMS gtk4-reload.sh DESTINATION ${KDE_INSTALL_BINDIR} RENAME plasma-theme-master-helper-gtk4-reload)
