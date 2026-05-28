@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.5] - 2026-05-27
+
+### Fixed
+- **Solar Offsets Overriding in KWin NightLight Active State**
+  - Resolved an issue where solar offsets (Daytime and Nighttime Offset sliders) were completely ignored when KDE's KWin NightLight DBus property `daylight` was active.
+  - Updated theme switching and override logic to bypass DBus and use offset-enabled solar clock calculations (`Solar::isDaytime`) whenever non-zero offsets are set.
+  - Ensures manual override auto-restoration ("Re-enable auto-switch at next scheduled cycle transition") triggers exactly at the custom offset boundaries rather than raw system times.
+
 ## [2.0.4] - 2026-05-27
 
 ### Added

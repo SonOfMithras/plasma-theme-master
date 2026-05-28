@@ -90,6 +90,17 @@ double ThemeReader::nativeLatitude() {
 }
 
 bool ThemeReader::isKWinDaytime() {
+  int dayOffset = solarDayOffset();
+  int nightOffset = solarNightOffset();
+
+  // If the user has configured solar offsets, we must use our own solar calculations
+  // because KWin's NightLight DBus property has no concept of our offsets.
+  if (dayOffset != 0 || nightOffset != 0) {
+    double lat = nativeLatitude();
+    double lon = nativeLongitude();
+    return Solar::isDaytime(lat, lon, dayOffset, nightOffset);
+  }
+
   QDBusInterface nightLight(QStringLiteral("org.kde.KWin"),
                             QStringLiteral("/org/kde/KWin/NightLight"),
                             QStringLiteral("org.kde.KWin.NightLight"),
@@ -103,8 +114,6 @@ bool ThemeReader::isKWinDaytime() {
   // Fallback if DBus fails
   double lat = nativeLatitude();
   double lon = nativeLongitude();
-  int dayOffset = solarDayOffset();
-  int nightOffset = solarNightOffset();
   return Solar::isDaytime(lat, lon, dayOffset, nightOffset);
 }
 
