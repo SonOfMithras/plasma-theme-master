@@ -152,6 +152,22 @@ output_path = '~/.local/share/konsole/PlasmaMaster.colorscheme'
 palette = 'current'
 
 # ---------------------------------------------------------------------------
+# GTK & Libadwaita Color Schemes
+# ---------------------------------------------------------------------------
+
+[templates.gtk4_colors]
+enabled = false
+input_path = '/usr/share/plasma-theme-master/templates/gtk4_colors.css.tpl'
+output_path = '~/.config/gtk-4.0/colors.css'
+palette = 'current'
+
+[templates.gtk3_colors]
+enabled = false
+input_path = '/usr/share/plasma-theme-master/templates/gtk3_colors.css.tpl'
+output_path = '~/.config/gtk-3.0/colors.css'
+palette = 'current'
+
+# ---------------------------------------------------------------------------
 # Discord Imports (separate section — GUI configures these)
 # ---------------------------------------------------------------------------
 

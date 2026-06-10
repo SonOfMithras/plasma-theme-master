@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 2.0.6**
+**Version 2.0.7**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -43,6 +43,7 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 - pipx (required for installing Material You dependencies)
 - Flatpak (optional, for Flatpak support)
 - Klassy Window Decoration (optional, for window decoration preset switching)
+- Libadwaita-without-adwaita (optional; installing `libadwaita-without-adwaita` from the AUR on Arch Linux for alternate GTK4/Libadwaita application theming support)
 
 ### Easy Install Script:
 

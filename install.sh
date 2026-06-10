@@ -116,21 +116,6 @@ check_dependencies() {
              fi
         fi
 
-        # Check for libadwaita-without-adwaita
-        if ! pacman -Qi libadwaita-without-adwaita >/dev/null 2>&1; then
-             print_warning "libadwaita-without-adwaita is missing (recommended for GTK4 theming)."
-             if ask_confirm "Do you want to install it from AUR?"; then
-                 if command -v yay >/dev/null 2>&1; then
-                     print_info "Installing using yay..."
-                     yay -S libadwaita-without-adwaita
-                 elif command -v paru >/dev/null 2>&1; then
-                     print_info "Installing using paru..."
-                     paru -S libadwaita-without-adwaita
-                 else
-                     print_error "No AUR helper (yay/paru) found. Please install 'libadwaita-without-adwaita' manually."
-                 fi
-             fi
-        fi
     elif command -v dnf >/dev/null 2>&1; then
         print_info "Detected Fedora-based system (dnf found)."
         

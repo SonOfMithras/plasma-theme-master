@@ -1,5 +1,6 @@
 #include "UniversalThemeExporter.h"
 #include <QCoreApplication>
+#include <QTimer>
 #include "Config.h"
 #include "GlobalThemeManager.h"
 #include "Logger.h"
@@ -325,6 +326,14 @@ void UniversalThemeExporter::syncAll() {
         Logger::log("UniversalThemeExporter: Running GTK4 live refresh hook: " + hookTool, Logger::Info);
         QProcess::startDetached(hookTool);
     }
+
+    // Delay a second-pass of syncTemplates by 2.5 seconds. This resolves the asynchronous race
+    // condition where KDE Plasma's background daemon/Breeze theme engine regenerates
+    // and overwrites ~/.config/gtk-4.0/colors.css after we sync.
+    QTimer::singleShot(2500, []() {
+        Logger::log("UniversalThemeExporter: Performing delayed GTK overwrite pass to prevent Breeze override.", Logger::Info);
+        syncTemplates();
+    });
 }
 
 void UniversalThemeExporter::syncTemplates() {

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.7] - 2026-06-09
+
+### Added
+- **Libadwaita & Standard GTK Color Scheme Templates**
+  - Added new native template files for GTK4/Libadwaita (`gtk4_colors.css.tpl`) and GTK3 (`gtk3_colors.css.tpl`).
+  - Automatically exports clean, unsuffixed CSS variables (e.g. `accent_bg_color`, `window_bg_color`, `view_bg_color`) to standard locations (`~/.config/gtk-4.0/colors.css` and `~/.config/gtk-3.0/colors.css`), bypassing Breeze-specific names.
+  - Enables all Libadwaita and standard GTK applications to dynamically respect and live-refresh custom system color palettes.
+- **Universal Settings GUI Integration**
+  - Added a dedicated checkbox labeled **"GTK & Libadwaita (Non-Breeze Themes only)"** and an associated **Restore** button directly to the **Universal Theming** page in the GUI.
+  - Automatically loads, saves, and updates settings dynamically, synchronizing both GTK3 and GTK4 templates.
+
+### Fixed
+- **Breeze Background Daemon Race Condition**
+  - Implemented a delayed second-pass execution (using a 2.5-second single-shot timer) during synchronization.
+  - Safely overwrites `colors.css` with standard variables *after* KDE Plasma's background daemon finishes regenerates the Breeze-suffixed color variables, preventing the Breeze engine from overriding custom styles.
+- **Millennium Theme Template Outline Color Contrast**
+  - Updated the Material Design 3 `outline` and `outline-variant` color calculations to interpolate between surface background and high-contrast foreground colors.
+  - This resolves contrast issues (e.g. black/invisible text in dark mode and light gray/hard to read text in light mode) in the Millennium Steam theme's top-level menu.
+
 ## [2.0.6] - 2026-05-28
 
 ### Added

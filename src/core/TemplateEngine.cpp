@@ -260,9 +260,17 @@ QMap<QString, QString> TemplateEngine::buildVars(const UniversalPalette &p) {
 
         QColor mdSurfaceVariant = targetDark ? mdSurface.lighter(115) : mdSurface.darker(115);
         QColor mdOnSurfaceVariant = targetDark ? mdOnSurface.darker(115) : mdOnSurface.lighter(115);
+        auto mixColors = [](const QColor &c1, const QColor &c2, double factor) -> QColor {
+            return QColor::fromRgbF(
+                c1.redF() * (1.0 - factor) + c2.redF() * factor,
+                c1.greenF() * (1.0 - factor) + c2.greenF() * factor,
+                c1.blueF() * (1.0 - factor) + c2.blueF() * factor,
+                c1.alphaF() * (1.0 - factor) + c2.alphaF() * factor
+            );
+        };
 
-        QColor mdOutline = targetDark ? mdSurface.lighter(130) : mdSurface.darker(130);
-        QColor mdOutlineVariant = targetDark ? mdSurface.lighter(115) : mdSurface.darker(115);
+        QColor mdOutline = mixColors(mdSurface, mdOnSurface, 0.5);
+        QColor mdOutlineVariant = mixColors(mdSurface, mdOnSurface, 0.3);
 
         QColor mdShadow = Qt::black;
         QColor mdScrim = Qt::black;

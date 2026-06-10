@@ -65,6 +65,9 @@ private:
     QCheckBox   *m_millenniumCheck;
     QPushButton *m_millenniumRestoreBtn;
 
+    QCheckBox   *m_gtkCheck;
+    QPushButton *m_gtkRestoreBtn;
+
     QLineEdit   *m_obsidianPathEdit;
     QPushButton *m_browseObsidianBtn;
     QPushButton *m_syncButton;

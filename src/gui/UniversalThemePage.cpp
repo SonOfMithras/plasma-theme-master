@@ -166,6 +166,11 @@ void UniversalThemePage::setupUi() {
     m_millenniumRestoreBtn = makeRestoreBtn("millennium", "Millennium");
     addRow(m_millenniumCheck, m_millenniumRestoreBtn);
 
+    // GTK & Libadwaita (Non-Breeze Themes)
+    m_gtkCheck      = new QCheckBox("GTK & Libadwaita (Non-Breeze Themes only)", this);
+    m_gtkRestoreBtn = makeRestoreBtn("gtk", "GTK");
+    addRow(m_gtkCheck, m_gtkRestoreBtn);
+
     // Obsidian — checkbox + restore in grid, path row below
     m_obsidianCheck      = new QCheckBox("Obsidian (Vault Snippet)", this);
     m_obsidianRestoreBtn = makeRestoreBtn("obsidian", "Obsidian");
@@ -210,6 +215,7 @@ void UniversalThemePage::setupUi() {
     connect(m_vicinaeCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_zedCheck,       &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_millenniumCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
+    connect(m_gtkCheck,       &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianCheck,  &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
     connect(m_obsidianPathEdit, &QLineEdit::editingFinished,
             this, &UniversalThemePage::saveSettings);
@@ -232,6 +238,7 @@ void UniversalThemePage::loadSettings() {
     m_vicinaeCheck->setChecked(TemplateConfig::isEnabled("vicinae"));
     m_zedCheck->setChecked(TemplateConfig::isEnabled("zed"));
     m_millenniumCheck->setChecked(TemplateConfig::isEnabled("millennium"));
+    m_gtkCheck->setChecked(TemplateConfig::isEnabled("gtk4_colors"));
     m_obsidianCheck->setChecked(TemplateConfig::isEnabled("obsidian"));
     m_obsidianPathEdit->setText(
         TemplateConfig::getValue("obsidian", "obsidian_vault_path", ""));
@@ -256,6 +263,8 @@ void UniversalThemePage::saveSettings() {
     TemplateConfig::setEnabled("vicinae",       m_vicinaeCheck->isChecked());
     TemplateConfig::setEnabled("zed",           m_zedCheck->isChecked());
     TemplateConfig::setEnabled("millennium",    m_millenniumCheck->isChecked());
+    TemplateConfig::setEnabled("gtk4_colors",   m_gtkCheck->isChecked());
+    TemplateConfig::setEnabled("gtk3_colors",   m_gtkCheck->isChecked());
     TemplateConfig::setEnabled("obsidian",      m_obsidianCheck->isChecked());
 
     if (!m_obsidianPathEdit->text().isEmpty())
