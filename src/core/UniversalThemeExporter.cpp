@@ -287,6 +287,30 @@ bool UniversalThemeExporter::restoreFile(const QString &path) {
     QString backupPath = path + ".bak";
     QFile backup(backupPath);
     if (!backup.exists()) {
+        // If no backup exists but the file exists, it was created by us, so remove it!
+        QFile file(path);
+        if (file.exists()) {
+            if (file.remove()) {
+                Logger::log("Removed generated file (no backup existed): " + path, Logger::Info);
+                // Also clean up Vesktop folders if Vencord
+                if (path.endsWith("Vencord/themes/PlasmaMaster.theme.css")) {
+                    QStringList vesktopPaths = {
+                        QDir::homePath() + "/.config/vesktop/themes/PlasmaMaster.theme.css",
+                        QDir::homePath() + "/.var/app/dev.vencord.Vesktop/config/vesktop/themes/PlasmaMaster.theme.css"
+                    };
+                    for (const QString &vpath : vesktopPaths) {
+                        QFile vfile(vpath);
+                        if (vfile.exists()) {
+                            vfile.remove();
+                            Logger::log("Removed Vesktop sync file: " + vpath, Logger::Info);
+                        }
+                    }
+                }
+                return true;
+            }
+            Logger::log("Failed to remove generated file: " + path, Logger::Error);
+            return false;
+        }
         Logger::log("No backup found for: " + path, Logger::Warning);
         return false;
     }
@@ -297,6 +321,22 @@ bool UniversalThemeExporter::restoreFile(const QString &path) {
     }
     if (backup.copy(path)) {
         Logger::log("Restored from backup: " + backupPath, Logger::Info);
+        
+        // Also clean up Vesktop folders if Vencord
+        if (path.endsWith("Vencord/themes/PlasmaMaster.theme.css")) {
+            QStringList vesktopPaths = {
+                QDir::homePath() + "/.config/vesktop/themes/PlasmaMaster.theme.css",
+                QDir::homePath() + "/.var/app/dev.vencord.Vesktop/config/vesktop/themes/PlasmaMaster.theme.css"
+            };
+            for (const QString &vpath : vesktopPaths) {
+                QFile vfile(vpath);
+                if (vfile.exists()) {
+                    vfile.remove();
+                    Logger::log("Removed Vesktop sync file: " + vpath, Logger::Info);
+                }
+            }
+        }
+        
         return true;
     }
     Logger::log("Failed to restore from backup: " + backupPath, Logger::Error);
@@ -411,6 +451,34 @@ void UniversalThemeExporter::syncTemplates() {
                     QTextStream(&sf) << rendered;
                     if (sf.commit()) {
                         Logger::log("Wrote: " + entry.outputPath, Logger::Info);
+                        
+                        // Sync to Vesktop folders if Vencord is enabled and Vesktop exists
+                        if (entry.name == "vencord") {
+                            QStringList vesktopDirs = {
+                                QDir::homePath() + "/.config/vesktop",
+                                QDir::homePath() + "/.var/app/dev.vencord.Vesktop/config/vesktop"
+                            };
+                            for (const QString &vdir : vesktopDirs) {
+                                if (QDir(vdir).exists()) {
+                                    QString themesDir = vdir + "/themes";
+                                    if (!QDir(themesDir).exists()) {
+                                        QDir().mkpath(themesDir);
+                                    }
+                                    QString path = themesDir + "/PlasmaMaster.theme.css";
+                                    QSaveFile addSf(path);
+                                    if (addSf.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                                        QTextStream(&addSf) << rendered;
+                                        if (addSf.commit()) {
+                                            Logger::log("Wrote Vesktop copy: " + path, Logger::Info);
+                                        } else {
+                                            Logger::log("Failed to commit Vesktop copy: " + path, Logger::Warning);
+                                        }
+                                    } else {
+                                        Logger::log("Cannot open for writing Vesktop copy: " + path, Logger::Warning);
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         Logger::log("Failed to commit: " + entry.outputPath, Logger::Error);
                         continue;

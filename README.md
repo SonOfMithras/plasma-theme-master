@@ -18,7 +18,7 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
-- **Universal Theme Sync** (v2.0.0 — Template System): Syncs Plasma colors to other apps using a matugen-style template engine. Supports VS Code/Antigravity, Firefox/Zen, BetterDiscord, Vencord, Kitty, Konsole, Zed Editor, Btop, Vicinae, and Obsidian. Each app uses a standalone `.tpl` file — fully customizable. Custom template entries can be added freely to `config.toml`.
+- **Universal Theme Sync** (v2.0.0 — Template System): Syncs Plasma colors to other apps using a matugen-style template engine. Supports VS Code/Antigravity, Firefox/Zen, BetterDiscord, Vencord/Vesktop, Kitty, Konsole, Zed Editor, Btop, Vicinae, and Obsidian. Each app uses a standalone `.tpl` file — fully customizable. Custom template entries can be added freely to `config.toml`.
 - **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -44,6 +44,13 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 - Flatpak (optional, for Flatpak support)
 - Klassy Window Decoration (optional, for window decoration preset switching)
 - Libadwaita-without-adwaita (optional; installing `libadwaita-without-adwaita` from the AUR on Arch Linux for alternate GTK4/Libadwaita application theming support)
+
+### Arch Linux (AUR)
+
+If you are on Arch Linux, you can install the package directly from the AUR using an AUR helper:
+```bash
+yay -S plasma-theme-master
+```
 
 ### Easy Install Script:
 
@@ -118,7 +125,7 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 ### Universal Theme Sync
 Plasma colors are injected into other apps via a template engine. Each app has a `.tpl` file and is configured in `~/.config/plasma-theme-master/config.toml`.
 
-**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`, `millennium` (Steam Material-Theme).
+**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`/`vesktop`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`, `millennium` (Steam Material-Theme).
 
 **Setup**:
 1. Enable sync for an app (writes to `config.toml`):
@@ -144,7 +151,7 @@ post_hook = 'myapp --reload'
 **Troubleshooting**:
 - **VS Code**: Set WindowAutofdetect color scheme to 'enabled' in settings. Backups stored as `settings.json.bak`.
 - **Firefox/Zen Browser**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config` for CSS themes to be loaded. Additionally, please note that browser restarts are required for color scheme changes to take full effect.
-- **BetterDiscord/Vencord**: Enable the "PlasmaMaster" theme under BetterDiscord theme settings.
+- **BetterDiscord/Vencord/Vesktop**: Enable the "PlasmaMaster" theme under client theme settings.
 - **Obsidian**: Enable the "Plasma Master" snippet in Appearance settings.
 - **Millennium (Steam)**: Overwrites `blue.css` to inject dynamic accent colors. Requires the Steam client modding framework [Millennium](https://steambrew.app/) and [Material-Theme](https://steambrew.app/theme?id=ipYjqODds05KMcvh7QJn) installed. In Steam's Material-Theme settings, the **Color** scheme must be set to **"Blue"**. Note: Live reloads are not automatically triggered by Steam, so a manual theme toggle or client refresh is required in Steam settings after synchronization to apply color changes.
 

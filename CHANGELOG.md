@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 - **Universal Settings GUI Integration**
   - Added a dedicated checkbox labeled **"GTK & Libadwaita (Non-Breeze Themes only)"** and an associated **Restore** button directly to the **Universal Theming** page in the GUI.
   - Automatically loads, saves, and updates settings dynamically, synchronizing both GTK3 and GTK4 templates.
+- **Vesktop Support in Vencord Sync**
+  - Updated Vencord sync to automatically copy generated themes to Vesktop directories (`~/.config/vesktop/themes/` and Flatpak location `~/.var/app/dev.vencord.Vesktop/config/vesktop/themes/`) if those directories exist.
+  - Cleans up all synchronized Vesktop theme files when Vencord configuration is restored.
 
 ### Fixed
 - **Breeze Background Daemon Race Condition**

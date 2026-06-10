@@ -58,7 +58,7 @@ check_dependencies() {
             fi
         fi
         
-        DEPENDENCIES="build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev libkf6config-dev libkf6coreaddons-dev libkf6colorscheme-dev pipx"
+        DEPENDENCIES="build-essential cmake extra-cmake-modules qt6-base-dev libkf6config-dev libkf6coreaddons-dev libkf6colorscheme-dev pipx"
         MISSING_DEPS=""
 
         for dep in $DEPENDENCIES; do
@@ -84,7 +84,7 @@ check_dependencies() {
         print_info "Detected Arch-based system (pacman found)."
         
         # Check ARCH dependencies
-        ARCH_DEPENDENCIES="base-devel cmake extra-cmake-modules qt6-base qt6-declarative kconfig kcoreaddons kcolorscheme python-pipx"
+        ARCH_DEPENDENCIES="base-devel cmake extra-cmake-modules qt6-base kconfig kcoreaddons kcolorscheme python-pipx"
         MISSING_ARCH_DEPS=""
         
         for dep in $ARCH_DEPENDENCIES; do
@@ -119,7 +119,7 @@ check_dependencies() {
     elif command -v dnf >/dev/null 2>&1; then
         print_info "Detected Fedora-based system (dnf found)."
         
-        FEDORA_DEPENDENCIES="gcc-c++ cmake extra-cmake-modules qt6-qtbase-devel qt6-qtdeclarative-devel kf6-kconfig-devel kf6-kcoreaddons-devel kf6-kcolorscheme-devel pipx"
+        FEDORA_DEPENDENCIES="gcc-c++ cmake extra-cmake-modules qt6-qtbase-devel kf6-kconfig-devel kf6-kcoreaddons-devel kf6-kcolorscheme-devel pipx"
         MISSING_FEDORA_DEPS=""
         
         for dep in $FEDORA_DEPENDENCIES; do
