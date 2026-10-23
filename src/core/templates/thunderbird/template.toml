@@ -1,0 +1,11 @@
+[catalog.thunderbird]
+name = "Thunderbird"
+category = "misc"
+
+# PTM renders the palette into Thunderbird's chrome via userChrome.css.
+# apply.sh wires the rendered file into every profile and enables userChrome;
+# see README.md for the read-only profile handling.
+[templates.thunderbird]
+input_path = "ptm.css"
+output_path = "$XDG_CACHE_HOME/ptm/thunderbird/ptm.css"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

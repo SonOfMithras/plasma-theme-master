@@ -1,174 +1,31 @@
 # Plasma Theme Master - Universal Template Configuration
-# Modeled after matugen's config format.
 #
-# Each [templates.NAME] section defines one theme output.
-# Fields:
-#   enabled      = true/false  (GUI toggles this)
-#   input_path   = path to .tpl file (use ~ for home)
-#   output_path  = where to write the rendered file (use ~ for home)
-#   palette      = "current" | "day" | "night"
-#   post_hook    = optional shell command — only needed for CUSTOM templates.
-#                  Built-in apps (kitty, btop, zed, etc.) run their hooks automatically.
+# Application templates are managed automatically via the GUI (App Templates tab)
+# or via CLI (plasma-theme-master sync-enable <app> / sync-disable <app>).
 #
-# You can add your own [templates.myapp] entries freely:
-#   [templates.myapp]
-#   enabled = true
-#   input_path = '~/.config/plasma-theme-master/templates/myapp.tpl'
-#   output_path = '~/.config/myapp/theme.conf'
-#   palette = 'current'
-#   post_hook = 'myapp --reload-theme'
+# Custom Templates:
+# You can add custom application templates in two ways:
 #
-# Built-in templates install to: /usr/share/plasma-theme-master/templates/
+# 1. Place a template directory in:
+#    ~/.local/share/plasma-theme-master/templates/<app_name>/template.toml
+#
+# 2. Or define custom templates directly in this file:
+#    [templates.myapp]
+#    enabled = true
+#    input_path = '~/.config/plasma-theme-master/templates/myapp.tpl'
+#    output_path = '~/.config/myapp/theme.conf'
+#    palette = 'current'
+#    post_hook = 'myapp --reload-theme'
 
 [config]
-# obsidian_vault_path = '~/Documents/MyVault'
+
+[palette]
+current = "Breeze"
+
+[app_templates]
 
 # ---------------------------------------------------------------------------
-# Kitty Terminal
-# ---------------------------------------------------------------------------
-
-[templates.kitty_light]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/kitty_light.tpl'
-output_path = '~/.config/kitty/light-theme.auto.conf'
-palette = 'day'
-
-[templates.kitty_dark]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/kitty_dark.tpl'
-output_path = '~/.config/kitty/dark-theme.auto.conf'
-palette = 'night'
-
-# ---------------------------------------------------------------------------
-# Btop
-# ---------------------------------------------------------------------------
-
-[templates.btop]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/btop.tpl'
-output_path = '~/.config/btop/themes/plasma-theme-master.theme'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Vicinae
-# ---------------------------------------------------------------------------
-
-[templates.vicinae]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/vicinae.tpl'
-output_path = '~/.local/share/vicinae/themes/plasma-theme-master.toml'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Firefox / Zen Browser
-# ---------------------------------------------------------------------------
-
-[templates.firefox]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/firefox.css.tpl'
-output_path = ''
-palette = 'current'
-
-[templates.zen_browser_chrome]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/zen-browser/userChrome.css.tpl'
-output_path = '~/.config/plasma-theme-master/zen-browser/userChrome.css'
-palette = 'current'
-
-[templates.zen_browser_content]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/zen-browser/userContent.css.tpl'
-output_path = '~/.config/plasma-theme-master/zen-browser/userContent.css'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Obsidian
-# ---------------------------------------------------------------------------
-
-[templates.obsidian]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/obsidian.css.tpl'
-output_path = ''
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# BetterDiscord
-# ---------------------------------------------------------------------------
-
-[templates.betterdiscord]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/betterdiscord/theme.css.tpl'
-output_path = '~/.config/BetterDiscord/themes/PlasmaMaster.theme.css'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Vencord
-# ---------------------------------------------------------------------------
-
-[templates.vencord]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/vencord/theme.css.tpl'
-output_path = '~/.config/Vencord/themes/PlasmaMaster.theme.css'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Zed Editor
-# ---------------------------------------------------------------------------
-
-[templates.zed]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/zed/theme.json.tpl'
-output_path = '~/.config/zed/themes/plasma-master.json'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# VS Code / VSCodium / Antigravity
-# ---------------------------------------------------------------------------
-
-[templates.vscode]
-enabled = false
-input_path = ''
-output_path = ''
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Millennium Material Theme (Steam)
-# ---------------------------------------------------------------------------
-
-[templates.millennium]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/millennium.tpl'
-output_path = '~/.steam/steam/millennium/themes/Material-Theme/css/main/colors/blue.css'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Konsole
-# ---------------------------------------------------------------------------
-
-[templates.konsole]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/konsole/colorscheme.tpl'
-output_path = '~/.local/share/konsole/PlasmaMaster.colorscheme'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# GTK & Libadwaita Color Schemes
-# ---------------------------------------------------------------------------
-
-[templates.gtk4_colors]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/gtk4_colors.css.tpl'
-output_path = '~/.config/gtk-4.0/colors.css'
-palette = 'current'
-
-[templates.gtk3_colors]
-enabled = false
-input_path = '/usr/share/plasma-theme-master/templates/gtk3_colors.css.tpl'
-output_path = '~/.config/gtk-3.0/colors.css'
-palette = 'current'
-
-# ---------------------------------------------------------------------------
-# Discord Imports (separate section — GUI configures these)
+# Discord Imports (configured via App Templates GUI)
 # ---------------------------------------------------------------------------
 
 [discord.betterdiscord]
@@ -178,3 +35,11 @@ custom_imports = []
 [discord.vencord]
 midnight_enabled = true
 custom_imports = []
+
+# ---------------------------------------------------------------------------
+# Obsidian Vaults & Auto-Detection
+# ---------------------------------------------------------------------------
+
+[obsidian]
+auto_detect = true
+vaults = []

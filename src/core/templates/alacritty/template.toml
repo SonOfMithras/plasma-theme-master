@@ -1,0 +1,10 @@
+[catalog.alacritty]
+name = "Alacritty"
+category = "terminal"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.alacritty]
+input_path = "alacritty.toml"
+output_path = "$XDG_CONFIG_HOME/alacritty/themes/ptm.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

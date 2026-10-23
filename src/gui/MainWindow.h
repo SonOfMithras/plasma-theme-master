@@ -27,6 +27,7 @@ class QTimer;
 
 class GlobalThemeEditor; // Forward Declaration
 class ColorSwatchPicker;  // Forward Declaration
+class ColorSchemesPage;    // Forward Declaration
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -83,6 +84,7 @@ private:
   QWidget *m_logsTab;
   GlobalThemeEditor *m_globalEditorTab;
   QWidget *m_universalTab; 
+  ColorSchemesPage *m_colorSchemesTab;
   QWidget *m_materialYouTab;
 
 

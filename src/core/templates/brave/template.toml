@@ -1,0 +1,9 @@
+[catalog.brave]
+name = "Brave"
+category = "browser"
+
+[templates.brave]
+input_path = "manifest.json"
+output_path = "$XDG_CACHE_HOME/ptm/brave-theme/manifest.json"
+post_hook = "bash '{{ config_dir }}/apply.sh' {{ mode }}"
+requires_path = "~/.config/BraveSoftware/Brave-Browser"

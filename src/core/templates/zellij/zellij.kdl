@@ -1,0 +1,15 @@
+themes {
+  ptm {
+    fg "{{colors.terminal_foreground.default.hex}}"
+    bg "{{colors.terminal_background.default.hex}}"
+    black "{{colors.terminal_normal_black.default.hex}}"
+    red "{{colors.terminal_normal_red.default.hex}}"
+    green "{{colors.terminal_normal_green.default.hex}}"
+    yellow "{{colors.terminal_normal_yellow.default.hex}}"
+    blue "{{colors.terminal_normal_blue.default.hex}}"
+    magenta "{{colors.terminal_normal_magenta.default.hex}}"
+    cyan "{{colors.terminal_normal_cyan.default.hex}}"
+    white "{{colors.terminal_normal_white.default.hex}}"
+    orange "{{colors.terminal_normal_red.default.hex | rotate_hue 30}}"
+  }
+}

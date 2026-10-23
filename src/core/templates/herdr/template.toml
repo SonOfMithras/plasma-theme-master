@@ -1,0 +1,8 @@
+[catalog.herdr]
+name = "herdr"
+category = "terminal"
+
+[templates.herdr]
+input_path = "herdr-colors.toml"
+output_path = "$XDG_CONFIG_HOME/herdr/ptm-colors.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

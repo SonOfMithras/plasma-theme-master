@@ -1,0 +1,7 @@
+[catalog.claude-code]
+name = "Claude Code"
+category = "ai"
+
+[templates.claude-code]
+input_path = "claude-code.json"
+output_path = "~/.claude/themes/ptm.json"

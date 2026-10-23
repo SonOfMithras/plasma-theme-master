@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "PTM",
+  "version": "1.0.0",
+  "description": "PTM palette theme for Chromium (rendered by PTM). Load this folder unpacked once: chrome://extensions → Developer mode → Load unpacked.",
+  "theme": {
+    "colors": {
+      "frame": [{{colors.background.default.red}}, {{colors.background.default.green}}, {{colors.background.default.blue}}],
+      "frame_inactive": [{{colors.surface_dim.default.red}}, {{colors.surface_dim.default.green}}, {{colors.surface_dim.default.blue}}],
+      "toolbar": [{{colors.surface_container.default.red}}, {{colors.surface_container.default.green}}, {{colors.surface_container.default.blue}}],
+      "tab_text": [{{colors.on_surface.default.red}}, {{colors.on_surface.default.green}}, {{colors.on_surface.default.blue}}],
+      "tab_background_text": [{{colors.on_surface_variant.default.red}}, {{colors.on_surface_variant.default.green}}, {{colors.on_surface_variant.default.blue}}],
+      "bookmark_text": [{{colors.on_surface.default.red}}, {{colors.on_surface.default.green}}, {{colors.on_surface.default.blue}}],
+      "ntp_background": [{{colors.surface_container_low.default.red}}, {{colors.surface_container_low.default.green}}, {{colors.surface_container_low.default.blue}}],
+      "ntp_text": [{{colors.on_surface.default.red}}, {{colors.on_surface.default.green}}, {{colors.on_surface.default.blue}}],
+      "ntp_link": [{{colors.primary.default.red}}, {{colors.primary.default.green}}, {{colors.primary.default.blue}}],
+      "button_background": [{{colors.surface_container_high.default.red}}, {{colors.surface_container_high.default.green}}, {{colors.surface_container_high.default.blue}}],
+      "control_background": [{{colors.surface_container.default.red}}, {{colors.surface_container.default.green}}, {{colors.surface_container.default.blue}}]
+    },
+    "tints": {
+      "buttons": [0.15, 0.6, 0.75],
+      "frame": [-1, -1, -1],
+      "frame_inactive": [-1, -1, -1],
+      "tab_text": [-1, -1, -1],
+      "tab_background_text": [-1, -1, -1],
+      "toolbar": [-1, -1, -1]
+    }
+  }
+}

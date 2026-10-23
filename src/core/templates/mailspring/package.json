@@ -1,0 +1,12 @@
+{
+  "name": "ptm",
+  "displayName": "PTM",
+  "theme": "ui",
+  "version": "1.0.0",
+  "description": "PTM palette theme for Mailspring",
+  "license": "MIT",
+  "engines": {
+    "mailspring": "*"
+  },
+  "private": true
+}

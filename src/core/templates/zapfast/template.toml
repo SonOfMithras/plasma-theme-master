@@ -1,0 +1,9 @@
+[catalog.zapfast]
+name = "Zapfast"
+category = "chat"
+
+[templates.zapfast]
+input_path_modes = { dark = "zapfast-dark.json", light = "zapfast-light.json" }
+output_path = "$XDG_CONFIG_HOME/zapfast/themes/ptm.json"
+post_hook = "zapfast reload-themes >/dev/null 2>&1 || true"
+requires_path = "$XDG_CONFIG_HOME/zapfast"

@@ -1,0 +1,10 @@
+[catalog.kitty]
+name = "Kitty"
+category = "terminal"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.kitty]
+input_path = "kitty.conf"
+output_path = "$XDG_CONFIG_HOME/kitty/themes/ptm.conf"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

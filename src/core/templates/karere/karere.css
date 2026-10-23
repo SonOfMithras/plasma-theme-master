@@ -1,0 +1,252 @@
+:root,
+body,
+body * {
+
+    /* Accent */
+    --WDS-accent: {{ colors.primary.default.hex }} !important;
+    --WDS-accent-RGB: {{ colors.primary.default.rgb_csv }} !important;
+
+    /* Palette roles for multi-tone empty-state illustrations */
+    --karere-illustration-primary: {{ colors.primary.default.hex }} !important;
+    --karere-illustration-light: {{ colors.secondary.default.hex }} !important;
+    --karere-illustration-highlight: {{ colors.tertiary.default.hex }} !important;
+    --karere-illustration-neutral: {{ colors.on_surface.default.hex }} !important;
+    --karere-illustration-outline: {{ colors.on_primary.default.hex }} !important;
+
+    --WDS-accent-deemphasized: {{ colors.primary_container.default.hex }} !important;
+    --WDS-accent-deemphasized-RGB: {{ colors.primary_container.default.rgb_csv }} !important;
+
+    --WDS-content-on-accent: {{ colors.on_primary.default.hex }} !important;
+    --WDS-content-on-accent-RGB: {{ colors.on_primary.default.rgb_csv }} !important;
+
+    /* Positive states: archive empty state and unread-message badges */
+    --WDS-accent-emphasized: {{ colors.primary.default.hex }} !important;
+    --WDS-accent-emphasized-RGB: {{ colors.primary.default.rgb_csv }} !important;
+
+    --WDS-secondary-positive: {{ colors.primary.default.hex }} !important;
+    --WDS-secondary-positive-RGB: {{ colors.primary.default.rgb_csv }} !important;
+    --WDS-secondary-positive-deemphasized: {{ colors.primary_container.default.hex }} !important;
+    --WDS-secondary-positive-deemphasized-RGB: {{ colors.primary_container.default.rgb_csv }} !important;
+
+    --WDS-green-400: {{ colors.primary.default.hex }} !important;
+    --WDS-green-400-RGB: {{ colors.primary.default.rgb_csv }} !important;
+    --WDS-green-500: {{ colors.primary.default.hex }} !important;
+    --WDS-green-500-RGB: {{ colors.primary.default.rgb_csv }} !important;
+    --WDS-persistent-activity-indicator: {{ colors.primary.default.hex }} !important;
+    --WDS-persistent-activity-indicator-RGB: {{ colors.primary.default.rgb_csv }} !important;
+    --WDS-persistent-always-branded: {{ colors.primary.default.hex }} !important;
+    --WDS-persistent-always-branded-RGB: {{ colors.primary.default.rgb_csv }} !important;
+
+    --badge-success-background-color: {{ colors.primary.default.hex }} !important;
+    --text-badge-success-background: {{ colors.primary.default.hex }} !important;
+    --badge-background-color-green: {{ colors.primary.default.hex }} !important;
+    --badge-pending: {{ colors.primary.default.hex }} !important;
+
+    /* Voice-message playback progress and playhead */
+    --audio-progress-incoming: {{ colors.primary.default.hex }} !important;
+    --audio-progress-outgoing: {{ colors.primary.default.hex }} !important;
+    --audio-progress-played-incoming: {{ colors.primary.default.hex }} !important;
+    --audio-progress-played-outgoing: {{ colors.primary.default.hex }} !important;
+    --ptt-thumb-incoming-unplayed: {{ colors.primary.default.hex }} !important;
+    --ptt-thumb-incoming-played: {{ colors.primary.default.hex }} !important;
+    --ptt-thumb-outgoing-unplayed: {{ colors.primary.default.hex }} !important;
+    --ptt-thumb-outgoing-played: {{ colors.primary.default.hex }} !important;
+
+    /* Background */
+    --WDS-background-wash-plain: {{ colors.surface.default.hex }} !important;
+    --WDS-background-wash-plain-RGB: {{ colors.surface.default.rgb_csv }} !important;
+
+    --WDS-background-wash-inset: {{ colors.surface_container.default.hex }} !important;
+    --WDS-background-wash-inset-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-background-elevated-wash-plain: {{ colors.surface_container.default.hex }} !important;
+    --WDS-background-elevated-wash-plain-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-background-elevated-wash-inset: {{ colors.surface_container_high.default.hex }} !important;
+    --WDS-background-elevated-wash-inset-RGB: {{ colors.surface_container_high.default.rgb_csv }} !important;
+
+    /* Surfaces */
+    --WDS-surface-default: {{ colors.surface.default.hex }} !important;
+    --WDS-surface-default-RGB: {{ colors.surface.default.rgb_csv }} !important;
+
+    --WDS-surface-emphasized: {{ colors.surface_container.default.hex }} !important;
+    --WDS-surface-emphasized-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-surface-highlight: {{ colors.surface_container_high.default.hex }} !important;
+    --WDS-surface-highlight-RGB: {{ colors.surface_container_high.default.rgb_csv }} !important;
+
+    --WDS-surface-elevated-default: {{ colors.surface_container.default.hex }} !important;
+    --WDS-surface-elevated-default-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-surface-elevated-emphasized: {{ colors.surface_container_high.default.hex }} !important;
+    --WDS-surface-elevated-emphasized-RGB: {{ colors.surface_container_high.default.rgb_csv }} !important;
+
+    --WDS-surface-pressed: {{ colors.surface_container_highest.default.hex }} !important;
+    --WDS-surface-pressed-RGB: {{ colors.surface_container_highest.default.rgb_csv }} !important;
+
+    /* Navigation/list selection */
+    --WDS-components-surface-nav-bar: {{ colors.surface.default.hex }} !important;
+    --WDS-components-surface-nav-bar-RGB: {{ colors.surface.default.rgb_csv }} !important;
+
+    --WDS-components-active-list-row: {{ colors.surface_container_high.default.hex }} !important;
+    --WDS-components-active-list-row-RGB: {{ colors.surface_container_high.default.rgb_csv }} !important;
+
+    --WDS-components-filter-surface-selected: {{ colors.primary_container.default.hex }} !important;
+    --WDS-components-filter-surface-selected-RGB: {{ colors.primary_container.default.rgb_csv }} !important;
+
+    /* Text */
+    --WDS-content-default: {{ colors.on_surface.default.hex }} !important;
+    --WDS-content-default-RGB: {{ colors.on_surface.default.rgb_csv }} !important;
+
+    --WDS-content-action-default: {{ colors.on_surface.default.hex }} !important;
+    --WDS-content-action-default-RGB: {{ colors.on_surface.default.rgb_csv }} !important;
+
+    --WDS-content-action-emphasized: {{ colors.primary.default.hex }} !important;
+    --WDS-content-action-emphasized-RGB: {{ colors.primary.default.rgb_csv }} !important;
+
+    --WDS-content-deemphasized: {{ colors.on_surface_variant.default.hex }} !important;
+    --WDS-content-deemphasized-RGB: {{ colors.on_surface_variant.default.rgb_csv }} !important;
+
+    --WDS-content-disabled: {{ colors.outline.default.hex }} !important;
+    --WDS-content-disabled-RGB: {{ colors.outline.default.rgb_csv }} !important;
+
+    --WDS-content-external-link: {{ colors.primary.default.hex }} !important;
+    --WDS-content-external-link-RGB: {{ colors.primary.default.rgb_csv }} !important;
+
+    /* Borders */
+    --WDS-lines-divider: {{ colors.outline_variant.default.hex }} !important;
+    --WDS-lines-divider-RGB: {{ colors.outline_variant.default.rgb_csv }} !important;
+
+    --WDS-lines-outline-deemphasized: {{ colors.outline_variant.default.hex }} !important;
+    --WDS-lines-outline-deemphasized-RGB: {{ colors.outline_variant.default.rgb_csv }} !important;
+
+    --WDS-lines-outline-default: {{ colors.outline.default.hex }} !important;
+    --WDS-lines-outline-default-RGB: {{ colors.outline.default.rgb_csv }} !important;
+
+    /* Chat */
+    --WDS-systems-chat-background-wallpaper: {{ colors.surface.default.hex }} !important;
+    --WDS-systems-chat-background-wallpaper-RGB: {{ colors.surface.default.rgb_csv }} !important;
+
+    --WDS-systems-chat-surface-composer: {{ colors.surface_container.default.hex }} !important;
+    --WDS-systems-chat-surface-composer-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-systems-chat-surface-tray: {{ colors.surface.default.hex }} !important;
+    --WDS-systems-chat-surface-tray-RGB: {{ colors.surface.default.rgb_csv }} !important;
+
+    /* Bubbles */
+    --WDS-systems-bubble-surface-incoming: {{ colors.surface_container.default.hex }} !important;
+    --WDS-systems-bubble-surface-incoming-RGB: {{ colors.surface_container.default.rgb_csv }} !important;
+
+    --WDS-systems-bubble-surface-outgoing: {{ colors.primary_container.default.hex }} !important;
+    --WDS-systems-bubble-surface-outgoing-RGB: {{ colors.primary_container.default.rgb_csv }} !important;
+
+    --WDS-systems-bubble-surface-system: {{ colors.surface_container_high.default.hex }} !important;
+    --WDS-systems-bubble-surface-system-RGB: {{ colors.surface_container_high.default.rgb_csv }} !important;
+
+    /* Legacy WhatsApp */
+    --background-default: {{ colors.surface.default.hex }} !important;
+    --background-default-hover: {{ colors.surface_container_high.default.hex }} !important;
+    --background-default-active: {{ colors.surface_container_highest.default.hex }} !important;
+
+    --panel-background: {{ colors.surface.default.hex }} !important;
+    --panel-background-deeper: {{ colors.surface.default.hex }} !important;
+    --panel-background-lighter: {{ colors.surface_container.default.hex }} !important;
+    --panel-header-background: {{ colors.surface.default.hex }} !important;
+
+    --search-container-background: {{ colors.surface_container.default.hex }} !important;
+
+    --drawer-background: {{ colors.surface.default.hex }} !important;
+    --drawer-background-deep: {{ colors.surface.default.hex }} !important;
+
+    --dropdown-background: {{ colors.surface_container_high.default.hex }} !important;
+
+    --intro-background: {{ colors.surface.default.hex }} !important;
+
+    --compose-panel-background: {{ colors.surface.default.hex }} !important;
+    --compose-input-background: {{ colors.surface_container.default.hex }} !important;
+    --compose-input-border: {{ colors.outline_variant.default.hex }} !important;
+
+    --conversation-panel-background: {{ colors.surface.default.hex }} !important;
+    --conversation-panel-border: {{ colors.outline_variant.default.hex }} !important;
+    --conversation-header-border: {{ colors.outline_variant.default.hex }} !important;
+
+    --incoming-background: {{ colors.surface_container.default.hex }} !important;
+    --incoming-background-deeper: {{ colors.surface_container.default.hex }} !important;
+
+    --outgoing-background: {{ colors.primary_container.default.hex }} !important;
+    --outgoing-background-deeper: {{ colors.primary_container.default.hex }} !important;
+
+    --system-message-background: {{ colors.surface_container_high.default.hex }} !important;
+
+    --primary: {{ colors.on_surface.default.hex }} !important;
+    --secondary: {{ colors.on_surface_variant.default.hex }} !important;
+    --secondary-lighter: {{ colors.on_surface_variant.default.hex }} !important;
+
+    --button-primary-background: {{ colors.primary.default.hex }} !important;
+    --button-primary-background-hover: {{ colors.primary.default.hex }} !important;
+
+    --checkbox-background: {{ colors.primary.default.hex }} !important;
+    --active-tab-marker: {{ colors.primary.default.hex }} !important;
+    --unread-marker-background: {{ colors.primary.default.hex }} !important;
+    --unread-timestamp: {{ colors.primary.default.hex }} !important;
+
+    --link: {{ colors.primary.default.hex }} !important;
+    --highlight: {{ colors.primary.default.hex }} !important;
+    --typing: {{ colors.primary.default.hex }} !important;
+    --ptt-green: {{ colors.primary.default.hex }} !important;
+
+    --teal: {{ colors.primary.default.hex }} !important;
+    --teal-pale: {{ colors.primary_container.default.hex }} !important;
+}
+
+/*
+ * WhatsApp applies the background directly to these containers too,
+ * so variable overrides alone are not sufficient.
+ */
+html,
+body,
+#app {
+    background-color: {{ colors.surface.default.hex }} !important;
+}
+
+/*
+ * WhatsApp's empty-state SVGs use hard-coded brand colors. Scope their
+ * recoloring to stable empty-state containers rather than generated classes
+ * or every SVG in the application.
+ */
+:is(
+    [data-testid="no-filtered-chats-container"],
+    [data-testid="all-chats-archived-container"]
+) svg [fill="#25d366" i] {
+    fill: var(--karere-illustration-primary) !important;
+}
+
+:is(
+    [data-testid="no-filtered-chats-container"],
+    [data-testid="all-chats-archived-container"]
+) svg [fill="#e6ffda" i],
+:is(
+    [data-testid="no-filtered-chats-container"],
+    [data-testid="all-chats-archived-container"]
+) svg [fill="#fcf5eb" i] {
+    fill: var(--karere-illustration-light) !important;
+}
+
+[data-testid="no-filtered-chats-container"] svg [fill="#afe966" i] {
+    fill: var(--karere-illustration-highlight) !important;
+}
+
+[data-testid="no-filtered-chats-container"] svg :is(
+    [fill="white" i],
+    [fill="#fff" i],
+    [fill="#ffffff" i]
+) {
+    fill: var(--karere-illustration-neutral) !important;
+}
+
+:is(
+    [data-testid="no-filtered-chats-container"],
+    [data-testid="all-chats-archived-container"]
+) svg [stroke="#111b21" i] {
+    stroke: var(--karere-illustration-outline) !important;
+}

@@ -1,0 +1,26 @@
+[catalog.mailspring]
+name = "Mailspring"
+category = "misc"
+
+# A Mailspring theme is a package directory: package.json plus styles/ui-variables.less.
+# Both files are rendered straight into the package, so no hook is needed; the theme is
+# selected once in Mailspring's Preferences -> Appearance.
+[templates.mailspring_package]
+input_path = "package.json"
+output_path = "$XDG_CONFIG_HOME/Mailspring/packages/ptm/package.json"
+requires_path = "~/.config/Mailspring"
+
+[templates.mailspring_variables]
+input_path = "ui-variables.less"
+output_path = "$XDG_CONFIG_HOME/Mailspring/packages/ptm/styles/ui-variables.less"
+requires_path = "~/.config/Mailspring"
+
+[templates.mailspring_package_flatpak]
+input_path = "package.json"
+output_path = "~/.var/app/com.getmailspring.Mailspring/config/Mailspring/packages/ptm/package.json"
+requires_path = "~/.var/app/com.getmailspring.Mailspring"
+
+[templates.mailspring_variables_flatpak]
+input_path = "ui-variables.less"
+output_path = "~/.var/app/com.getmailspring.Mailspring/config/Mailspring/packages/ptm/styles/ui-variables.less"
+requires_path = "~/.var/app/com.getmailspring.Mailspring"

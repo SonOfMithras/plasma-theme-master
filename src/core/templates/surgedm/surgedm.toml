@@ -1,0 +1,100 @@
+[colors]
+name = "PTM"
+
+graph = [
+    "{{ colors.secondary.default.hex }}",
+    "{{ colors.primary.default.hex }}",
+    "{{ colors.tertiary.default.hex }}",
+    "{{ colors.tertiary_container.default.hex }}"
+]
+
+[colors.primary]
+background = "{{ colors.terminal_background.default.hex }}"
+foreground = "{{ colors.terminal_foreground.default.hex }}"
+accent = "{{ colors.primary.default.hex }}"
+
+[colors.normal]
+black = "{{ colors.outline.default.hex }}"
+red = "{{ colors.terminal_normal_red.default.hex }}"
+green = "{{ colors.terminal_normal_green.default.hex }}"
+yellow = "{{ colors.terminal_normal_yellow.default.hex }}"
+blue = "{{ colors.terminal_normal_blue.default.hex }}"
+magenta = "{{ colors.tertiary.default.hex }}"
+cyan = "{{ colors.terminal_normal_cyan.default.hex }}"
+white = "{{ colors.terminal_normal_white.default.hex }}"
+
+[colors.bright]
+black = "{{ colors.terminal_bright_black.default.hex }}"
+red = "{{ colors.terminal_bright_red.default.hex }}"
+green = "{{ colors.terminal_bright_green.default.hex }}"
+yellow = "{{ colors.terminal_bright_yellow.default.hex }}"
+blue = "{{ colors.terminal_bright_blue.default.hex }}"
+magenta = "{{ colors.tertiary.default.hex }}"
+cyan = "{{ colors.terminal_bright_cyan.default.hex }}"
+white = "{{ colors.terminal_bright_white.default.hex }}"
+
+[colors.dark]
+graph = [
+    "{{ colors.secondary.dark.hex }}",
+    "{{ colors.primary.dark.hex }}",
+    "{{ colors.tertiary.dark.hex }}",
+    "{{ colors.tertiary_container.dark.hex }}"
+]
+
+[colors.dark.primary]
+background = "{{ colors.terminal_background.dark.hex }}"
+foreground = "{{ colors.terminal_foreground.dark.hex }}"
+accent = "{{ colors.primary.dark.hex }}"
+
+[colors.dark.normal]
+black = "{{ colors.outline.dark.hex }}"
+red = "{{ colors.terminal_normal_red.dark.hex }}"
+green = "{{ colors.terminal_normal_green.dark.hex }}"
+yellow = "{{ colors.terminal_normal_yellow.dark.hex }}"
+blue = "{{ colors.terminal_normal_blue.dark.hex }}"
+magenta = "{{ colors.tertiary.dark.hex }}"
+cyan = "{{ colors.terminal_normal_cyan.dark.hex }}"
+white = "{{ colors.terminal_normal_white.dark.hex }}"
+
+[colors.dark.bright]
+black = "{{ colors.terminal_bright_black.dark.hex }}"
+red = "{{ colors.terminal_bright_red.dark.hex }}"
+green = "{{ colors.terminal_bright_green.dark.hex }}"
+yellow = "{{ colors.terminal_bright_yellow.dark.hex }}"
+blue = "{{ colors.terminal_bright_blue.dark.hex }}"
+magenta = "{{ colors.tertiary.dark.hex }}"
+cyan = "{{ colors.terminal_bright_cyan.dark.hex }}"
+white = "{{ colors.terminal_bright_white.dark.hex }}"
+
+[colors.light]
+graph = [
+    "{{ colors.secondary.light.hex }}",
+    "{{ colors.primary.light.hex }}",
+    "{{ colors.tertiary.light.hex }}",
+    "{{ colors.tertiary_container.light.hex }}"
+]
+
+[colors.light.primary]
+background = "{{ colors.terminal_background.light.hex }}"
+foreground = "{{ colors.terminal_foreground.light.hex }}"
+accent = "{{ colors.primary.light.hex }}"
+
+[colors.light.normal]
+black = "{{ colors.outline.light.hex }}"
+red = "{{ colors.terminal_normal_red.light.hex }}"
+green = "{{ colors.terminal_normal_green.light.hex }}"
+yellow = "{{ colors.terminal_normal_yellow.light.hex }}"
+blue = "{{ colors.terminal_normal_blue.light.hex }}"
+magenta = "{{ colors.tertiary.light.hex }}"
+cyan = "{{ colors.terminal_normal_cyan.light.hex }}"
+white = "{{ colors.terminal_normal_white.light.hex }}"
+
+[colors.light.bright]
+black = "{{ colors.terminal_bright_black.light.hex }}"
+red = "{{ colors.terminal_bright_red.light.hex }}"
+green = "{{ colors.terminal_bright_green.light.hex }}"
+yellow = "{{ colors.terminal_bright_yellow.light.hex }}"
+blue = "{{ colors.terminal_bright_blue.light.hex }}"
+magenta = "{{ colors.tertiary.light.hex }}"
+cyan = "{{ colors.terminal_bright_cyan.light.hex }}"
+white = "{{ colors.terminal_bright_white.light.hex }}"

@@ -1,0 +1,22 @@
+:root {
+  --plasma-window-bg: {{colors.surface.default.hex}};
+  --plasma-window-fg: {{colors.on_surface.default.hex}};
+  --plasma-view-bg: {{colors.surface_container.default.hex}};
+  --plasma-view-fg: {{colors.on_surface.default.hex}};
+  --plasma-accent: {{colors.primary.default.hex}};
+  --plasma-on-accent: {{colors.on_primary.default.hex}};
+}
+
+/* Automated Theme Override */
+#navigator-toolbox {
+  background-color: var(--plasma-window-bg) !important;
+  color: var(--plasma-window-fg) !important;
+}
+
+.tab-background[selected="true"] {
+  background-color: var(--plasma-accent) !important;
+}
+
+.tabbrowser-tab[selected="true"] {
+  color: var(--plasma-on-accent) !important;
+}

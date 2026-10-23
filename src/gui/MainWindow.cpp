@@ -7,7 +7,9 @@
 #include "../core/UniversalThemeExporter.h"
 #include "GlobalThemeEditor.h"
 #include "UniversalThemePage.h"
+#include "ColorSchemesPage.h"
 #include "ColorSwatchPicker.h"
+#include "../core/PaletteCatalog.h"
 #include "core/Logger.h"
 #include <QAction>
 #include <QDesktopServices>
@@ -40,6 +42,7 @@
 #include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+  ThemeWriter::refreshApplicationPalette();
   setupUi();
   populateThemes();
   loadSettings();
@@ -75,9 +78,13 @@ void MainWindow::setupUi() {
   m_globalEditorTab = new GlobalThemeEditor(this);
   m_mainTabs->addTab(m_globalEditorTab, tr("Global Theme Editor"));
 
-  // Universal Theme Tab
+  // App Templates Tab
   m_universalTab = new UniversalThemePage(this);
-  m_mainTabs->addTab(m_universalTab, tr("Universal Sync"));
+  m_mainTabs->addTab(m_universalTab, tr("App Templates"));
+
+  // Color Schemes Tab
+  m_colorSchemesTab = new ColorSchemesPage(this);
+  m_mainTabs->addTab(m_colorSchemesTab, tr("Color Schemes"));
 
   // Material You Tab
   m_mainTabs->addTab(m_materialYouTab, tr("Material You"));
@@ -89,7 +96,8 @@ void MainWindow::setupUi() {
   setupMenuBar();
 
   setWindowTitle(tr("Plasma Theme Master"));
-  resize(650, 650);
+  setMinimumSize(720, 540);
+  resize(860, 680);
 }
 
 void MainWindow::setupMenuBar() {
@@ -923,6 +931,15 @@ void MainWindow::toggleAuto(bool checked) {
         if (Config::isMaterialYouOverrideEnabled()) {
           ThemeWriter::applyColorScheme(
               isDay ? "MaterialYouLight" : "MaterialYouDark", true);
+        } else {
+          PaletteCatalog::instance().applyActivePalette(isDay, false);
+        }
+      } else {
+        if (Config::isMaterialYouOverrideEnabled()) {
+          ThemeWriter::applyColorScheme(
+              isDay ? "MaterialYouLight" : "MaterialYouDark", true);
+        } else {
+          PaletteCatalog::instance().applyActivePalette(isDay, false);
         }
       }
       if (!kvantum.isEmpty())
@@ -948,9 +965,11 @@ void MainWindow::toggleAuto(bool checked) {
     // fix contrast issues
     QTimer::singleShot(2000, this, [this, applyAction]() {
       applyAction();
+      ThemeWriter::setAutoLookAndFeel(true);
       if (m_autoCheck->isChecked()) {
         UniversalThemeExporter::syncAll();
       }
+      refreshStatus();
     });
 
   } else {
@@ -974,6 +993,8 @@ void MainWindow::applyStaticDay() {
     ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
     if (Config::isMaterialYouOverrideEnabled()) {
       ThemeWriter::applyColorScheme("MaterialYouLight", true);
+    } else {
+      PaletteCatalog::instance().applyActivePalette(true, false);
     }
     ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
     ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
@@ -989,6 +1010,7 @@ void MainWindow::applyStaticDay() {
     if (!m_autoCheck->isChecked()) {
       UniversalThemeExporter::syncAll();
     }
+    refreshStatus();
   });
 
   refreshStatus();
@@ -1007,6 +1029,8 @@ void MainWindow::applyStaticNight() {
     ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
     if (Config::isMaterialYouOverrideEnabled()) {
       ThemeWriter::applyColorScheme("MaterialYouDark", true);
+    } else {
+      PaletteCatalog::instance().applyActivePalette(false, false);
     }
     ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
     ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
@@ -1022,6 +1046,7 @@ void MainWindow::applyStaticNight() {
     if (!m_autoCheck->isChecked()) {
       UniversalThemeExporter::syncAll();
     }
+    refreshStatus();
   });
 
   refreshStatus();
@@ -1038,6 +1063,8 @@ void MainWindow::applyCurrentTarget() {
       ThemeWriter::applyGlobalTheme(m_globalDayCombo->currentText(), true);
       if (Config::isMaterialYouOverrideEnabled()) {
         ThemeWriter::applyColorScheme("MaterialYouLight", true);
+      } else {
+        PaletteCatalog::instance().applyActivePalette(true, false);
       }
       ThemeWriter::setKvantumTheme(m_kvantumDayCombo->currentText(), true);
       ThemeWriter::setGtkTheme(m_gtkDayCombo->currentText(), true);
@@ -1046,6 +1073,8 @@ void MainWindow::applyCurrentTarget() {
       ThemeWriter::applyGlobalTheme(m_globalNightCombo->currentText(), true);
       if (Config::isMaterialYouOverrideEnabled()) {
         ThemeWriter::applyColorScheme("MaterialYouDark", true);
+      } else {
+        PaletteCatalog::instance().applyActivePalette(false, false);
       }
       ThemeWriter::setKvantumTheme(m_kvantumNightCombo->currentText(), true);
       ThemeWriter::setGtkTheme(m_gtkNightCombo->currentText(), true);
@@ -1069,6 +1098,7 @@ void MainWindow::applyCurrentTarget() {
       ThemeWriter::setAutoLookAndFeel(true);
     }
     UniversalThemeExporter::syncAll();
+    refreshStatus();
   });
 
   refreshStatus();
@@ -1090,6 +1120,10 @@ void MainWindow::refreshStatus() {
   QString kvantum = ThemeReader::currentKvantumTheme();
   QString gtk = ThemeReader::currentGtkTheme();
   QString autoLabel = ThemeReader::isAutoLookAndFeel() ? "Enabled" : "Disabled";
+
+  if (m_colorSchemesTab) {
+    m_colorSchemesTab->refreshCurrentPalette();
+  }
 
   m_statusLabel->setText(tr("<b>Global:</b> %1<br><b>Kvantum:</b> "
                             "%2<br><b>GTK:</b> %3<br><b>Auto:</b> %4")

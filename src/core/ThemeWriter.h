@@ -18,6 +18,7 @@ public:
   static void setDefaultLightTheme(const QString &themeName);
   static bool applyGlobalTheme(const QString &themeName, bool force = false);
   static bool applyColorScheme(const QString &schemeName, bool force = false);
+  static void refreshApplicationPalette();
 
   // App Config (plasma-theme-masterrc)
   static void setSolarDayOffset(int minutes);

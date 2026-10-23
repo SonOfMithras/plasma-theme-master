@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "PTM",
+  "version": "1.0.0",
+  "description": "PTM palette theme for Brave / Chromium chrome UI",
+  "theme": {
+    "images": {
+      "theme_frame": "images/theme_frame.png",
+      "theme_frame_inactive": "images/theme_frame_inactive.png",
+      "theme_frame_incognito": "images/theme_frame_incognito.png",
+      "theme_toolbar": "images/theme_toolbar.png",
+      "theme_ntp_background": "images/theme_ntp_background.png",
+      "theme_tab_background": "images/theme_tab_background.png"
+    },
+    "colors": {
+      "frame": [{{ colors.surface.default.rgb_csv }}],
+      "frame_inactive": [{{ colors.surface_dim.default.rgb_csv }}],
+      "frame_incognito": [{{ colors.surface_dim.default.rgb_csv }}],
+      "frame_incognito_inactive": [{{ colors.surface.default.rgb_csv }}],
+      "toolbar": [{{ colors.surface_container.default.rgb_csv }}],
+      "toolbar_text": [{{ colors.on_surface.default.rgb_csv }}],
+      "toolbar_button_icon": [{{ colors.on_surface.default.rgb_csv }}],
+      "tab_text": [{{ colors.on_surface.default.rgb_csv }}],
+      "tab_background_text": [{{ colors.on_surface_variant.default.rgb_csv }}],
+      "tab_background_text_inactive": [{{ colors.on_surface_variant.default.rgb_csv }}],
+      "tab_background_text_incognito": [{{ colors.on_surface.default.rgb_csv }}],
+      "tab_background_text_incognito_inactive": [{{ colors.on_surface_variant.default.rgb_csv }}],
+      "bookmark_text": [{{ colors.on_surface.default.rgb_csv }}],
+      "background_tab": [{{ colors.surface.default.rgb_csv }}],
+      "background_tab_inactive": [{{ colors.surface_dim.default.rgb_csv }}],
+      "background_tab_incognito": [{{ colors.surface_dim.default.rgb_csv }}],
+      "background_tab_incognito_inactive": [{{ colors.surface.default.rgb_csv }}],
+      "button_background": [{{ colors.surface.default.rgb_csv }}],
+      "omnibox_background": [{{ colors.surface_container_high.default.rgb_csv }}],
+      "omnibox_text": [{{ colors.on_surface.default.rgb_csv }}],
+      "ntp_background": [{{ colors.surface.default.rgb_csv }}],
+      "ntp_text": [{{ colors.on_surface.default.rgb_csv }}],
+      "ntp_link": [{{ colors.primary.default.rgb_csv }}],
+      "ntp_header": [{{ colors.surface_container.default.rgb_csv }}],
+      "ntp_section": [{{ colors.surface_container.default.rgb_csv }}]
+    },
+    "properties": {
+      "ntp_background_alignment": "top",
+      "ntp_background_repeat": "no-repeat",
+      "ntp_logo_alternate": 0
+    }
+  }
+}

@@ -1,0 +1,9 @@
+[catalog.helix]
+name = "Helix"
+category = "editor"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.helix]
+input_path = "helix.toml"
+output_path = "$XDG_CONFIG_HOME/helix/themes/ptm.toml"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

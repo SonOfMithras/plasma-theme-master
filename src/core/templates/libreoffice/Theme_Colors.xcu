@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Colors below are hex placeholders, {{ config_dir }}/apply.sh converts them to the decimal
+     integers this schema actually requires (standard int(hex, 16) RRGGBB conversion, confirmed
+     against LibreOffice/core's own officecfg/registry/schema/org/openoffice/Office/UI.xcs, the
+     authoritative source for every ColorScheme property name and description used below,
+     including FieldColor, which really does control input-widget backgrounds despite its name
+     reading like a document-field-shading setting at first glance). Chrome roles map to Noctalia
+     colors. Document/BASIC-editor colors stay literal, legible regardless of chrome darkness,
+     same reasoning as darktable's neutral photo-viewing background: these are functional, not
+     chrome. -->
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" oor:name="UI" oor:package="org.openoffice.Office">
+  <node oor:name="ColorScheme">
+    <node oor:name="ColorSchemes">
+      <node oor:name="Noctalia" oor:op="fuse">
+        <node oor:name="AppBackground"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="DocColor"><prop oor:name="Color" oor:op="fuse"><value>f7f7fa</value></prop></node>
+        <node oor:name="FontColor"><prop oor:name="Color" oor:op="fuse"><value>1a1a1a</value></prop></node>
+        <node oor:name="DocBoundaries"><prop oor:name="Color" oor:op="fuse"><value>cccccc</value></prop></node>
+
+        <node oor:name="WindowColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="WindowTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="BaseColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ButtonColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container_high.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ButtonTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="AccentColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="DisabledColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.outline_variant.default.hex_stripped}}</value></prop></node>
+        <node oor:name="DisabledTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface_variant.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ShadowColor"><prop oor:name="Color" oor:op="fuse"><value>808080</value></prop></node>
+        <node oor:name="Shadow"><prop oor:name="Color" oor:op="fuse"><value xsi:nil="false" /></prop><prop oor:name="IsVisible" oor:op="fuse"><value>false</value></prop></node>
+        <node oor:name="SeparatorColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.outline_variant.default.hex_stripped}}</value></prop></node>
+        <node oor:name="FaceColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ActiveColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ActiveTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="ActiveBorderColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="FieldColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container_high.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuBarColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuBarTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuBarHighlightColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuBarHighlightTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuHighlightColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuHighlightTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_primary.default.hex_stripped}}</value></prop></node>
+        <node oor:name="MenuBorderColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.outline.default.hex_stripped}}</value></prop></node>
+        <node oor:name="InactiveColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.surface_container.default.hex_stripped}}</value></prop></node>
+        <node oor:name="InactiveTextColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.on_surface_variant.default.hex_stripped}}</value></prop></node>
+        <node oor:name="InactiveBorderColor"><prop oor:name="Color" oor:op="fuse"><value>{{colors.outline_variant.default.hex_stripped}}</value></prop></node>
+
+        <node oor:name="BASICEditor"><prop oor:name="Color" oor:op="fuse"><value>ffffff</value></prop></node>
+        <node oor:name="BASICError"><prop oor:name="Color" oor:op="fuse"><value>d32f2f</value></prop></node>
+        <node oor:name="BASICIdentifier"><prop oor:name="Color" oor:op="fuse"><value>1a1a1a</value></prop></node>
+        <node oor:name="BASICKeyword"><prop oor:name="Color" oor:op="fuse"><value>0b57d0</value></prop></node>
+        <node oor:name="BASICNumber"><prop oor:name="Color" oor:op="fuse"><value>d97706</value></prop></node>
+        <node oor:name="BASICOperator"><prop oor:name="Color" oor:op="fuse"><value>444444</value></prop></node>
+        <node oor:name="BASICString"><prop oor:name="Color" oor:op="fuse"><value>15803d</value></prop></node>
+        <node oor:name="BASICComment"><prop oor:name="Color" oor:op="fuse"><value>6b7280</value></prop></node>
+
+        <node oor:name="WriterIdxShadings"><prop oor:name="Color" oor:op="fuse"><value>e8e8e8</value></prop><prop oor:name="IsVisible" oor:op="fuse"><value>true</value></prop></node>
+        <node oor:name="WriterFieldShadings"><prop oor:name="Color" oor:op="fuse"><value>e8e8e8</value></prop><prop oor:name="IsVisible" oor:op="fuse"><value>true</value></prop></node>
+        <node oor:name="CalcGrid"><prop oor:name="Color" oor:op="fuse"><value>d9d9d9</value></prop></node>
+      </node>
+    </node>
+  </node>
+</oor:component-data>

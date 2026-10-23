@@ -1,0 +1,260 @@
+#!/usr/bin/env bash
+# whitesur-folders — apply a WhiteSur folder color to the icon overlay.
+# Called by apply.sh with a color name (green, grey, orange, pink, purple, red, yellow, blue).
+set -euo pipefail
+
+COLOR="${1:?Usage: whitesur-folders <color>}"
+
+# WhiteSur palette hex values
+color_hex() {
+  case "$1" in
+  green) echo b3ee96 ;;
+  grey) echo 8f8f8f ;;
+  nord) echo 88c0d0 ;;
+  orange) echo ffae70 ;;
+  pink) echo ff85bd ;;
+  purple) echo e791f3 ;;
+  red) echo ff8180 ;;
+  yellow) echo ffd485 ;;
+  blue) echo 46a2d7 ;;
+  *) echo 46a2d7 ;;
+  esac
+}
+
+# Compute dark / main / medium / light HSV variants. Prints 4 hex lines.
+color_variants() {
+  local hex="$1"
+  local r g b
+  r=$((16#${hex:0:2}))
+  g=$((16#${hex:2:2}))
+  b=$((16#${hex:4:2}))
+  awk -v r=$r -v g=$g -v b=$b '
+function rgb2hsv(r,g,b,  mx,mn,d,h,s,v,t) {
+	r/=255; g/=255; b/=255
+	mx=(r>g)?(r>b?r:b):(g>b?g:b); mn=(r<g)?(r<b?r:b):(g<b?g:b)
+	v=mx; d=mx-mn
+	if(d==0){s=0;h=0} else { s=d/mx
+		if(mx==r){t=(g-b)/d;if(t<0)t+=6;h=60*t}
+		else if(mx==g){h=60*(((b-r)/d)+2)}
+		else{h=60*(((r-g)/d)+4)}
+	}
+	return h SUBSEP s SUBSEP v
+}
+function hsv2rgb(h,s,v,  hi,f,p,q,tm,rv,gv,bv) {
+	hi=int(h/60)%6; f=h/60-int(h/60)
+	p=v*(1-s); q=v*(1-f*s); tm=v*(1-(1-f)*s)
+	if(hi==0){rv=v;gv=tm;bv=p}
+	else if(hi==1){rv=q;gv=v;bv=p}
+	else if(hi==2){rv=p;gv=v;bv=tm}
+	else if(hi==3){rv=p;gv=q;bv=v}
+	else if(hi==4){rv=tm;gv=p;bv=v}
+	else{rv=v;gv=p;bv=q}
+	printf "%02x%02x%02x", int(rv*255), int(gv*255), int(bv*255)
+}
+BEGIN {
+	split(rgb2hsv(r,g,b), t, SUBSEP)
+	h=t[1]+0; s=t[2]+0; v=t[3]+0
+	ds=s*1.25; if(ds>1)ds=1; dv=v*0.80
+	hsv2rgb(h,ds,dv); printf "\n"
+	printf "%02x%02x%02x\n",r,g,b
+	ms=s*0.90; mv=v*1.10; if(mv>1)mv=1
+	hsv2rgb(h,ms,mv); printf "\n"
+	ls=s*0.75; lv=v*1.15; if(lv>1)lv=1
+	hsv2rgb(h,ls,lv); printf "\n"
+}'
+}
+
+msg() { printf '%s: %s\n' "${0##*/}" "$*"; } >&2
+
+# Find the WhiteSur theme name from KDE or gsettings
+detect_theme_name() {
+  local theme
+  theme="$(kreadconfig6 --file kdeglobals --group Icons --key Theme 2>/dev/null || true)"
+  if [[ -z "$theme" ]]; then
+    theme="$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null || true)"
+    theme="${theme//\'/}"
+  fi
+  for candidate in "$theme" WhiteSur WhiteSur-dark WhiteSur-light; do
+    [[ -n "$candidate" ]] || continue
+    local base
+    for base in ~/.local/share/icons /usr/local/share/icons /usr/share/icons; do
+      [[ -f "$base/$candidate/index.theme" ]] || continue
+      printf '%s' "$candidate"
+      return 0
+    done
+  done
+  return 1
+}
+
+# Find the system (non-overlay) WhiteSur theme directory
+find_system_theme_dir() {
+  local name="$1"
+  local base
+  for base in /usr/local/share/icons /usr/share/icons; do
+    if [[ -f "$base/$name/index.theme" && ! -f "$base/$name/.whitesur-overlay" ]]; then
+      printf '%s' "$base/$name"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Ensure pristine cache exists and contains real uncorrupted SVG files
+ensure_pristine() {
+  local pristine="$HOME/.local/share/icons/.whitesur-pristine"
+  if [[ -f "$pristine/places/scalable/folder.svg" && ! -L "$pristine/places/scalable/folder.svg" ]]; then
+    return 0
+  fi
+
+  local src_repo=""
+  for candidate in \
+    "$HOME/Downloads/customization/Themes/WhiteSur-icon-theme" \
+    "$HOME/Downloads/WhiteSur-icon-theme" \
+    "$HOME/WhiteSur-icon-theme"; do
+    if [[ -d "$candidate/src/places/scalable" && -d "$candidate/colors" ]]; then
+      src_repo="$candidate"
+      break
+    fi
+  done
+
+  if [[ -n "$src_repo" ]]; then
+    rm -rf "$pristine"
+    mkdir -p "$pristine/places/scalable" "$pristine/dark/scalable" "$pristine/colors"
+    cp -a "$src_repo/src/places/scalable"/* "$pristine/places/scalable/"
+    cp -a "$src_repo/links/places/scalable"/* "$pristine/places/scalable/"
+    cp -a "$src_repo/colors"/* "$pristine/colors/"
+    [[ -f "$src_repo/src/places/scalable/user-trash-dark.svg" ]] && \
+      cp -a "$src_repo/src/places/scalable/user-trash-dark.svg" "$pristine/dark/scalable/user-trash.svg"
+    [[ -f "$src_repo/src/places/scalable/user-trash-full-dark.svg" ]] && \
+      cp -a "$src_repo/src/places/scalable/user-trash-full-dark.svg" "$pristine/dark/scalable/user-trash-full.svg"
+    return 0
+  fi
+
+  return 1
+}
+
+# Apply color to a theme directory
+apply_theme() {
+  local usr="$1" sys="$2" color="$3" theme_name="$4"
+  local pristine="$HOME/.local/share/icons/.whitesur-pristine"
+  local tp="$usr/places/scalable"
+
+  # If this is a system theme overlay, link non-places directories
+  if [[ -n "$sys" ]]; then
+    mkdir -p "$usr"
+    [[ -f "$usr/.whitesur-overlay" ]] || {
+      cp -f "$sys/index.theme" "$usr/index.theme"
+      touch "$usr/.whitesur-overlay"
+    }
+    for dir in "$sys"/*/; do
+      [[ -d "$dir" ]] || continue
+      local bname
+      bname="$(basename "$dir")"
+      [[ "$bname" == "places" || "$bname" == "places@2x" ]] && continue
+      [[ -e "$usr/$bname" ]] || ln -sf "$dir" "$usr/$bname"
+    done
+  fi
+
+  # Clean slate for places/scalable
+  rm -rf "$tp"
+  mkdir -p "$tp"
+
+  # 1. Copy pristine scalable base SVGs and relative links
+  cp -a "$pristine/places/scalable"/* "$tp/"
+
+  # 2. If dark theme, copy dark trash variants
+  if [[ "$theme_name" =~ [Dd]ark && -d "$pristine/dark/scalable" ]]; then
+    cp -af "$pristine/dark/scalable"/* "$tp/"
+  fi
+
+  # 3. If color is not blue, overlay pre-rendered color SVGs and recolor emblem SVGs
+  if [[ "$color" != "blue" ]]; then
+    if [[ -d "$pristine/colors/color-$color" ]]; then
+      cp -af "$pristine/colors/color-$color"/*.svg "$tp/"
+    fi
+
+    # Recolor specialized folder SVGs (emblems like folder-script.svg, folder-git.svg, etc.)
+    local hexrec variants vr_dark vr_main vr_med vr_light tmp f
+    hexrec="$(color_hex "$color")"
+    variants="$(color_variants "$hexrec")"
+    vr_dark="$(sed -n '1p' <<<"$variants")"
+    vr_main="$(sed -n '2p' <<<"$variants")"
+    vr_med="$(sed -n '3p' <<<"$variants")"
+    vr_light="$(sed -n '4p' <<<"$variants")"
+
+    for f in "$tp"/*.svg; do
+      [[ -f "$f" && ! -L "$f" ]] || continue
+      grep -q '#46a2d7\|#008ea2\|#60c0f0\|#83d4fb' "$f" || continue
+      tmp="${f}.tmp.$$"
+      sed -e "s/#008ea2/#${vr_dark}/g" \
+          -e "s/#46a2d7/#${vr_main}/g" \
+          -e "s/#60c0f0/#${vr_med}/g" \
+          -e "s/#83d4fb/#${vr_light}/g" \
+          "$f" >"$tmp" && mv "$tmp" "$f"
+    done
+  fi
+
+  # 4. Ensure places@2x is a clean symlink to places
+  if [[ -L "$usr/places@2x" ]]; then
+    : # already a symlink
+  elif [[ -d "$usr/places@2x" ]]; then
+    rm -rf "$usr/places@2x"
+    ln -s places "$usr/places@2x"
+  else
+    ln -s places "$usr/places@2x"
+  fi
+
+  gtk-update-icon-cache --force --quiet "$usr" 2>/dev/null || true
+  touch "$usr" 2>/dev/null || true
+}
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+active_theme="$(detect_theme_name)" || {
+  msg "WhiteSur icon theme is not installed"
+  exit 0
+}
+
+ensure_pristine || {
+  msg "Could not locate pristine WhiteSur icons"
+  exit 1
+}
+
+variants=(WhiteSur WhiteSur-dark WhiteSur-light)
+[[ " ${variants[*]} " =~ " ${active_theme} " ]] || variants=("$active_theme" "${variants[@]}")
+
+seen_places=()
+
+for theme_name in "${variants[@]}"; do
+  usr="$HOME/.local/share/icons/$theme_name"
+  sys="$(find_system_theme_dir "$theme_name" 2>/dev/null || true)"
+
+  # Must exist locally or as system theme
+  if [[ -z "$sys" && ! -d "$usr" ]]; then
+    continue
+  fi
+
+  # Track real path of places to prevent double-processing symlinked themes (e.g. WhiteSur-light -> WhiteSur)
+  if [[ -d "$usr/places" ]]; then
+    real_places="$(realpath -m "$usr/places" 2>/dev/null || true)"
+    if [[ -n "$real_places" ]]; then
+      if [[ " ${seen_places[*]} " =~ " ${real_places} " ]]; then
+        # Already processed this physical places directory; just update cache if needed
+        gtk-update-icon-cache --force --quiet "$usr" 2>/dev/null || true
+        continue
+      fi
+      seen_places+=("$real_places")
+    fi
+  fi
+
+  apply_theme "$usr" "$sys" "$COLOR" "$theme_name"
+done
+
+# Notify KDE Plasma
+current_kde_icon="$(kreadconfig6 --file kdeglobals --group Icons --key Theme 2>/dev/null || true)"
+if [[ "$current_kde_icon" =~ WhiteSur ]]; then
+  kwriteconfig6 --file kdeglobals --group Icons --key Theme "$current_kde_icon" 2>/dev/null || true
+fi
+qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+qdbus6 org.kde.plasmashell /PlasmaShell refreshCurrentShell >/dev/null 2>&1 || true
+qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.refreshCurrentShell >/dev/null 2>&1 || true

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(plasma-theme-master VERSION 2.0.7)
+project(plasma-theme-master VERSION 2.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -62,16 +62,23 @@ add_subdirectory(src)
 
 install(FILES plasma-theme-master.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 install(PROGRAMS uninstall.sh DESTINATION ${KDE_INSTALL_BINDIR} RENAME plasma-theme-master-uninstall)
+install(PROGRAMS clean-templates.sh DESTINATION ${KDE_INSTALL_BINDIR} RENAME plasma-theme-master-clean-templates)
 
-# Install built-in template files
+# Install template files
 install(DIRECTORY src/core/templates/
     DESTINATION ${KDE_INSTALL_DATAROOTDIR}/plasma-theme-master/templates
-    FILES_MATCHING
-        PATTERN "*.tpl"
-        PATTERN "*.sh"
+    PATTERN "config.toml.default" EXCLUDE
+    PATTERN "*.bak" EXCLUDE
+    PATTERN ".git*" EXCLUDE
 )
 
 # Install default config alongside templates
 install(FILES src/core/templates/config.toml.default
     DESTINATION ${KDE_INSTALL_DATAROOTDIR}/plasma-theme-master
+)
+
+# Install official and community palette catalogs
+install(DIRECTORY src/core/palettes/
+    DESTINATION ${KDE_INSTALL_DATAROOTDIR}/plasma-theme-master/palettes
+    PATTERN "*.bak" EXCLUDE
 )

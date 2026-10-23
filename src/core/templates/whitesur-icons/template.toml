@@ -1,0 +1,8 @@
+[catalog.whitesur-icons]
+name = "WhiteSur Icon Theme"
+category = "system"
+
+[templates.whitesur_icons]
+input_path = "colors"
+output_path = "~/.cache/ptm/whitesur-icons/colors-final"
+post_hook = "bash '{{ config_dir }}/apply.sh' ~/.cache/ptm/whitesur-icons/colors-final"

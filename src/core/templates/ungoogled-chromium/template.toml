@@ -1,0 +1,8 @@
+[catalog.ungoogled-chromium]
+name = "Ungoogled Chromium"
+category = "browser"
+
+[templates.ungoogled_chromium_theme]
+input_path = "manifest.json"
+output_path = "$XDG_CACHE_HOME/ptm/ungoogled-chromium/theme/manifest.json"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

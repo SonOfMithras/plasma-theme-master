@@ -1,0 +1,4 @@
+{{ colors.source_color.default.hex }}
+{{ colors.surface.default.hex }}
+
+adwaita:93c0ea black:4f4f4f blue:5294e2 bluegrey:607d8b breeze:57b8ec brown:ae8e6c carmine:a30002 cyan:00bcd4 darkcyan:45abb7 deeporange:eb6637 green:87b158 grey:8e8e8f indigo:5c6bc0 magenta:ca71df nordic:81a1c1 orange:ee923a palebrown:d1bfae paleorange:eeca8f pink:f06292 red:e25252 teal:16a085 violet:7e57c2 white:e4e4e4 yaru:676767 yellow:f9bd30

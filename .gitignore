@@ -1,9 +1,10 @@
-# Build and bac directories
+# Build and backup directories
 build/
 bin/
 cmake-build-*/
 .backup/
 package_release.sh
+plasma-theme-master-aur-repo/
 
 # CMake
 CMakeCache.txt

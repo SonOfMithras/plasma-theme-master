@@ -1,0 +1,15 @@
+{
+    "userSettings": {
+    "customThemeSeedsDark": {
+        "background": "{{colors.surface.dark.hex}}",
+        "foregroundOverride": "{{colors.on_surface.dark.hex}}",
+        "primary": "{{colors.primary.dark.hex}}"
+    },
+    "customThemeSeedsLight": {
+        "background": "{{colors.surface.light.hex}}",
+        "foregroundOverride": "{{colors.on_surface.light.hex}}",
+        "primary": "{{colors.primary.light.hex}}"
+    },
+    "themeMode": "THEME_MODE_INHERIT"
+    }
+}

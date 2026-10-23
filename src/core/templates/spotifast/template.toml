@@ -1,0 +1,15 @@
+[catalog.spotifast]
+name = "Spotifast"
+category = "audio"
+
+[templates.spotifast]
+input_path_modes = { dark = "spotifast-dark.json", light = "spotifast-light.json" }
+output_path = "$XDG_CONFIG_HOME/spotifast/themes/ptm.json"
+post_hook = "spotifast reload-themes >/dev/null 2>&1 || true"
+requires_path = "$XDG_CONFIG_HOME/spotifast"
+
+[templates.spotifast-flatpak]
+input_path_modes = { dark = "spotifast-dark.json", light = "spotifast-light.json" }
+output_path = "~/.var/app/rocks.spotifast.Spotifast/config/spotifast/themes/ptm.json"
+post_hook = "flatpak run rocks.spotifast.Spotifast reload-themes >/dev/null 2>&1 || true"
+requires_path = "~/.var/app/rocks.spotifast.Spotifast"

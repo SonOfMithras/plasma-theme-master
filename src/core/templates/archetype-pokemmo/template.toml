@@ -1,0 +1,9 @@
+[catalog.archetype-pokemmo]
+name = "Archetype (PokeMMO)"
+category = "gaming"
+
+[templates.archetype-pokemmo]
+input_path_modes = { dark = "archetype-colors-dark.json", light = "archetype-colors-light.json" }
+output_path = "$XDG_CACHE_HOME/ptm/archetype-pokemmo/colors.json"
+post_hook = "python3 '{{ config_dir }}/apply.py'"
+hook_async = false

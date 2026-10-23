@@ -1,0 +1,10 @@
+[catalog.yapfast]
+name = "yapfast"
+category = "chat"
+
+[templates.yapfast]
+input_path_modes = { dark = "yapfast-dark.json", light = "yapfast-light.json" }
+output_path = "$XDG_CACHE_HOME/ptm/yapfast/theme.json"
+post_hook = "python3 '{{ config_dir }}/apply.py'"
+hook_async = false
+requires_path = "$XDG_DATA_HOME/yapfast"

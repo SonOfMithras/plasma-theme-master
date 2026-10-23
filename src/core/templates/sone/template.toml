@@ -1,0 +1,18 @@
+[catalog.sone]
+name     = "Sone"
+category = "audio"
+
+[templates.sone]
+input_path    = "theme.json"
+output_path   = "$XDG_CONFIG_HOME/sone/theme.json"
+requires_path = "$XDG_CONFIG_HOME/sone"
+
+[templates.sone-flatpak]
+input_path    = "theme.json"
+output_path   = "~/.var/app/io.github.lullabyX.sone/config/sone/theme.json"
+requires_path = "~/.var/app/io.github.lullabyX.sone/config/sone"
+
+[templates.sone-snap]
+input_path    = "theme.json"
+output_path   = "~/snap/sone/current/.config/sone/theme.json"
+requires_path = "~/snap/sone/current/.config/sone"

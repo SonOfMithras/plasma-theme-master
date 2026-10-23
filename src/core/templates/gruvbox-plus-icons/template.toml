@@ -1,0 +1,8 @@
+[catalog.gruvbox-plus-icons]
+name = "Gruvbox Plus Icon Theme"
+category = "system"
+
+[templates.gruvbox_plus_icons]
+input_path = "colors"
+output_path = "colors-final"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

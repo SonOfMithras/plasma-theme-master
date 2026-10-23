@@ -1,0 +1,8 @@
+[catalog.firefox]
+name = "Firefox"
+category = "browser"
+
+[templates.firefox]
+input_path = "userChrome.css"
+output_path = "$XDG_CACHE_HOME/ptm/firefox/plasma-colors.css"
+post_hook = "plasma-theme-master-helper-firefox \"$XDG_CACHE_HOME/ptm/firefox/plasma-colors.css\""

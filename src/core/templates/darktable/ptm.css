@@ -1,0 +1,150 @@
+@import url("/usr/share/darktable/themes/darktable.css");
+
+/* PTM theme for darktable's own theme-file system (Preferences > general
+   > theme dropdown), NOT the generic GTK ~/.config/gtk-3.0/gtk.css path --
+   darktable ships its own separate theme CSS files under themes/, selected
+   internally, confirmed via /usr/share/darktable/themes/ (native) and
+   /app/share/darktable/themes/ (Flatpak sandbox).
+
+   darktable.css defines ~106 named colors, ~85 of them derived from a 21-stop
+   grey_00..grey_100 scale via alias/shade()/alpha(), same pattern the
+   "elegant" variant themes ship with (@import darktable.css, then redefine
+   just the colors that need to change). GTK resolves @define-color-to-
+   @define-color chains at parse time, not live -- redefining only grey_XX
+   after the import would NOT retroactively update bg_color/fg_color/etc,
+   since those already captured grey_XX's value when darktable.css itself
+   defined them. So this file re-executes the ENTIRE color block in the same
+   order as the original, with only the 21 grey_XX anchors changed, everything
+   else keeps its original shade()/alpha()/alias formula, which then correctly
+   recomputes off the new greys within this same file's own top-to-bottom
+   cascade.
+
+   The @import path below must be absolute, not relative -- confirmed via
+   darktable-org/darktable#10914: a theme file placed in the user themes
+   directory can't resolve a relative "darktable.css" import, it only
+   searches within its own directory, not the system themes directory where
+   the real darktable.css actually lives. The community's own workaround
+   (a manually created "themes" symlink alongside the custom file) is more
+   fragile than just using the real absolute path directly.
+
+   Deliberately UNCHANGED below: graph_red/green/blue (RGB histogram channel
+   lines), colorlabel_red/green/blue/yellow/purple (the actual photo
+   color-tagging feature), brush_cursor/brush_trace (mask-editing overlay,
+   drawn over arbitrary photo content). These are functional/semantic colors,
+   not chrome -- recoloring them would work against the app's actual purpose,
+   not just look different.
+
+   The grey scale below intentionally uses only 8 real PTM role colors
+   (stepped, not smoothly interpolated) -- a smooth 21-stop gradient would
+   require inventing in-between tones that don't correspond to a single
+   PTM color placeholder, which the hardcoded-colors rule for this
+   repo doesn't allow. Each named color in darktable's own palette
+   still colors a distinct flat UI region, not a continuous gradient surface,
+   so the step boundaries aren't visible in practice. */
+
+@define-color grey_00 #000000;
+@define-color grey_05 {{colors.surface.default.hex}};
+@define-color grey_10 {{colors.surface.default.hex}};
+@define-color grey_15 {{colors.on_primary.default.hex}};
+@define-color grey_20 {{colors.on_primary.default.hex}};
+@define-color grey_25 {{colors.surface_container.default.hex}};
+@define-color grey_30 {{colors.surface_container.default.hex}};
+@define-color grey_35 {{colors.surface_container_high.default.hex}};
+@define-color grey_40 {{colors.surface_container_high.default.hex}};
+@define-color grey_45 {{colors.surface_container_high.default.hex}};
+@define-color grey_50 {{colors.outline_variant.default.hex}};
+@define-color grey_55 {{colors.outline_variant.default.hex}};
+@define-color grey_60 {{colors.outline_variant.default.hex}};
+@define-color grey_65 {{colors.outline.default.hex}};
+@define-color grey_70 {{colors.outline.default.hex}};
+@define-color grey_75 {{colors.outline.default.hex}};
+@define-color grey_80 {{colors.on_surface_variant.default.hex}};
+@define-color grey_85 {{colors.on_surface_variant.default.hex}};
+@define-color grey_90 {{colors.on_surface.default.hex}};
+@define-color grey_95 {{colors.on_surface.default.hex}};
+@define-color grey_100 #ffffff;
+@define-color selected_bg_color @grey_35;       /* legacy stuff */
+@define-color border_color @grey_10;            /* border, when used */
+@define-color bg_color @grey_15;                /* general background */
+@define-color fg_color @grey_75;                /* general text */
+@define-color base_color @fg_color;             /* legacy stuff */
+@define-color text_color @grey_05;              /* same */
+@define-color placeholder_text_color @grey_50;  /* placeholder text color (text on search background fields) */
+@define-color disabled_fg_color @grey_45;       /* disabled controls */
+@define-color scroll_bar_inactive @grey_40;
+@define-color scroll_bar_active @grey_60;
+@define-color scroll_bar_bg @grey_10;
+@define-color plugin_bg_color @grey_20;
+@define-color section_label shade(@fg_color, 0.92);
+@define-color plugin_label_color @grey_60;
+@define-color collapsible_bg_color @grey_25;
+@define-color bauhaus_bg shade(@plugin_bg_color,0.75);
+@define-color bauhaus_fill shade(@plugin_label_color,0.95);
+@define-color bauhaus_fg @fg_color;       /* needed to correctly display color pickers in all states, even if they inherit @fg_color by default */
+@define-color bauhaus_border shade(@plugin_bg_color, 0.5);
+@define-color bauhaus_indicator_border @grey_20;
+@define-color bauhaus_bg_hover @grey_60;
+@define-color bauhaus_fg_hover @grey_90;
+@define-color bauhaus_fg_selected @grey_80;
+@define-color bauhaus_fg_insensitive alpha(@fg_color, 0.4);
+@define-color button_bg @grey_25;
+@define-color button_fg alpha(@fg_color, 0.55);
+@define-color button_border shade(@button_bg, 1.04);
+@define-color button_hover_bg @grey_50;
+@define-color button_hover_fg @grey_15;
+@define-color field_bg @grey_15;
+@define-color field_fg @fg_color;
+@define-color field_active_bg @grey_25;
+@define-color field_active_fg @grey_80;
+@define-color field_selected_bg @grey_40;
+@define-color field_selected_fg @grey_85;
+@define-color field_hover_bg @grey_55;
+@define-color field_hover_fg @grey_95;
+@define-color tooltip_bg_color @grey_15;
+@define-color tooltip_fg_color @grey_65;
+@define-color really_dark_bg_color @grey_05;
+@define-color log_fg_color @grey_85;
+@define-color darkroom_bg_color @grey_50;    /* this need to be middle grey to correctly work on images. And for all themes */
+@define-color darkroom_preview_bg_color @darkroom_bg_color;
+@define-color lighttable_bg_color @grey_40;
+@define-color lighttable_preview_bg_color @darkroom_bg_color;
+@define-color lighttable_bg_font_color @grey_75;
+@define-color print_bg_color @lighttable_bg_color;
+@define-color thumbnail_font_color @grey_30;
+@define-color thumbnail_bg_color @grey_50;
+@define-color thumbnail_star_bg_color @grey_35;
+@define-color thumbnail_star_hover_color @grey_80;
+@define-color thumbnail_localcopy @grey_95;
+@define-color thumbnail_fg_color @grey_55;
+@define-color thumbnail_bg50_color @grey_95;
+@define-color thumbnail_selected_bg_color @grey_70;
+@define-color thumbnail_hover_bg_color @grey_85;
+@define-color thumbnail_hover_fg_color @grey_90;
+@define-color filmstrip_bg_color @lighttable_bg_color;
+@define-color timeline_bg_color shade(@lighttable_bg_color, 0.9);
+@define-color timeline_fg_color @text_color;
+@define-color timeline_text_bg_color alpha(black, .8);
+@define-color timeline_text_fg_color alpha(white, .9);
+@define-color range_graph_color alpha(@timeline_fg_color, 0.75);
+@define-color range_bg_color alpha(@fg_color, 0.12);
+@define-color range_cursor_color alpha(@fg_color, 0.75);
+@define-color range_sel_color alpha(@bauhaus_fill, 0.6);
+@define-color range_icon_color alpha(@thumbnail_hover_fg_color, 0.35);
+@define-color brush_cursor alpha(white, .9);
+@define-color brush_trace alpha(black, .6);
+@define-color graph_bg @grey_15;
+@define-color graph_exterior shade(@graph_bg, 0.9);
+@define-color graph_border @grey_05;
+@define-color graph_fg @grey_75;
+@define-color graph_fg_active @grey_95;
+@define-color graph_grid @grey_05;
+@define-color graph_overlay @grey_50;
+@define-color inset_histogram alpha(@grey_65, 0.50);
+@define-color graph_red rgb(237,30,20);
+@define-color graph_green rgb(28,235,26);
+@define-color graph_blue rgb(14,14,233);
+@define-color colorlabel_red rgb(230,0,0);
+@define-color colorlabel_green rgb(0,230,0);
+@define-color colorlabel_blue rgb(40,140,255);
+@define-color colorlabel_yellow rgb(255,180,0);
+@define-color colorlabel_purple rgb(230,0,230);

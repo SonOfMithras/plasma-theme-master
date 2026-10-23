@@ -2,77 +2,65 @@
 #define UNIVERSALTHEMEPAGE_H
 
 #include <QWidget>
-#include <QCheckBox>
-#include <QLineEdit>
-#include <QPushButton>
+#include <QList>
+#include <QString>
+#include <QMap>
+
+class QLineEdit;
+class QCheckBox;
+class QPushButton;
+class QProgressBar;
+class QLabel;
+class QButtonGroup;
+class FlowLayout;
+class TemplateCardWidget;
 
 class UniversalThemePage : public QWidget {
     Q_OBJECT
 public:
     explicit UniversalThemePage(QWidget *parent = nullptr);
+    ~UniversalThemePage() override;
 
 private slots:
-    void syncNow();
-    void pickObsidianVault();
-    void showBDSettings();
-    void showVencordSettings();
+    void onSearchTextChanged(const QString &text);
+    void onCategoryFilterChanged(int id);
+    void onInstalledOnlyToggled(bool checked);
+    void onAppToggled(const QString &appId, bool enabled);
+    void onConfigureClicked(const QString &appId);
+    void onRestoreClicked(const QString &appId);
+
+    void onSyncClicked();
+    void onSyncStarted(quint64 generation);
+    void onSyncProgress(quint64 generation, int current, int total, const QString &appName);
+    void onSyncFinished(quint64 generation, bool success, const QStringList &warnings);
 
 private:
     void setupUi();
-    void loadSettings();
-    void saveSettings();
+    void populateCards();
+    void filterCards();
+    void updateCounts();
 
-    // Helper: create a restore button wired to a specific template name
-    QPushButton *makeRestoreBtn(const QString &templateName,
-                                const QString &displayName);
+    // App Templates Controls & Cards
+    QLineEdit       *m_searchEdit = nullptr;
+    QButtonGroup    *m_categoryGroup = nullptr;
+    QCheckBox       *m_installedOnlyCheck = nullptr;
+    QLabel          *m_countLabel = nullptr;
 
-    QCheckBox   *m_vscodeCheck;
-    QPushButton *m_vscodeRestoreBtn;
+    QWidget         *m_cardsContainer = nullptr;
+    FlowLayout      *m_flowLayout = nullptr;
+    QList<TemplateCardWidget *> m_cardWidgets;
 
-    QCheckBox   *m_firefoxCheck;
-    QPushButton *m_firefoxRestoreBtn;
+    QLabel          *m_statusLabel = nullptr;
+    QProgressBar    *m_progressBar = nullptr;
+    QPushButton     *m_syncButton = nullptr;
 
-    QCheckBox   *m_zenBrowserCheck;
-    QCheckBox   *m_zenBrowserContentCheck;
-    QPushButton *m_zenBrowserRestoreBtn;
-
-    QCheckBox   *m_discordCheck;
-    QPushButton *m_discordRestoreBtn;
-    QPushButton *m_discordConfigBtn;
-
-    QCheckBox   *m_vencordCheck;
-    QPushButton *m_vencordRestoreBtn;
-    QPushButton *m_vencordConfigBtn;
-
-    QCheckBox   *m_kittyCheck;
-    QPushButton *m_kittyRestoreBtn;
-
-    QCheckBox   *m_konsoleCheck;
-    QPushButton *m_konsoleRestoreBtn;
-
-    QCheckBox   *m_btopCheck;
-    QPushButton *m_btopRestoreBtn;
-
-    QCheckBox   *m_vicinaeCheck;
-    QPushButton *m_vicinaeRestoreBtn;
-
-    QCheckBox   *m_zedCheck;
-    QPushButton *m_zedRestoreBtn;
-
-    QCheckBox   *m_obsidianCheck;
-    QPushButton *m_obsidianRestoreBtn;
-
-    QCheckBox   *m_millenniumCheck;
-    QPushButton *m_millenniumRestoreBtn;
-
-    QCheckBox   *m_gtkCheck;
-    QPushButton *m_gtkRestoreBtn;
-
-    QLineEdit   *m_obsidianPathEdit;
-    QPushButton *m_browseObsidianBtn;
-    QPushButton *m_syncButton;
-
-    bool m_isLoading = false;
+    QString          m_activeCategory;
+    int              m_activeSourceFilter = 0; // 0 = All, 1 = Bundled, 2 = User
+    QButtonGroup    *m_sourceGroup = nullptr;
+    QPushButton     *m_sourceAllBtn = nullptr;
+    QPushButton     *m_sourceBundledBtn = nullptr;
+    QPushButton     *m_sourceUserBtn = nullptr;
+    bool             m_isLoading = false;
 };
 
 #endif // UNIVERSALTHEMEPAGE_H

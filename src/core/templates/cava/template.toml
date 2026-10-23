@@ -1,0 +1,10 @@
+[catalog.cava]
+name = "Cava"
+category = "audio"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.cava]
+input_path = "cava.ini"
+output_path = "$XDG_CONFIG_HOME/cava/themes/ptm"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

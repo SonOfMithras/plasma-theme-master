@@ -1,0 +1,19 @@
+[catalog.zen-browser]
+name = "Zen Browser"
+category = "browser"
+
+# Both entries run the same apply.sh, which rewrites userChrome.css, userContent.css and
+# user.js in every Zen profile: concurrent runs would clobber each other's edits.
+[templates.zen_browser_chrome]
+input_path = "zen-userChrome.css"
+output_path = "$XDG_CACHE_HOME/ptm/zen-browser/zen-userChrome.css"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"
+hook_async = false
+
+[templates.zen_browser_content]
+input_path = "zen-userContent.css"
+output_path = "$XDG_CACHE_HOME/ptm/zen-browser/zen-userContent.css"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"
+hook_async = false

@@ -1,0 +1,21 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://speedcrunch.org/schemas/theme-v1.schema.json",
+    "name": "PTM",
+    "author": "RSKA3",
+    "homepage": "https://github.com/RSKA3/PTM-Speedcrunch-Template",
+    "version": "1",
+
+    "list": "{{ colors.on_surface.default.hex }}",
+    "unit": "{{ colors.on_surface_variant.default.hex }}",
+    "number": "{{ colors.tertiary.default.hex }}",
+    "parens": "{{ colors.outline.default.hex }}",
+    "result": "{{ colors.primary.default.hex }}",
+    "comment": "{{ colors.secondary.default.hex }}",
+    "function": "{{ colors.primary_fixed_dim.default.hex }}",
+    "operator": "{{ colors.tertiary_fixed_dim.default.hex }}",
+    "variable": "{{ colors.secondary_fixed_dim.default.hex }}",
+    "separator": "{{ colors.outline.default.hex }}",
+    "background": "{{ colors.background.default.hex }}",
+    "primary": "{{ colors.primary.default.hex }}"
+}

@@ -1,0 +1,203 @@
+{
+  "name": "PTM",
+  "$schema": "https://github.com/longbridge/gpui-kit/raw/refs/heads/main/.theme-schema.json",
+  "themes": [
+    {
+      "name": "PTM",
+      "colors": {
+        "accent.background": "{{ colors.primary_container.default.hex }}",
+        "accent.foreground": "{{ colors.on_primary_container.default.hex }}",
+        "accordion.background": "{{ colors.surface_container.default.hex }}",
+        "accordion.hover.background": "{{ colors.surface_container_high.default.hex }}",
+        "background": "{{ colors.background.default.hex }}",
+        "border": "{{ colors.outline_variant.default.hex }}",
+        "caret": "{{ colors.primary.default.hex }}",
+        "chart.1": "{{ colors.primary.default.hex }}",
+        "chart.2": "{{ colors.secondary.default.hex }}",
+        "chart.3": "{{ colors.tertiary.default.hex }}",
+        "chart.4": "{{ colors.error.default.hex }}",
+        "chart.5": "{{ palettes.neutral_variant.60.hex }}",
+        "chart.bullish": "{{ palettes.tertiary.60.hex }}",
+        "chart.bearish": "{{ colors.error.default.hex }}",
+        "chart.grid": "{{ colors.outline_variant.default.hex }}",
+        "danger.background": "{{ colors.error.default.hex }}",
+        "danger.active.background": "{{ colors.error.default.hex }}",
+        "danger.foreground": "{{ colors.on_error_container.default.hex }}",
+        "danger.hover.background": "{{ colors.error.default.hex }}",
+        "description_list.label.background": "{{ colors.surface_container_high.default.hex }}",
+        "description_list.label.foreground": "{{ colors.on_surface.default.hex }}",
+        "drag.border": "{{ colors.primary.default.hex }}",
+        "drop_target.background": "{{ colors.primary_container.default.hex }}",
+        "foreground": "{{ colors.on_surface.default.hex }}",
+        "group_box.background": "{{ colors.surface_container_low.default.hex }}",
+        "group_box.foreground": "{{ colors.on_surface.default.hex }}",
+        "group_box.title.foreground": "{{ colors.primary.default.hex }}",
+        "info.background": "{{ colors.secondary.default.hex }}",
+        "info.active.background": "{{ colors.secondary.default.hex }}",
+        "info.foreground": "{{ colors.on_secondary_container.default.hex }}",
+        "info.hover.background": "{{ colors.secondary.default.hex }}",
+        "input.border": "{{ colors.outline_variant.default.hex }}",
+        "link": "{{ colors.primary.default.hex }}",
+        "link.active": "{{ colors.tertiary.default.hex }}",
+        "link.hover": "{{ colors.hover.default.hex }}",
+        "list.background": "{{ colors.surface.default.hex }}",
+        "list.active.background": "{{ colors.primary_container.default.hex }}",
+        "list.active.border": "{{ colors.primary.default.hex }}",
+        "list.even.background": "{{ colors.surface_container.default.hex }}",
+        "list.head.background": "{{ colors.surface_container_high.default.hex }}",
+        "list.hover.background": "{{ colors.surface_container_high.default.hex }}",
+        "muted.background": "{{ colors.surface_container_high.default.hex }}",
+        "muted.foreground": "{{ colors.on_surface_variant.default.hex }}",
+        "popover.background": "{{ colors.surface_container_high.default.hex }}",
+        "popover.foreground": "{{ colors.on_surface.default.hex }}",
+        "primary.background": "{{ colors.primary.default.hex }}",
+        "primary.active.background": "{{ colors.on_primary.default.hex }}",
+        "primary.foreground": "{{ colors.on_primary.default.hex }}",
+        "primary.hover.background": "{{ colors.primary_container.default.hex }}",
+        "progress.bar.background": "{{ colors.primary.default.hex }}",
+        "ring": "{{ colors.primary.default.hex }}",
+        "scrollbar.background": "{{ colors.surface_container.default.hex }}",
+        "scrollbar.thumb.background": "{{ colors.outline.default.hex }}",
+        "scrollbar.thumb.hover.background": "{{ colors.on_surface_variant.default.hex }}",
+        "secondary.background": "{{ colors.surface_container_high.default.hex }}",
+        "secondary.active.background": "{{ colors.surface_container_highest.default.hex }}",
+        "secondary.foreground": "{{ colors.on_surface.default.hex }}",
+        "secondary.hover.background": "{{ colors.surface_container_highest.default.hex }}",
+        "selection.background": "{{ colors.primary_container.default.hex }}",
+        "sidebar.background": "{{ colors.surface_container.default.hex }}",
+        "sidebar.accent.background": "{{ colors.primary.default.hex }}",
+        "sidebar.accent.foreground": "{{ colors.surface.default.hex }}",
+        "sidebar.border": "{{ colors.outline_variant.default.hex }}",
+        "sidebar.foreground": "{{ colors.on_surface.default.hex }}",
+        "sidebar.primary.background": "{{ colors.primary.default.hex }}",
+        "sidebar.primary.foreground": "{{ colors.on_primary.default.hex }}",
+        "skeleton.background": "{{ colors.surface_container_high.default.hex }}",
+        "slider.background": "{{ colors.surface_container_highest.default.hex }}",
+        "slider.thumb.background": "{{ colors.primary.default.hex }}",
+        "switch.background": "{{ colors.surface_container_highest.default.hex }}",
+        "switch.thumb.background": "{{ colors.on_primary_container.default.hex }}",
+        "tab.background": "{{ colors.surface_container.default.hex }}",
+        "tab.active.background": "{{ colors.surface_container_high.default.hex }}",
+        "tab.active.foreground": "{{ colors.on_surface.default.hex }}",
+        "tab_bar.background": "{{ colors.surface_container.default.hex }}",
+        "tab_bar.segmented.background": "{{ colors.surface_container_high.default.hex }}",
+        "tab.foreground": "{{ colors.on_surface_variant.default.hex }}",
+        "table.background": "{{ colors.surface.default.hex }}",
+        "table.active.background": "{{ colors.primary_container.default.hex }}",
+        "table.active.border": "{{ colors.primary.default.hex }}",
+        "table.even.background": "{{ colors.surface_container.default.hex }}",
+        "table.head.background": "{{ colors.surface_container_high.default.hex }}",
+        "table.head.foreground": "{{ colors.on_surface.default.hex }}",
+        "table.foot.background": "{{ colors.surface_container.default.hex }}",
+        "table.foot.foreground": "{{ colors.on_surface_variant.default.hex }}",
+        "table.hover.background": "{{ colors.surface_container_high.default.hex }}",
+        "table.row.border": "{{ colors.outline_variant.default.hex }}",
+        "title_bar.background": "{{ colors.surface_container.default.hex }}",
+        "title_bar.border": "{{ colors.outline_variant.default.hex }}",
+        "warning.background": "{{ colors.tertiary_container.default.hex }}",
+        "warning.active.background": "{{ colors.tertiary.default.hex }}",
+        "warning.hover.background": "{{ colors.tertiary.default.hex }}",
+        "warning.foreground": "{{ colors.on_tertiary_container.default.hex }}",
+        "overlay": "{{ colors.scrim.default.hex }}80", 
+        "window.border": "{{ colors.outline_variant.default.hex }}",
+        "base.blue": "{{ palettes.primary.50.hex }}",
+        "base.blue.light": "{{ palettes.primary.70.hex }}",
+        "base.cyan": "{{ palettes.tertiary.50.hex }}",
+        "base.cyan.light": "{{ palettes.tertiary.70.hex }}",
+        "base.green": "{{ colors.primary.default.hex }}",
+        "base.green.light": "{{ palettes.tertiary.60.hex }}",
+        "base.magenta": "{{ palettes.secondary.50.hex }}",
+        "base.magenta.light": "{{ palettes.secondary.70.hex }}",
+        "base.red": "{{ colors.error.default.hex }}",
+        "base.red.light": "{{ palettes.error.60.hex }}",
+        "base.yellow": "{{ palettes.tertiary.50.hex }}",
+        "base.yellow.light": "{{ palettes.tertiary.70.hex }}"
+      },
+      "highlight": {
+        "editor.foreground": "{{ colors.on_surface.default.hex }}",
+        "editor.background": "{{ colors.background.default.hex }}",
+        "editor.active_line.background": "{{ colors.surface_container.default.hex }}",
+        "editor.line_number": "{{ colors.outline.default.hex }}",
+        "editor.active_line_number": "{{ colors.on_surface.default.hex }}",
+        "editor.invisible": "{{ colors.outline_variant.default.hex }}",
+        "conflict": "{{ colors.error.default.hex }}",
+        "created": "{{ colors.primary.default.hex }}",
+        "hidden": "{{ colors.outline.default.hex }}",
+        "hint": "{{ colors.tertiary.default.hex }}",
+        "modified": "{{ colors.secondary.default.hex }}",
+        "predictive": "{{ colors.surface_variant.default.hex }}",
+        "syntax": {
+          "attribute": {
+            "color": "{{ palettes.secondary.70.hex }}"
+          },
+          "boolean": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "comment": {
+            "color": "{{ colors.on_surface_variant.default.hex }}"
+          },
+          "comment.doc": {
+            "color": "{{ colors.on_surface_variant.default.hex }}"
+          },
+          "constant": {
+            "color": "{{ palettes.primary.70.hex }}"
+          },
+          "constructor": {
+            "color": "{{ palettes.secondary.70.hex }}"
+          },
+          "embedded": {
+            "color": "{{ colors.on_surface.default.hex }}"
+          },
+          "function": {
+            "color": "{{ palettes.primary.70.hex }}"
+          },
+          "keyword": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "link_text": {
+            "color": "{{ colors.primary.default.hex }}"
+          },
+          "link_uri": {
+            "color": "{{ colors.secondary.default.hex }}"
+          },
+          "number": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "string": {
+            "color": "{{ palettes.secondary.70.hex }}"
+          },
+          "string.escape": {
+            "color": "{{ palettes.primary.70.hex }}"
+          },
+          "string.regex": {
+            "color": "{{ palettes.primary.70.hex }}"
+          },
+          "string.special": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "string.special.symbol": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "tag": {
+            "color": "{{ palettes.secondary.70.hex }}"
+          },
+          "text.literal": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          },
+          "title": {
+            "color": "{{ colors.primary.default.hex }}"
+          },
+          "type": {
+            "color": "{{ palettes.secondary.70.hex }}"
+          },
+          "property": {
+            "color": "{{ colors.on_surface.default.hex }}"
+          },
+          "variable.special": {
+            "color": "{{ palettes.tertiary.70.hex }}"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+[catalog.glow]
+name = "Glow"
+category = "terminal"
+
+[templates.glow]
+input_path = "glow.json"
+output_path = "$XDG_CONFIG_HOME/glow/ptm.json"

@@ -1,0 +1,13 @@
+[catalog.darktable]
+name = "darktable"
+category = "editor"
+
+[templates.darktable]
+input_path = "ptm.css"
+output_path = "~/.config/darktable/themes/ptm.css"
+requires_path = "~/.config/darktable"
+
+[templates.darktable-flatpak]
+input_path = "ptm-flatpak.css"
+output_path = "~/.var/app/org.darktable.Darktable/config/darktable/themes/ptm.css"
+requires_path = "~/.var/app/org.darktable.Darktable"

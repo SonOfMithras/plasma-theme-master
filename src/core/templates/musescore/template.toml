@@ -1,0 +1,8 @@
+[catalog.musescore]
+name = "MuseScore4"
+category = "editor"
+
+[templates.musescore]
+input_path = "MuseScore4.ini"
+output_path = "$XDG_CONFIG_HOME/MuseScore/ptm.ini"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

@@ -1,0 +1,7 @@
+[catalog.codex]
+name = "Codex"
+category = "ai"
+
+[templates.codex]
+input_path = "codex.tmTheme"
+output_path = "~/.codex/themes/ptm.tmTheme"

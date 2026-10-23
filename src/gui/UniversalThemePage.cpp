@@ -1,366 +1,422 @@
 #include "UniversalThemePage.h"
+#include "FlowLayout.h"
+#include "TemplateCardWidget.h"
+#include "TemplateSettingsDialog.h"
+#include "../core/CommunityTemplateCatalog.h"
 #include "../core/TemplateConfig.h"
+#include "../core/TemplateApplyService.h"
 #include "../core/UniversalThemeExporter.h"
 #include "../core/Logger.h"
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGridLayout>
-#include <QGroupBox>
 #include <QLabel>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QDialog>
-#include <QTextEdit>
-#include <QScrollArea>
-#include <QTimer>
+#include <QLineEdit>
 #include <QCheckBox>
-#include <QDialogButtonBox>
-#include <QIcon>
+#include <QPushButton>
+#include <QProgressBar>
+#include <QScrollArea>
+#include <QButtonGroup>
+#include <QMessageBox>
+#include <QTime>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QFrame>
+#include <QFont>
 
 UniversalThemePage::UniversalThemePage(QWidget *parent) : QWidget(parent) {
+    m_activeCategory = tr("All");
     setupUi();
-    loadSettings();
+    populateCards();
+
+    // Wire async sync signals from TemplateApplyService
+    TemplateApplyService &service = TemplateApplyService::instance();
+    connect(&service, &TemplateApplyService::syncStarted,
+            this, &UniversalThemePage::onSyncStarted);
+    connect(&service, &TemplateApplyService::syncProgress,
+            this, &UniversalThemePage::onSyncProgress);
+    connect(&service, &TemplateApplyService::syncFinished,
+            this, &UniversalThemePage::onSyncFinished);
 }
 
-// ---------------------------------------------------------------------------
-// Restore button factory — looks up output_path from config.toml at click time
-// so it reflects any user edits to config without restarting the app.
-// ---------------------------------------------------------------------------
-QPushButton *UniversalThemePage::makeRestoreBtn(const QString &templateName,
-                                                const QString &displayName) {
-    auto *btn = new QPushButton(this);
-    btn->setToolTip("Restore original config / remove sync files");
-    btn->setIcon(QIcon::fromTheme("edit-undo"));
-    if (btn->icon().isNull()) btn->setText("Restore");
-
-    connect(btn, &QPushButton::clicked, this, [this, templateName, displayName]() {
-        QString question = QString("Restore %1 config from backup?").arg(displayName);
-        if (QMessageBox::question(this, "Restore " + displayName, question)
-                != QMessageBox::Yes) return;
-
-        // Find all template entries matching this name (covers kitty_light + kitty_dark)
-        QList<TemplateEntry> entries = TemplateConfig::loadTemplates();
-        bool any = false;
-        for (const TemplateEntry &e : entries) {
-            // Match exact name or prefixed name (e.g. "kitty" matches "kitty_light")
-            if (e.name == templateName || e.name.startsWith(templateName + "_")) {
-                if (!e.outputPath.isEmpty()) {
-                    if (UniversalThemeExporter::restoreFile(e.outputPath)) {
-                        Logger::log("Restored " + e.name + " from backup.", Logger::Info);
-                        any = true;
-                    }
-                }
-            }
-        }
-
-        if (any)
-            QMessageBox::information(this, "Done",
-                                     "Restored " + displayName + " config from backup.");
-        else
-            QMessageBox::warning(this, "No Backup Found",
-                                 "No backup file found for " + displayName +
-                                 ".\nOutput may not have been written yet.");
-    });
-
-    return btn;
-}
+UniversalThemePage::~UniversalThemePage() = default;
 
 void UniversalThemePage::setupUi() {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(15);
+    mainLayout->setContentsMargins(18, 16, 18, 16);
+    mainLayout->setSpacing(10);
 
-    QLabel *header = new QLabel("<h2>Universal Theming</h2>", this);
-    mainLayout->addWidget(header);
+    // Scroll Area for all content
+    QScrollArea *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setFrameShape(QFrame::NoFrame);
 
-    QLabel *desc = new QLabel(
-        "Automatically export Plasma colors to other applications. "
-        "Configuration is stored in <code>~/.config/plasma-theme-master/config.toml</code>.",
-        this);
-    desc->setWordWrap(true);
-    mainLayout->addWidget(desc);
+    QWidget *scrollContent = new QWidget(scrollArea);
+    QVBoxLayout *contentLayout = new QVBoxLayout(scrollContent);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setSpacing(14);
 
-    // Apps Group
-    QGroupBox *appsGroup = new QGroupBox(tr("Supported Applications"), this);
-    QGridLayout *grid = new QGridLayout(appsGroup);
-    grid->setColumnStretch(0, 1);
+    // Header: App Templates Title & Subtitle
+    QVBoxLayout *headerBox = new QVBoxLayout();
+    headerBox->setSpacing(4);
 
-    int row = 0;
+    QLabel *titleLabel = new QLabel(tr("<h3>App Templates</h3>"), scrollContent);
+    QLabel *descLabel = new QLabel(
+        tr("Configure application templates to automatically synchronize colors on theme and palette changes."),
+        scrollContent);
+    descLabel->setWordWrap(true);
+    QFont descFont = descLabel->font();
+    descFont.setPointSize(9);
+    descLabel->setFont(descFont);
+    QPalette dp = descLabel->palette();
+    dp.setColor(QPalette::WindowText, dp.color(QPalette::PlaceholderText));
+    descLabel->setPalette(dp);
 
-    // Helper: add a standard row (checkbox + optional config btn + restore btn)
-    auto addRow = [&](QCheckBox *cb, QPushButton *restoreBtn,
-                      QPushButton *configBtn = nullptr) {
-        grid->addWidget(cb, row, 0);
-        int col = 1;
-        if (configBtn) grid->addWidget(configBtn, row, col++);
-        grid->addWidget(restoreBtn, row, col);
-        row++;
+    headerBox->addWidget(titleLabel);
+    headerBox->addWidget(descLabel);
+    contentLayout->addLayout(headerBox);
+
+    // Filter & Search Controls
+    QVBoxLayout *controlBox = new QVBoxLayout();
+    controlBox->setSpacing(8);
+
+    QHBoxLayout *searchRow = new QHBoxLayout();
+    searchRow->setSpacing(10);
+
+    m_searchEdit = new QLineEdit(scrollContent);
+    m_searchEdit->setPlaceholderText(tr("Search application templates by name, category, or keyword..."));
+    m_searchEdit->setClearButtonEnabled(true);
+    m_searchEdit->setMinimumHeight(32);
+    searchRow->addWidget(m_searchEdit, 1);
+
+    m_installedOnlyCheck = new QCheckBox(tr("Detected on System"), scrollContent);
+    m_installedOnlyCheck->setToolTip(tr("Show only applications found on this machine"));
+    m_installedOnlyCheck->setCursor(Qt::PointingHandCursor);
+    searchRow->addWidget(m_installedOnlyCheck);
+
+    m_countLabel = new QLabel(scrollContent);
+    QFont cntFont = m_countLabel->font();
+    cntFont.setPointSize(9);
+    m_countLabel->setFont(cntFont);
+    QPalette cp = m_countLabel->palette();
+    cp.setColor(QPalette::WindowText, cp.color(QPalette::PlaceholderText));
+    m_countLabel->setPalette(cp);
+    searchRow->addWidget(m_countLabel);
+
+    controlBox->addLayout(searchRow);
+
+    // Source Filter Pills: All | Bundled (N) | User (M)
+    QHBoxLayout *sourceRow = new QHBoxLayout();
+    sourceRow->setSpacing(6);
+
+    m_sourceGroup = new QButtonGroup(this);
+    m_sourceGroup->setExclusive(true);
+
+    m_sourceAllBtn = new QPushButton(tr("All"), scrollContent);
+    m_sourceAllBtn->setCheckable(true);
+    m_sourceAllBtn->setChecked(true);
+    m_sourceAllBtn->setCursor(Qt::PointingHandCursor);
+    m_sourceGroup->addButton(m_sourceAllBtn, 0);
+    sourceRow->addWidget(m_sourceAllBtn);
+
+    m_sourceBundledBtn = new QPushButton(tr("Bundled"), scrollContent);
+    m_sourceBundledBtn->setCheckable(true);
+    m_sourceBundledBtn->setCursor(Qt::PointingHandCursor);
+    m_sourceGroup->addButton(m_sourceBundledBtn, 1);
+    sourceRow->addWidget(m_sourceBundledBtn);
+
+    m_sourceUserBtn = new QPushButton(tr("User"), scrollContent);
+    m_sourceUserBtn->setCheckable(true);
+    m_sourceUserBtn->setCursor(Qt::PointingHandCursor);
+    m_sourceGroup->addButton(m_sourceUserBtn, 2);
+    sourceRow->addWidget(m_sourceUserBtn);
+
+    sourceRow->addStretch();
+    controlBox->addLayout(sourceRow);
+
+    // Category Filter Pills (native checkable pushbuttons wrapping via FlowLayout)
+    QWidget *pillsContainer = new QWidget(scrollContent);
+    FlowLayout *pillsFlow = new FlowLayout(pillsContainer, 0, 4, 4);
+    pillsFlow->setFillColumns(false);
+
+    m_categoryGroup = new QButtonGroup(this);
+    m_categoryGroup->setExclusive(true);
+
+    QStringList categories = {
+        tr("All"), tr("Terminal"), tr("Editor"), tr("Browser"), tr("Chat"),
+        tr("Launcher"), tr("System"), tr("Audio"), tr("Gaming"), tr("AI & Tools"), tr("Misc")
     };
 
-    // VS Code
-    m_vscodeCheck      = new QCheckBox("VS Code / VSCodium / Antigravity", this);
-    m_vscodeRestoreBtn = makeRestoreBtn("vscode", "VS Code");
-    addRow(m_vscodeCheck, m_vscodeRestoreBtn);
+    int catIdx = 0;
+    for (const QString &cat : categories) {
+        QPushButton *btn = new QPushButton(cat, pillsContainer);
+        btn->setCheckable(true);
+        btn->setCursor(Qt::PointingHandCursor);
+        if (catIdx == 0) btn->setChecked(true);
+        m_categoryGroup->addButton(btn, catIdx++);
+        pillsFlow->addWidget(btn);
+    }
+    controlBox->addWidget(pillsContainer);
 
-    // Firefox
-    m_firefoxCheck      = new QCheckBox("Firefox / Zen Browser (userChrome.css)", this);
-    m_firefoxRestoreBtn = makeRestoreBtn("firefox", "Firefox");
-    addRow(m_firefoxCheck, m_firefoxRestoreBtn);
+    contentLayout->addLayout(controlBox);
 
-    // Zen Browser (Noctalia Community Template)
-    m_zenBrowserCheck      = new QCheckBox("Zen Browser (Noctalia Community Template)", this);
-    m_zenBrowserRestoreBtn = makeRestoreBtn("zen_browser", "Zen Browser");
-    m_zenBrowserContentCheck = new QCheckBox("Theme settings and content pages (userContent.css)", this);
-    m_zenBrowserContentCheck->setStyleSheet("margin-left: 20px;"); // Indent as sub-option
-    
-    // Wire dynamic enabling/disabling of the sub-option
-    m_zenBrowserContentCheck->setEnabled(m_zenBrowserCheck->isChecked());
-    connect(m_zenBrowserCheck, &QCheckBox::toggled, m_zenBrowserContentCheck, &QCheckBox::setEnabled);
-    
-    addRow(m_zenBrowserCheck, m_zenBrowserRestoreBtn);
-    grid->addWidget(m_zenBrowserContentCheck, row++, 0);
+    // Cards Grid
+    m_cardsContainer = new QWidget(scrollContent);
+    m_flowLayout = new FlowLayout(m_cardsContainer, 0, 10, 10);
+    m_flowLayout->setFillColumns(true);
+    m_flowLayout->setMinItemWidth(260);
+    m_cardsContainer->setLayout(m_flowLayout);
+    contentLayout->addWidget(m_cardsContainer);
 
-    // BetterDiscord
-    m_discordCheck      = new QCheckBox("BetterDiscord (Midnight Theme CSS)", this);
-    m_discordRestoreBtn = makeRestoreBtn("betterdiscord", "BetterDiscord");
-    m_discordConfigBtn  = new QPushButton("Configure", this);
-    connect(m_discordConfigBtn, &QPushButton::clicked,
-            this, &UniversalThemePage::showBDSettings);
-    addRow(m_discordCheck, m_discordRestoreBtn, m_discordConfigBtn);
+    scrollArea->setWidget(scrollContent);
+    mainLayout->addWidget(scrollArea, 1);
 
-    // Vencord
-    m_vencordCheck      = new QCheckBox("Vencord (Midnight Theme CSS)", this);
-    m_vencordRestoreBtn = makeRestoreBtn("vencord", "Vencord");
-    m_vencordConfigBtn  = new QPushButton("Configure", this);
-    connect(m_vencordConfigBtn, &QPushButton::clicked,
-            this, &UniversalThemePage::showVencordSettings);
-    addRow(m_vencordCheck, m_vencordRestoreBtn, m_vencordConfigBtn);
+    // Bottom Action & Status Bar
+    QHBoxLayout *bottomBar = new QHBoxLayout();
+    bottomBar->setSpacing(12);
 
-    // Kitty
-    m_kittyCheck      = new QCheckBox("Kitty Terminal", this);
-    m_kittyRestoreBtn = makeRestoreBtn("kitty", "Kitty"); // matches kitty_light + kitty_dark
-    addRow(m_kittyCheck, m_kittyRestoreBtn);
+    QVBoxLayout *statusBox = new QVBoxLayout();
+    statusBox->setSpacing(3);
 
-    // Konsole
-    m_konsoleCheck      = new QCheckBox("Konsole (Colors & Profile)", this);
-    m_konsoleRestoreBtn = makeRestoreBtn("konsole", "Konsole");
-    addRow(m_konsoleCheck, m_konsoleRestoreBtn);
+    m_statusLabel = new QLabel(tr("Ready to sync templates"), this);
+    QFont stFont = m_statusLabel->font();
+    stFont.setPointSize(8.5);
+    m_statusLabel->setFont(stFont);
+    statusBox->addWidget(m_statusLabel);
 
-    // Btop
-    m_btopCheck      = new QCheckBox("Btop (System Monitor Theme)", this);
-    m_btopRestoreBtn = makeRestoreBtn("btop", "Btop");
-    addRow(m_btopCheck, m_btopRestoreBtn);
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setFixedHeight(6);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setVisible(false);
+    statusBox->addWidget(m_progressBar);
 
-    // Vicinae
-    m_vicinaeCheck      = new QCheckBox("Vicinae (Dynamic Theme)", this);
-    m_vicinaeRestoreBtn = makeRestoreBtn("vicinae", "Vicinae");
-    addRow(m_vicinaeCheck, m_vicinaeRestoreBtn);
+    bottomBar->addLayout(statusBox, 1);
 
-    // Zed
-    m_zedCheck      = new QCheckBox("Zed Editor (Theme JSON)", this);
-    m_zedRestoreBtn = makeRestoreBtn("zed", "Zed");
-    addRow(m_zedCheck, m_zedRestoreBtn);
+    m_syncButton = new QPushButton(tr("Sync Now"), this);
+    m_syncButton->setMinimumHeight(38);
+    m_syncButton->setMinimumWidth(130);
+    m_syncButton->setCursor(Qt::PointingHandCursor);
+    QFont syncFont = m_syncButton->font();
+    syncFont.setBold(true);
+    m_syncButton->setFont(syncFont);
+    bottomBar->addWidget(m_syncButton);
 
-    // Millennium Steam (Material Theme)
-    m_millenniumCheck      = new QCheckBox("Millennium Steam (Material Theme)", this);
-    m_millenniumRestoreBtn = makeRestoreBtn("millennium", "Millennium");
-    addRow(m_millenniumCheck, m_millenniumRestoreBtn);
+    mainLayout->addLayout(bottomBar);
 
-    // GTK & Libadwaita (Non-Breeze Themes)
-    m_gtkCheck      = new QCheckBox("GTK & Libadwaita (Non-Breeze Themes only)", this);
-    m_gtkRestoreBtn = makeRestoreBtn("gtk", "GTK");
-    addRow(m_gtkCheck, m_gtkRestoreBtn);
-
-    // Obsidian — checkbox + restore in grid, path row below
-    m_obsidianCheck      = new QCheckBox("Obsidian (Vault Snippet)", this);
-    m_obsidianRestoreBtn = makeRestoreBtn("obsidian", "Obsidian");
-    grid->addWidget(m_obsidianCheck,      row, 0);
-    grid->addWidget(m_obsidianRestoreBtn, row, 1);
-    row++;
-
-    QWidget *obsContainer = new QWidget(this);
-    QHBoxLayout *obsLayout = new QHBoxLayout(obsContainer);
-    obsLayout->setContentsMargins(0, 0, 0, 0);
-    m_obsidianPathEdit = new QLineEdit(this);
-    m_obsidianPathEdit->setPlaceholderText("Path to Obsidian Vault...");
-    m_browseObsidianBtn = new QPushButton("Browse...", this);
-    obsLayout->addWidget(m_obsidianPathEdit);
-    obsLayout->addWidget(m_browseObsidianBtn);
-    grid->addWidget(obsContainer, row, 0, 1, 3);
-
-    mainLayout->addWidget(appsGroup);
-
-    // Sync button
-    m_syncButton = new QPushButton("Sync Now", this);
-    m_syncButton->setMinimumHeight(40);
-    mainLayout->addStretch();
-    mainLayout->addWidget(m_syncButton);
-
-    // Connections
-    connect(m_browseObsidianBtn, &QPushButton::clicked,
-            this, &UniversalThemePage::pickObsidianVault);
+    // --- Connections ---
+    connect(m_searchEdit, &QLineEdit::textChanged,
+            this, &UniversalThemePage::onSearchTextChanged);
+    connect(m_sourceGroup, &QButtonGroup::idClicked,
+            this, [this](int id) {
+                m_activeSourceFilter = id;
+                filterCards();
+            });
+    connect(m_categoryGroup, &QButtonGroup::idClicked,
+            this, &UniversalThemePage::onCategoryFilterChanged);
+    connect(m_installedOnlyCheck, &QCheckBox::toggled,
+            this, &UniversalThemePage::onInstalledOnlyToggled);
     connect(m_syncButton, &QPushButton::clicked,
-            this, &UniversalThemePage::syncNow);
-
-    // Auto-save on toggle — writes directly to config.toml
-    connect(m_vscodeCheck,    &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_firefoxCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_zenBrowserCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_zenBrowserContentCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_discordCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_kittyCheck,     &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_konsoleCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_vencordCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_btopCheck,      &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_vicinaeCheck,   &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_zedCheck,       &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_millenniumCheck, &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_gtkCheck,       &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_obsidianCheck,  &QCheckBox::toggled, this, &UniversalThemePage::saveSettings);
-    connect(m_obsidianPathEdit, &QLineEdit::editingFinished,
-            this, &UniversalThemePage::saveSettings);
+            this, &UniversalThemePage::onSyncClicked);
 }
 
-void UniversalThemePage::loadSettings() {
+void UniversalThemePage::populateCards() {
     m_isLoading = true;
     TemplateConfig::ensureUserConfig();
 
-    m_vscodeCheck->setChecked(TemplateConfig::isEnabled("vscode"));
-    m_firefoxCheck->setChecked(TemplateConfig::isEnabled("firefox"));
-    m_zenBrowserCheck->setChecked(TemplateConfig::isEnabled("zen_browser_chrome"));
-    m_zenBrowserContentCheck->setChecked(TemplateConfig::isEnabled("zen_browser_content"));
-    m_zenBrowserContentCheck->setEnabled(m_zenBrowserCheck->isChecked());
-    m_discordCheck->setChecked(TemplateConfig::isEnabled("betterdiscord"));
-    m_kittyCheck->setChecked(TemplateConfig::isEnabled("kitty_light"));
-    m_konsoleCheck->setChecked(TemplateConfig::isEnabled("konsole"));
-    m_vencordCheck->setChecked(TemplateConfig::isEnabled("vencord"));
-    m_btopCheck->setChecked(TemplateConfig::isEnabled("btop"));
-    m_vicinaeCheck->setChecked(TemplateConfig::isEnabled("vicinae"));
-    m_zedCheck->setChecked(TemplateConfig::isEnabled("zed"));
-    m_millenniumCheck->setChecked(TemplateConfig::isEnabled("millennium"));
-    m_gtkCheck->setChecked(TemplateConfig::isEnabled("gtk4_colors"));
-    m_obsidianCheck->setChecked(TemplateConfig::isEnabled("obsidian"));
-    m_obsidianPathEdit->setText(
-        TemplateConfig::getValue("obsidian", "obsidian_vault_path", ""));
+    CommunityTemplateCatalog &catalog = CommunityTemplateCatalog::instance();
+    catalog.reload();
+
+    if (m_sourceBundledBtn) {
+        m_sourceBundledBtn->setText(tr("Bundled (%1)").arg(catalog.bundledCount()));
+    }
+    if (m_sourceUserBtn) {
+        m_sourceUserBtn->setText(tr("User (%1)").arg(catalog.userCount()));
+    }
+
+    while (QLayoutItem *item = m_flowLayout->takeAt(0)) {
+        if (QWidget *w = item->widget()) delete w;
+        delete item;
+    }
+    m_cardWidgets.clear();
+
+    const QList<CommunityTemplateApp> &allApps = catalog.apps();
+
+    for (const CommunityTemplateApp &app : allApps) {
+        if (app.category.toLower().trimmed() == "compositor") continue;
+
+        auto *card = new TemplateCardWidget(app, m_cardsContainer);
+        card->setChecked(TemplateConfig::isAppEnabled(app.id));
+
+        connect(card, &TemplateCardWidget::appToggled,
+                this, &UniversalThemePage::onAppToggled);
+        connect(card, &TemplateCardWidget::configureClicked,
+                this, &UniversalThemePage::onConfigureClicked);
+        connect(card, &TemplateCardWidget::restoreClicked,
+                this, &UniversalThemePage::onRestoreClicked);
+
+        m_flowLayout->addWidget(card);
+        m_cardWidgets.append(card);
+    }
 
     m_isLoading = false;
+    filterCards();
 }
 
-void UniversalThemePage::saveSettings() {
+void UniversalThemePage::onSearchTextChanged(const QString &) {
+    filterCards();
+}
+
+void UniversalThemePage::onCategoryFilterChanged(int id) {
+    QAbstractButton *btn = m_categoryGroup->button(id);
+    if (btn) {
+        m_activeCategory = btn->text();
+        filterCards();
+    }
+}
+
+void UniversalThemePage::onInstalledOnlyToggled(bool) {
+    filterCards();
+}
+
+void UniversalThemePage::filterCards() {
+    QString search = m_searchEdit->text().trimmed().toLower();
+    bool installedOnly = m_installedOnlyCheck->isChecked();
+
+    int visibleCount = 0;
+    for (TemplateCardWidget *card : m_cardWidgets) {
+        bool matchSearch = search.isEmpty() ||
+                           card->displayName().toLower().contains(search) ||
+                           card->category().toLower().contains(search) ||
+                           card->description().toLower().contains(search) ||
+                           card->appId().toLower().contains(search);
+
+        bool matchCat = (m_activeCategory == tr("All")) ||
+                        (card->category().compare(m_activeCategory, Qt::CaseInsensitive) == 0);
+
+        bool matchInstalled = !installedOnly || card->isInstalled();
+
+        bool matchSource = true;
+        if (m_activeSourceFilter == 1) {
+            matchSource = !card->isUser();
+        } else if (m_activeSourceFilter == 2) {
+            matchSource = card->isUser();
+        }
+
+        bool visible = matchSearch && matchCat && matchInstalled && matchSource;
+        card->setVisible(visible);
+        if (visible) visibleCount++;
+    }
+
+    m_countLabel->setText(tr("Showing %1 of %2 templates").arg(visibleCount).arg(m_cardWidgets.size()));
+}
+
+void UniversalThemePage::onAppToggled(const QString &appId, bool enabled) {
     if (m_isLoading) return;
 
-    TemplateConfig::setEnabled("vscode",        m_vscodeCheck->isChecked());
-    TemplateConfig::setEnabled("firefox",       m_firefoxCheck->isChecked());
-    TemplateConfig::setEnabled("zen_browser_chrome",  m_zenBrowserCheck->isChecked());
-    TemplateConfig::setEnabled("zen_browser_content", m_zenBrowserCheck->isChecked() && m_zenBrowserContentCheck->isChecked());
-    TemplateConfig::setEnabled("betterdiscord", m_discordCheck->isChecked());
-    // Kitty drives both light and dark entries together
-    TemplateConfig::setEnabled("kitty_light",   m_kittyCheck->isChecked());
-    TemplateConfig::setEnabled("kitty_dark",    m_kittyCheck->isChecked());
-    TemplateConfig::setEnabled("konsole",       m_konsoleCheck->isChecked());
-    TemplateConfig::setEnabled("vencord",       m_vencordCheck->isChecked());
-    TemplateConfig::setEnabled("btop",          m_btopCheck->isChecked());
-    TemplateConfig::setEnabled("vicinae",       m_vicinaeCheck->isChecked());
-    TemplateConfig::setEnabled("zed",           m_zedCheck->isChecked());
-    TemplateConfig::setEnabled("millennium",    m_millenniumCheck->isChecked());
-    TemplateConfig::setEnabled("gtk4_colors",   m_gtkCheck->isChecked());
-    TemplateConfig::setEnabled("gtk3_colors",   m_gtkCheck->isChecked());
-    TemplateConfig::setEnabled("obsidian",      m_obsidianCheck->isChecked());
+    TemplateConfig::setAppEnabled(appId, enabled);
+    Logger::log(QString("UniversalThemePage: App %1 toggled %2").arg(appId).arg(enabled ? "ON" : "OFF"),
+                Logger::Info);
 
-    if (!m_obsidianPathEdit->text().isEmpty())
-        TemplateConfig::setValue("obsidian", "obsidian_vault_path",
-                                 m_obsidianPathEdit->text());
-}
+    if (appId == "zed" && enabled) {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(tr("Zed Theme Style"));
+        msgBox.setText(tr("<b>Choose Zed Theme Variant</b>"));
+        msgBox.setInformativeText(tr("Select your preferred background style for Zed Editor:\n\n"
+                                     "• Opaque: Solid background following system palette\n"
+                                     "• Transparent: Translucent background for blur effects"));
+        QPushButton *opaqueBtn = msgBox.addButton(tr("Opaque"), QMessageBox::AcceptRole);
+        QPushButton *transBtn = msgBox.addButton(tr("Transparent"), QMessageBox::AcceptRole);
 
-void UniversalThemePage::pickObsidianVault() {
-    QString dir = QFileDialog::getExistingDirectory(
-        this, tr("Select Obsidian Vault Folder"), QDir::homePath(),
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (!dir.isEmpty()) {
-        m_obsidianPathEdit->setText(dir);
-        saveSettings();
+        QString current = TemplateConfig::getValue("zed", "opacity", "opaque");
+        if (current == "transparent") {
+            msgBox.setDefaultButton(transBtn);
+        } else {
+            msgBox.setDefaultButton(opaqueBtn);
+        }
+
+        msgBox.exec();
+        if (msgBox.clickedButton() == transBtn) {
+            TemplateConfig::setValue("zed", "opacity", "transparent");
+        } else {
+            TemplateConfig::setValue("zed", "opacity", "opaque");
+        }
     }
 }
 
-void UniversalThemePage::showBDSettings() {
-    QDialog dlg(this);
-    dlg.setWindowTitle("Configure BetterDiscord Sync");
-    dlg.resize(500, 350);
+void UniversalThemePage::onConfigureClicked(const QString &appId) {
+    TemplateSettingsDialog dlg(appId, this);
+    dlg.exec();
+}
 
-    QVBoxLayout *layout = new QVBoxLayout(&dlg);
+void UniversalThemePage::onRestoreClicked(const QString &appId) {
+    QString appName = appId;
+    for (TemplateCardWidget *c : m_cardWidgets) {
+        if (c->appId() == appId) {
+            appName = c->displayName();
+            break;
+        }
+    }
 
-    QCheckBox *useMidnight = new QCheckBox(
-        "Use Midnight UI (recommended for cohesive colors)", &dlg);
-    useMidnight->setChecked(
-        TemplateConfig::getValue("betterdiscord", "midnight_enabled", "true") == "true");
-    layout->addWidget(useMidnight);
+    if (QMessageBox::question(this, tr("Restore %1").arg(appName),
+                             tr("Restore %1 configuration from backup?").arg(appName))
+        != QMessageBox::Yes) {
+        return;
+    }
 
-    layout->addWidget(new QLabel("<b>Custom Import URLs (one per line):</b>"));
-    QTextEdit *customEdit = new QTextEdit(&dlg);
-    customEdit->setText(TemplateConfig::getList("betterdiscord", "custom_imports").join("\n"));
-    layout->addWidget(customEdit);
+    bool restoredAny = false;
 
-    QDialogButtonBox *bbox = new QDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
-    layout->addWidget(bbox);
-    connect(bbox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    connect(bbox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    const CommunityTemplateApp *app = CommunityTemplateCatalog::instance().findApp(appId);
+    if (app) {
+        for (const auto &e : app->entries) {
+            for (const QString &p : e.outputPaths) {
+                QString exp = CommunityTemplateCatalog::expandPath(p);
+                if (UniversalThemeExporter::restoreFile(exp)) restoredAny = true;
+            }
+        }
+    }
 
-    if (dlg.exec() == QDialog::Accepted) {
-        TemplateConfig::setValue("betterdiscord", "midnight_enabled",
-                                 useMidnight->isChecked() ? "true" : "false");
-        QStringList imports;
-        for (const QString &line : customEdit->toPlainText().split("\n"))
-            if (!line.trimmed().isEmpty()) imports << line.trimmed();
-        imports.removeDuplicates();
-        TemplateConfig::setList("betterdiscord", "custom_imports", imports);
+    if (restoredAny) {
+        QMessageBox::information(this, tr("Done"),
+                                 tr("Restored original configuration for %1.").arg(appName));
+    } else {
+        QMessageBox::warning(this, tr("No Backup Found"),
+                             tr("No backup files found for %1.").arg(appName));
     }
 }
 
-void UniversalThemePage::showVencordSettings() {
-    QDialog dlg(this);
-    dlg.setWindowTitle("Configure Vencord Sync");
-    dlg.resize(500, 350);
-
-    QVBoxLayout *layout = new QVBoxLayout(&dlg);
-
-    QCheckBox *useMidnight = new QCheckBox(
-        "Use Midnight Theme Base (recommended for cohesive colors)", &dlg);
-    useMidnight->setChecked(
-        TemplateConfig::getValue("vencord", "midnight_enabled", "true") == "true");
-    layout->addWidget(useMidnight);
-
-    layout->addWidget(new QLabel("<b>Custom Import URLs (one per line):</b>"));
-    QTextEdit *customEdit = new QTextEdit(&dlg);
-    customEdit->setText(TemplateConfig::getList("vencord", "custom_imports").join("\n"));
-    layout->addWidget(customEdit);
-
-    QDialogButtonBox *bbox = new QDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
-    layout->addWidget(bbox);
-    connect(bbox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    connect(bbox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-
-    if (dlg.exec() == QDialog::Accepted) {
-        TemplateConfig::setValue("vencord", "midnight_enabled",
-                                 useMidnight->isChecked() ? "true" : "false");
-        QStringList imports;
-        for (const QString &line : customEdit->toPlainText().split("\n"))
-            if (!line.trimmed().isEmpty()) imports << line.trimmed();
-        imports.removeDuplicates();
-        TemplateConfig::setList("vencord", "custom_imports", imports);
-    }
+void UniversalThemePage::onSyncClicked() {
+    TemplateApplyService::instance().applyAsync("current");
 }
 
-void UniversalThemePage::syncNow() {
-    saveSettings();
-    UniversalThemeExporter::syncAll();
+void UniversalThemePage::onSyncStarted(quint64) {
+    m_progressBar->setVisible(true);
+    m_progressBar->setValue(0);
+    m_statusLabel->setText(tr("Starting asynchronous template sync..."));
+    m_syncButton->setEnabled(false);
+    m_syncButton->setText(tr("Syncing..."));
+}
 
-    // Double-pass: let kdeglobals settle then sync again
-    QTimer::singleShot(2000, this, []() {
-        UniversalThemeExporter::syncAll();
-    });
+void UniversalThemePage::onSyncProgress(quint64, int current, int total, const QString &appName) {
+    m_progressBar->setMaximum(total > 0 ? total : 1);
+    m_progressBar->setValue(current);
+    m_statusLabel->setText(tr("Syncing [%1] (%2 of %3)...").arg(appName).arg(current).arg(total));
+}
 
-    QMessageBox::information(this, "Sync Universal Theme",
-                             "Theme sync triggered. Check logs for details.");
+void UniversalThemePage::onSyncFinished(quint64, bool success, const QStringList &warnings) {
+    m_progressBar->setVisible(false);
+    m_syncButton->setEnabled(true);
+    m_syncButton->setText(tr("Sync Now"));
+
+    QString timeStr = QTime::currentTime().toString("hh:mm:ss");
+    if (success) {
+        m_statusLabel->setText(tr("Last sync completed successfully at %1").arg(timeStr));
+    } else {
+        m_statusLabel->setText(tr("Sync completed with warnings at %1").arg(timeStr));
+    }
+
+    if (!warnings.isEmpty()) {
+        Logger::log("UniversalThemePage: Sync warnings:\n" + warnings.join("\n"), Logger::Warning);
+    }
 }

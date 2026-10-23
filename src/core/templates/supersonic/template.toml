@@ -1,0 +1,15 @@
+[catalog.supersonic]
+name = "Supersonic"
+category = "audio"
+
+[templates.supersonic]
+input_path = "ptm.toml"
+output_path = "$XDG_CONFIG_HOME/supersonic/themes/ptm.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh' native"
+requires_path = "$XDG_CONFIG_HOME/supersonic"
+
+[templates.supersonic-flatpak]
+input_path = "ptm.toml"
+output_path = "~/.var/app/io.github.dweymouth.supersonic/config/supersonic/themes/ptm.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh' flatpak"
+requires_path = "~/.var/app/io.github.dweymouth.supersonic"

@@ -1,4 +1,7 @@
 #include "UniversalThemeExporter.h"
+#include "TemplateApplyService.h"
+#include "PaletteCatalog.h"
+#include <QApplication>
 #include <QCoreApplication>
 #include <QTimer>
 #include "Config.h"
@@ -27,6 +30,29 @@
 UniversalPalette UniversalThemeExporter::extractColors() {
     auto config = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
     config->reparseConfiguration();
+
+    QString currentPal = TemplateConfig::getValue("palette", "current", "");
+    if (currentPal.isEmpty()) {
+        currentPal = QStringLiteral("Breeze");
+    }
+    if (!currentPal.isEmpty()) {
+        const ThemePalette *pal = PaletteCatalog::instance().findPalette(currentPal);
+        if (pal) {
+            bool isDark = true;
+            KConfigGroup group = config->group(QStringLiteral("General"));
+            QString scheme = group.readEntry(QStringLiteral("ColorScheme"), QString());
+            if (scheme.contains("Light", Qt::CaseInsensitive)) {
+                isDark = false;
+            } else if (scheme.contains("Dark", Qt::CaseInsensitive)) {
+                isDark = true;
+            } else {
+                KConfigGroup winGroup = config->group(QStringLiteral("Colors:Window"));
+                QColor winBg = winGroup.readEntry("BackgroundNormal", QColor(30, 30, 30));
+                isDark = (winBg.lightness() < 128);
+            }
+            return pal->toUniversalPalette(isDark);
+        }
+    }
 
     if (Config::isMaterialYouOverrideEnabled()) {
         KConfigGroup group = config->group(QStringLiteral("General"));
@@ -128,6 +154,19 @@ UniversalPalette UniversalThemeExporter::extractColorsFromConfig(KSharedConfig::
     palette.ansiCyanBright    = palette.ansiCyan.lighter(120);
     palette.ansiWhiteBright   = palette.ansiWhite.lighter(120);
 
+    palette.specialColors["terminal_bg"] = palette.windowBg.name();
+    palette.specialColors["terminal_background"] = palette.windowBg.name();
+    palette.specialColors["terminal_fg"] = palette.windowFg.name();
+    palette.specialColors["terminal_foreground"] = palette.windowFg.name();
+    palette.specialColors["cursor"] = palette.accent.name();
+    palette.specialColors["terminal_cursor"] = palette.accent.name();
+    palette.specialColors["cursor_text"] = palette.windowBg.name();
+    palette.specialColors["terminal_cursor_text"] = palette.windowBg.name();
+    palette.specialColors["selection_bg"] = palette.selection.name();
+    palette.specialColors["terminal_selection_bg"] = palette.selection.name();
+    palette.specialColors["selection_fg"] = palette.windowFg.name();
+    palette.specialColors["terminal_selection_fg"] = palette.windowFg.name();
+
     return palette;
 }
 
@@ -141,6 +180,11 @@ UniversalPalette UniversalThemeExporter::paletteForEntry(const QString &paletteM
         if (Config::isMaterialYouOverrideEnabled()) {
             schemeName = "MaterialYouLight";
         } else {
+            const ThemePalette *pal = PaletteCatalog::instance().findPalette(
+                PaletteCatalog::instance().activePaletteName());
+            if (pal) {
+                return pal->toUniversalPalette(false);
+            }
             schemeName = GlobalThemeManager::getColorSchemeFromGlobal(
                 ThemeReader::defaultLightTheme());
         }
@@ -160,6 +204,11 @@ UniversalPalette UniversalThemeExporter::paletteForEntry(const QString &paletteM
         if (Config::isMaterialYouOverrideEnabled()) {
             schemeName = "MaterialYouDark";
         } else {
+            const ThemePalette *pal = PaletteCatalog::instance().findPalette(
+                PaletteCatalog::instance().activePaletteName());
+            if (pal) {
+                return pal->toUniversalPalette(true);
+            }
             schemeName = GlobalThemeManager::getColorSchemeFromGlobal(
                 ThemeReader::defaultDarkTheme());
         }
@@ -189,82 +238,7 @@ void UniversalThemeExporter::injectPaletteEnv(const UniversalPalette &p) {
     }
 }
 
-// =============================================================================
-// Discord import string builder
-// =============================================================================
 
-QString UniversalThemeExporter::buildImports(const QString &appName) {
-    // appName is "betterdiscord" or "vencord" — maps to [discord.betterdiscord] etc.
-    QString imports;
-
-    bool midnightEnabled =
-        (TemplateConfig::getValue(appName, "midnight_enabled", "true") == "true");
-    if (midnightEnabled) {
-        imports += "@import url(\"https://refact0r.github.io/midnight-discord/build/"
-                   "midnight.css\");\n";
-    }
-
-    QStringList customImports = TemplateConfig::getList(appName, "custom_imports");
-    for (const QString &url : customImports) {
-        if (url.trimmed().isEmpty()) continue;
-        QString clean = url.trimmed();
-        if (!clean.startsWith("@import"))
-            imports += QString("@import url(\"%1\");\n").arg(clean);
-        else
-            imports += clean + "\n";
-    }
-    return imports;
-}
-
-// =============================================================================
-// Zed-specific derived color variables
-// =============================================================================
-
-QMap<QString, QString> UniversalThemeExporter::buildZedExtras(
-    const UniversalPalette &p) {
-    auto toHex = [](QColor c) { return c.name(); };
-    auto toHexA = [](QColor c, int alpha) -> QString {
-        c.setAlpha(alpha);
-        return QString("#%1%2%3%4")
-            .arg(c.red(), 2, 16, QChar('0'))
-            .arg(c.green(), 2, 16, QChar('0'))
-            .arg(c.blue(), 2, 16, QChar('0'))
-            .arg(c.alpha(), 2, 16, QChar('0'));
-    };
-
-    // Derive Catppuccin-style surface levels from the palette
-    bool isDark = p.windowBg.lightness() < 128;
-    QColor mantle = p.windowBg;
-    QColor crust  = isDark ? mantle.darker(115) : mantle.darker(105);
-    QColor s0     = isDark ? mantle.lighter(115) : mantle.darker(110);
-    QColor s1     = isDark ? mantle.lighter(130) : mantle.darker(120);
-    QColor s2     = isDark ? mantle.lighter(145) : mantle.darker(130);
-
-    QColor text     = p.viewFg;
-    QColor subtext0 = QColor(
-        text.red()   * 0.75 + p.viewBg.red()   * 0.25,
-        text.green() * 0.75 + p.viewBg.green() * 0.25,
-        text.blue()  * 0.75 + p.viewBg.blue()  * 0.25);
-    QColor subtext1 = QColor(
-        text.red()   * 0.55 + p.viewBg.red()   * 0.45,
-        text.green() * 0.55 + p.viewBg.green() * 0.45,
-        text.blue()  * 0.55 + p.viewBg.blue()  * 0.45);
-    QColor overlay0 = QColor(
-        text.red()   * 0.35 + p.viewBg.red()   * 0.65,
-        text.green() * 0.35 + p.viewBg.green() * 0.65,
-        text.blue()  * 0.35 + p.viewBg.blue()  * 0.65);
-
-    QMap<QString, QString> e;
-    e["ZED_CRUST"]    = toHex(crust);
-    e["ZED_SURFACE0"] = toHex(s0);
-    e["ZED_SURFACE1"] = toHex(s1);
-    e["ZED_SURFACE2"] = toHex(s2);
-    e["ZED_SUBTEXT0"] = toHex(subtext0);
-    e["ZED_SUBTEXT1"] = toHex(subtext1);
-    e["ZED_OVERLAY0"] = toHex(overlay0);
-    e["ZED_SURFACE2_80"] = toHexA(s2, 128);
-    return e;
-}
 
 // =============================================================================
 // File utilities
@@ -348,190 +322,11 @@ bool UniversalThemeExporter::restoreFile(const QString &path) {
 // =============================================================================
 
 void UniversalThemeExporter::syncAll() {
-    syncTemplates();
-
-    // Trigger GTK4 live refresh hook so GTK4/Libadwaita apps update their colors
-    QString hookTool = QStandardPaths::findExecutable(QStringLiteral("plasma-theme-master-helper-gtk4-reload"));
-    if (hookTool.isEmpty()) {
-        hookTool = QDir::homePath() + QStringLiteral("/.local/bin/plasma-theme-master-helper-gtk4-reload");
-        if (!QFile::exists(hookTool)) {
-            hookTool = QCoreApplication::applicationDirPath() + QStringLiteral("/plasma-theme-master-helper-gtk4-reload");
-            if (!QFile::exists(hookTool)) {
-                hookTool.clear();
-            }
-        }
+    if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
+        TemplateApplyService::instance().applyAsync();
+    } else {
+        TemplateApplyService::instance().applySync();
     }
-
-    if (!hookTool.isEmpty()) {
-        Logger::log("UniversalThemeExporter: Running GTK4 live refresh hook: " + hookTool, Logger::Info);
-        QProcess::startDetached(hookTool);
-    }
-
-    // Delay a second-pass of syncTemplates by 2.5 seconds. This resolves the asynchronous race
-    // condition where KDE Plasma's background daemon/Breeze theme engine regenerates
-    // and overwrites ~/.config/gtk-4.0/colors.css after we sync.
-    QTimer::singleShot(2500, []() {
-        Logger::log("UniversalThemeExporter: Performing delayed GTK overwrite pass to prevent Breeze override.", Logger::Info);
-        syncTemplates();
-    });
 }
 
-void UniversalThemeExporter::syncTemplates() {
-    Logger::log("UniversalThemeExporter: Starting template sync...", Logger::Info);
 
-    TemplateConfig::ensureUserConfig();
-    QList<TemplateEntry> entries = TemplateConfig::loadTemplates();
-
-    // Built-in post-hooks: the app always knows what each app needs.
-    // These run automatically for known template names — users don't configure these.
-    // post_hook in config.toml is reserved for user-added custom templates only.
-    static const QMap<QString, QString> builtinHooks = {
-        {"btop",         "pkill -USR2 btop || true"},
-        {"vicinae",      "vicinae theme set plasma-theme-master"},
-        {"firefox",      "plasma-theme-master-helper-firefox"},
-        {"obsidian",     "plasma-theme-master-helper-obsidian"},
-        {"zed",          "plasma-theme-master-helper-zed"},
-        {"vscode",       "plasma-theme-master-helper-vscode"},
-        {"konsole",      "plasma-theme-master-helper-konsole"},
-        {"kitty",        "plasma-theme-master-helper-kitty"},
-        {"kitty_dark",   "plasma-theme-master-helper-kitty"},
-        {"kitty_light",  "plasma-theme-master-helper-kitty"},
-        {"zen_browser_chrome",  "bash /usr/share/plasma-theme-master/templates/zen-browser/zen-browser-apply.sh"},
-        {"zen_browser_content", "bash /usr/share/plasma-theme-master/templates/zen-browser/zen-browser-apply.sh"},
-        // betterdiscord, vencord: no post-hook needed
-    };
-
-    for (const TemplateEntry &entry : entries) {
-        if (!entry.enabled) continue;
-
-        Logger::log("Syncing template: " + entry.name, Logger::Info);
-
-        // --- 1. Resolve palette ---
-        UniversalPalette palette = paletteForEntry(entry.palette);
-
-        // --- 2. Build extra variables ---
-        QMap<QString, QString> extra = entry.extra;
-
-        // Discord apps: pre-compute {{IMPORTS}}
-        if (entry.name == "betterdiscord" || entry.name == "vencord") {
-            extra["IMPORTS"] = buildImports(entry.name);
-        }
-        // Zed: pre-compute derived surface/text colors
-        if (entry.name == "zed") {
-            auto zedExtras = buildZedExtras(palette);
-            for (auto it = zedExtras.cbegin(); it != zedExtras.cend(); ++it)
-                extra[it.key()] = it.value();
-        }
-
-        // --- 3. Render template → output file (if inputPath is set) ---
-        QString renderedTmpPath; // non-empty when we wrote to a temp file
-        if (!entry.inputPath.isEmpty()) {
-            if (!QFile::exists(entry.inputPath)) {
-                Logger::log("Template file not found, skipping: " + entry.inputPath,
-                            Logger::Warning);
-                continue;
-            }
-
-            QString rendered = TemplateEngine::render(entry.inputPath, palette, extra);
-            if (rendered.isEmpty()) {
-                Logger::log("Template rendered empty, skipping: " + entry.name,
-                            Logger::Warning);
-                continue;
-            }
-
-            if (!entry.outputPath.isEmpty()) {
-                QFileInfo fi(entry.outputPath);
-                if (!QDir(fi.absolutePath()).exists())
-                    QDir().mkpath(fi.absolutePath());
-
-                backupFile(entry.outputPath);
-
-                QSaveFile sf(entry.outputPath);
-                if (sf.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                    QTextStream(&sf) << rendered;
-                    if (sf.commit()) {
-                        Logger::log("Wrote: " + entry.outputPath, Logger::Info);
-                        
-                        // Sync to Vesktop folders if Vencord is enabled and Vesktop exists
-                        if (entry.name == "vencord") {
-                            QStringList vesktopDirs = {
-                                QDir::homePath() + "/.config/vesktop",
-                                QDir::homePath() + "/.var/app/dev.vencord.Vesktop/config/vesktop"
-                            };
-                            for (const QString &vdir : vesktopDirs) {
-                                if (QDir(vdir).exists()) {
-                                    QString themesDir = vdir + "/themes";
-                                    if (!QDir(themesDir).exists()) {
-                                        QDir().mkpath(themesDir);
-                                    }
-                                    QString path = themesDir + "/PlasmaMaster.theme.css";
-                                    QSaveFile addSf(path);
-                                    if (addSf.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                                        QTextStream(&addSf) << rendered;
-                                        if (addSf.commit()) {
-                                            Logger::log("Wrote Vesktop copy: " + path, Logger::Info);
-                                        } else {
-                                            Logger::log("Failed to commit Vesktop copy: " + path, Logger::Warning);
-                                        }
-                                    } else {
-                                        Logger::log("Cannot open for writing Vesktop copy: " + path, Logger::Warning);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Logger::log("Failed to commit: " + entry.outputPath, Logger::Error);
-                        continue;
-                    }
-                } else {
-                    Logger::log("Cannot open for writing: " + entry.outputPath, Logger::Error);
-                    continue;
-                }
-            } else {
-                // No output_path: write to a temp file for the helper to consume
-                // (e.g. firefox helper reads rendered CSS from a path argument)
-                renderedTmpPath = QDir::tempPath() + "/ptm_" + entry.name + ".tmp";
-                QFile tmp(renderedTmpPath);
-                if (tmp.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                    QTextStream(&tmp) << rendered;
-                    tmp.close();
-                } else {
-                    renderedTmpPath.clear();
-                }
-            }
-        }
-
-        // --- 4. Inject palette into environment for helper binaries ---
-        injectPaletteEnv(palette);
-
-        // --- 5. Determine which hook to run ---
-        // Priority: built-in hook for known apps > user post_hook for custom apps
-        QString hook;
-        if (builtinHooks.contains(entry.name)) {
-            hook = builtinHooks[entry.name];
-        } else if (!entry.postHook.isEmpty()) {
-            hook = entry.postHook; // user-defined custom template hook
-        }
-
-        if (!hook.isEmpty()) {
-            // Append temp file path as argument when helper needs the rendered content
-            if (!renderedTmpPath.isEmpty())
-                hook += " \"" + renderedTmpPath + "\"";
-
-            Logger::log("Running hook for [" + entry.name + "]: " + hook, Logger::Info);
-            QProcess proc;
-            proc.start("/bin/sh", {"-c", hook});
-            if (!proc.waitForFinished(10000)) {
-                Logger::log("Hook timed out for: " + entry.name, Logger::Warning);
-                proc.kill();
-            } else if (proc.exitCode() != 0) {
-                Logger::log("Hook exited with code " +
-                                QString::number(proc.exitCode()) +
-                                " for: " + entry.name,
-                            Logger::Warning);
-            }
-        }
-    }
-
-    Logger::log("UniversalThemeExporter: Template sync complete.", Logger::Info);
-}

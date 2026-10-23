@@ -8,8 +8,12 @@
 #include "ThemeReader.h"
 #include "ThemeWriter.h"
 #include "UniversalThemeExporter.h"
+#include "PaletteCatalog.h"
+#include "CommunityTemplateCatalog.h"
 #include <QCoreApplication>
 #include <QDateTime>
+#include <KSharedConfig>
+#include <KConfigGroup>
 #include <QDebug>
 #include <QDir>
 #include <QFileSystemWatcher>
@@ -82,6 +86,9 @@ void CLIHandler::printHelp() {
       << "                Clone a global theme to the user directory.\n"
       << "                Example: plasma-theme-master clone-global Breeze "
          "MyBreeze\n\n"
+      << "  clean-templates\n"
+      << "                Clean up generated application templates and restore "
+         "configs.\n\n"
       << "  uninstall\n"
       << "                Run the uninstallation script.\n\n"
       << "  sync-universal (or sync-now)\n"
@@ -96,6 +103,11 @@ void CLIHandler::printHelp() {
       << "                List universal sync apps and their status.\n\n"
       << "  sync-restore <app>\n"
       << "                Restore an app configuration from backup.\n\n"
+      << "  palette-list\n"
+      << "                List available bundled and user color palettes.\n\n"
+      << "  palette-apply <name> [current|night|day]\n"
+      << "                Apply a color palette and trigger universal sync.\n"
+      << "                Example: plasma-theme-master palette-apply \"Catppuccin Mocha\"\n\n"
       << "  log [-n <lines>] [--errors]\n"
       << "                View application logs. Default: last 100 lines.\n"
       << "                Example: plasma-theme-master log -n 50 --errors\n\n";
@@ -302,11 +314,12 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
         std::cout << "Applying calculated Global (" << (isDay ? "Day" : "Night")
                   << "): " << qPrintable(targetGlobal) << "\n";
         ThemeWriter::applyGlobalTheme(targetGlobal);
-        if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
-                                              : "MaterialYouDark");
-        }
-        // Kvantum might be reset by Global Theme, so always apply it AFTER
+      }
+      if (Config::isMaterialYouOverrideEnabled()) {
+        ThemeWriter::applyColorScheme(isDay ? "MaterialYouLight"
+                                            : "MaterialYouDark");
+      } else {
+        PaletteCatalog::instance().applyActivePalette(isDay, false);
       }
 
       if (!targetKvantum.isEmpty()) {
@@ -463,9 +476,11 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     auto applyTheme = [&]() {
       if (!global.isEmpty()) {
         ThemeWriter::applyGlobalTheme(global, true);
-        if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouDark", true);
-        }
+      }
+      if (Config::isMaterialYouOverrideEnabled()) {
+        ThemeWriter::applyColorScheme("MaterialYouDark", true);
+      } else {
+        PaletteCatalog::instance().applyActivePalette(false, false);
       }
       if (!kvantum.isEmpty()) {
         ThemeWriter::setKvantumTheme(kvantum, true);
@@ -507,9 +522,11 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     auto applyTheme = [&]() {
       if (!global.isEmpty()) {
         ThemeWriter::applyGlobalTheme(global, true);
-        if (Config::isMaterialYouOverrideEnabled()) {
-          ThemeWriter::applyColorScheme("MaterialYouLight", true);
-        }
+      }
+      if (Config::isMaterialYouOverrideEnabled()) {
+        ThemeWriter::applyColorScheme("MaterialYouLight", true);
+      } else {
+        PaletteCatalog::instance().applyActivePalette(true, false);
       }
       if (!kvantum.isEmpty()) {
         ThemeWriter::setKvantumTheme(kvantum, true);
@@ -566,7 +583,41 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     syncDebounceTimer->setSingleShot(true);
     syncDebounceTimer->setInterval(2000); // 2000ms debounce
 
-    QObject::connect(syncDebounceTimer, &QTimer::timeout, qApp, []() {
+    // Cache last known color state from kdeglobals to prevent feedback loops
+    // and ignore non-color kdeglobals writes (fonts, window states, etc.)
+    struct KdeColorState {
+      QString colorScheme;
+      QString winBg;
+      QString winFg;
+      QString accent;
+    };
+    static KdeColorState s_lastKdeColorState;
+    auto readKdeColorState = []() -> KdeColorState {
+      KdeColorState state;
+      auto config = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
+      config->reparseConfiguration();
+      KConfigGroup genGroup = config->group(QStringLiteral("General"));
+      state.colorScheme = genGroup.readEntry(QStringLiteral("ColorScheme"), QString());
+      KConfigGroup winGroup = config->group(QStringLiteral("Colors:Window"));
+      state.winBg = winGroup.readEntry(QStringLiteral("BackgroundNormal"), QString());
+      state.winFg = winGroup.readEntry(QStringLiteral("ForegroundNormal"), QString());
+      KConfigGroup wmGroup = config->group(QStringLiteral("WM"));
+      state.accent = wmGroup.readEntry(QStringLiteral("activeBackground"), QString());
+      return state;
+    };
+    s_lastKdeColorState = readKdeColorState();
+
+    QObject::connect(syncDebounceTimer, &QTimer::timeout, qApp, [readKdeColorState]() {
+      KdeColorState current = readKdeColorState();
+      if (current.colorScheme == s_lastKdeColorState.colorScheme &&
+          current.winBg == s_lastKdeColorState.winBg &&
+          current.winFg == s_lastKdeColorState.winFg &&
+          current.accent == s_lastKdeColorState.accent) {
+        // kdeglobals changed (e.g. non-color settings, fonts, or self-writes), but colors are unchanged
+        return;
+      }
+      s_lastKdeColorState = current;
+
       Logger::log("Daemon: Triggering syncAll due to kdeglobals change "
                   "(MaterialYou/Color sync)",
                   Logger::Info);
@@ -622,24 +673,34 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       if (ThemeReader::isAutoLookAndFeel()) {
         bool isDay = ThemeReader::isKWinDaytime();
 
+        static bool s_hasLastIsDay = false;
+        static bool s_lastIsDay = false;
+        bool dayStateChanged = (!s_hasLastIsDay || s_lastIsDay != isDay);
+        s_hasLastIsDay = true;
+        s_lastIsDay = isDay;
+
         QString currentGlobal = ThemeReader::currentGlobalTheme();
         QString targetGlobal = isDay ? ThemeReader::defaultLightTheme()
                                      : ThemeReader::defaultDarkTheme();
 
         bool needUpdate = false;
 
-        if (firstRun ||
+        if (firstRun || dayStateChanged ||
             (!targetGlobal.isEmpty() && currentGlobal != targetGlobal)) {
           Logger::log(
-              firstRun ? "Daemon: Enforcing global theme on boot. Applying " +
-                             targetGlobal
-                       : "Daemon: Global theme mismatch detected. Applying " +
-                             targetGlobal,
+              firstRun ? "Daemon: Enforcing theme on boot. Target: " +
+                             (isDay ? QString("Day") : QString("Night"))
+                       : "Daemon: Theme/Daylight transition detected. Target: " +
+                             (isDay ? QString("Day") : QString("Night")),
               Logger::Info);
-          ThemeWriter::applyGlobalTheme(targetGlobal, firstRun);
+          if (!targetGlobal.isEmpty()) {
+            ThemeWriter::applyGlobalTheme(targetGlobal, firstRun);
+          }
           if (Config::isMaterialYouOverrideEnabled()) {
             ThemeWriter::applyColorScheme(
                 isDay ? "MaterialYouLight" : "MaterialYouDark", firstRun);
+          } else {
+            PaletteCatalog::instance().applyActivePalette(isDay, false);
           }
           needUpdate = true;
         }
@@ -714,10 +775,12 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                 if (!targetGlobal.isEmpty()) {
                   ThemeWriter::applyGlobalTheme(targetGlobal, true);
                   ThemeWriter::setAutoLookAndFeel(true);
-                  if (Config::isMaterialYouOverrideEnabled()) {
-                    ThemeWriter::applyColorScheme(
-                        isDay ? "MaterialYouLight" : "MaterialYouDark", true);
-                  }
+                }
+                if (Config::isMaterialYouOverrideEnabled()) {
+                  ThemeWriter::applyColorScheme(
+                      isDay ? "MaterialYouLight" : "MaterialYouDark", true);
+                } else {
+                  PaletteCatalog::instance().applyActivePalette(isDay, false);
                 }
                 if (!targetKvantum.isEmpty())
                   ThemeWriter::setKvantumTheme(targetKvantum, true);
@@ -728,35 +791,8 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
                 if (!targetFlatpak.isEmpty())
                   FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
 
-                // Double-pass: Solid delay to let first pass settle, then apply
-                // again to fix contrast issues
-                QTimer::singleShot(
-                    2000, qApp,
-                    [targetGlobal, targetKvantum, targetGtk, targetKlassy,
-                     targetFlatpak, isDay]() {
-                      Logger::log("Daemon: Performing second pass to fix "
-                                  "contrast issues...",
-                                  Logger::Info);
-                      if (!targetGlobal.isEmpty()) {
-                        ThemeWriter::applyGlobalTheme(targetGlobal, true);
-                        ThemeWriter::setAutoLookAndFeel(true);
-                        if (Config::isMaterialYouOverrideEnabled()) {
-                          ThemeWriter::applyColorScheme(
-                              isDay ? "MaterialYouLight" : "MaterialYouDark",
-                              true);
-                        }
-                      }
-                      if (!targetKvantum.isEmpty())
-                        ThemeWriter::setKvantumTheme(targetKvantum, true);
-                      if (!targetGtk.isEmpty())
-                        ThemeWriter::setGtkTheme(targetGtk, true);
-                      if (!targetKlassy.isEmpty())
-                        ThemeWriter::setKlassyPreset(targetKlassy, true);
-                      if (!targetFlatpak.isEmpty())
-                        FlatpakManager::setFlatpakGtkTheme(targetFlatpak);
-
-                      UniversalThemeExporter::syncAll();
-                    });
+                ThemeWriter::setAutoLookAndFeel(true);
+                UniversalThemeExporter::syncAll();
               });
         }
       } else {
@@ -791,6 +827,10 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
     solarTimer->start(60000); // 60 seconds
 
     return qApp->exec();
+  } else if (command == "clean-templates") {
+    std::cout << "Cleaning up generated templates and restoring backups...\n";
+    int ret = std::system("command -v plasma-theme-master-clean-templates >/dev/null 2>&1 && plasma-theme-master-clean-templates || clean-templates.sh");
+    return WEXITSTATUS(ret);
   } else if (command == "uninstall") {
     std::cout << "Launching Uninstaller...\n";
     int ret = std::system("plasma-theme-master-uninstall");
@@ -806,73 +846,91 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    // Map short names to template entry names
-    QMap<QString, QString> nameMap = {{"vscode", "vscode"},
-                                      {"firefox", "firefox"},
-                                      {"discord", "betterdiscord"},
-                                      {"betterdiscord", "betterdiscord"},
-                                      {"kitty", "kitty_light"},
-                                      {"konsole", "konsole"},
-                                      {"btop", "btop"},
-                                      {"vicinae", "vicinae"},
-                                      {"obsidian", "obsidian"},
-                                      {"zed", "zed"},
-                                      {"vencord", "vencord"},
-                                      {"millennium", "millennium"},
-                                      {"steam", "millennium"},
-                                      {"zen", "zen_browser_chrome"},
-                                      {"zen-browser", "zen_browser_chrome"},
-                                      {"zen_browser", "zen_browser_chrome"}};
-    if (!nameMap.contains(app)) {
-      std::cerr << "Unknown app: " << qPrintable(app) << "\n";
-      return 1;
+    QString targetApp = app;
+    if (app == "kitty_light" || app == "kitty_dark") targetApp = "kitty";
+    else if (app == "betterdiscord" || app == "vencord") targetApp = "discord";
+    else if (app == "zen" || app == "zen_browser" || app == "zen_browser_chrome" || app == "zen_browser_content") targetApp = "zen-browser";
+    else if (app == "millennium") targetApp = "steam";
+
+    if (app == "gtk") {
+      TemplateConfig::setAppEnabled("gtk3", true);
+      TemplateConfig::setAppEnabled("gtk4", true);
+      std::cout << "Enabled sync for gtk (GTK 3 & GTK 4)\n";
+      return 0;
     }
-    QString tmplName = nameMap[app];
-    TemplateConfig::setEnabled(tmplName, true);
-    if (tmplName == "kitty_light")
-      TemplateConfig::setEnabled("kitty_dark", true);
-    if (tmplName == "zen_browser_chrome")
-      TemplateConfig::setEnabled("zen_browser_content", true);
-    std::cout << "Enabled sync for " << qPrintable(app) << "\n";
-    return 0;
+
+    if (CommunityTemplateCatalog::instance().findApp(targetApp)) {
+      TemplateConfig::setAppEnabled(targetApp, true);
+      std::cout << "Enabled sync for " << qPrintable(targetApp) << "\n";
+      return 0;
+    }
+
+    // Check if it's a custom template defined in config.toml
+    if (TemplateConfig::isEnabled(app) || !TemplateConfig::getValue(app, "input_path").isEmpty()) {
+      TemplateConfig::setEnabled(app, true);
+      std::cout << "Enabled custom sync for " << qPrintable(app) << "\n";
+      return 0;
+    }
+
+    std::cerr << "Unknown app: " << qPrintable(app) << "\n";
+    return 1;
   } else if (command == "sync-disable") {
     if (args.size() < 2) {
       std::cerr << "Usage: sync-disable <app>\n";
       return 1;
     }
     QString app = args.at(1).toLower();
-    QMap<QString, QString> nameMap = {{"vscode", "vscode"},
-                                      {"firefox", "firefox"},
-                                      {"discord", "betterdiscord"},
-                                      {"betterdiscord", "betterdiscord"},
-                                      {"kitty", "kitty_light"},
-                                      {"konsole", "konsole"},
-                                      {"btop", "btop"},
-                                      {"vicinae", "vicinae"},
-                                      {"obsidian", "obsidian"},
-                                      {"zed", "zed"},
-                                      {"vencord", "vencord"},
-                                      {"millennium", "millennium"},
-                                      {"steam", "millennium"},
-                                      {"zen", "zen_browser_chrome"},
-                                      {"zen-browser", "zen_browser_chrome"},
-                                      {"zen_browser", "zen_browser_chrome"}};
-    if (!nameMap.contains(app)) {
-      std::cerr << "Unknown app: " << qPrintable(app) << "\n";
-      return 1;
+    QString targetApp = app;
+    if (app == "kitty_light" || app == "kitty_dark") targetApp = "kitty";
+    else if (app == "betterdiscord" || app == "vencord") targetApp = "discord";
+    else if (app == "zen" || app == "zen_browser" || app == "zen_browser_chrome" || app == "zen_browser_content") targetApp = "zen-browser";
+    else if (app == "millennium") targetApp = "steam";
+
+    if (app == "gtk") {
+      TemplateConfig::setAppEnabled("gtk3", false);
+      TemplateConfig::setAppEnabled("gtk4", false);
+      std::cout << "Disabled sync for gtk (GTK 3 & GTK 4)\n";
+      return 0;
     }
-    QString tmplName = nameMap[app];
-    TemplateConfig::setEnabled(tmplName, false);
-    if (tmplName == "kitty_light")
-      TemplateConfig::setEnabled("kitty_dark", false);
-    if (tmplName == "zen_browser_chrome")
-      TemplateConfig::setEnabled("zen_browser_content", false);
-    std::cout << "Disabled sync for " << qPrintable(app) << "\n";
-    return 0;
+
+    if (CommunityTemplateCatalog::instance().findApp(targetApp)) {
+      TemplateConfig::setAppEnabled(targetApp, false);
+      std::cout << "Disabled sync for " << qPrintable(targetApp) << "\n";
+      return 0;
+    }
+
+    if (TemplateConfig::isEnabled(app) || !TemplateConfig::getValue(app, "input_path").isEmpty()) {
+      TemplateConfig::setEnabled(app, false);
+      std::cout << "Disabled custom sync for " << qPrintable(app) << "\n";
+      return 0;
+    }
+
+    std::cerr << "Unknown app: " << qPrintable(app) << "\n";
+    return 1;
   } else if (command == "sync-list") {
-    std::cout << "Universal Sync Status (from config.toml):\n";
-    auto entries = TemplateConfig::loadTemplates();
-    for (const auto &e : entries) {
+    std::cout << "Application Template Status:\n";
+    const auto &commApps = CommunityTemplateCatalog::instance().apps();
+    for (const auto &app : commApps) {
+      bool en = TemplateConfig::isAppEnabled(app.id);
+      std::cout << "  " << qPrintable(app.id) << " (" << qPrintable(app.name) << "): "
+                << (en ? "Enabled" : "Disabled") << "\n";
+    }
+
+    // Custom templates from config.toml (if any)
+    static const QSet<QString> legacyKnown = {
+        "kitty", "kitty_dark", "kitty_light", "btop", "vicinae", "firefox",
+        "obsidian", "betterdiscord", "vencord", "zed", "vscode", "millennium",
+        "steam", "konsole", "zen_browser_chrome", "zen_browser_content",
+        "zen-browser", "palette", "discord", "gtk", "gtk3", "gtk4"
+    };
+    bool headerPrinted = false;
+    for (const auto &e : TemplateConfig::loadTemplates()) {
+      if (legacyKnown.contains(e.name.toLower()) || CommunityTemplateCatalog::instance().findApp(e.name))
+        continue;
+      if (!headerPrinted) {
+        std::cout << "\nCustom Templates (from config.toml):\n";
+        headerPrinted = true;
+      }
       std::cout << "  " << qPrintable(e.name) << ": "
                 << (e.enabled ? "Enabled" : "Disabled") << "\n";
     }
@@ -883,22 +941,39 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 1;
     }
     QString app = args.at(1).toLower();
-    // Restore: find the output_path for the named template and restore its .bak
-    auto entries = TemplateConfig::loadTemplates();
-    bool found = false;
-    for (const auto &e : entries) {
-      if (e.name == app || (app == "discord" && e.name == "betterdiscord") ||
-          (app == "kitty" && e.name == "kitty_light")) {
-        if (!e.outputPath.isEmpty()) {
-          bool ok = UniversalThemeExporter::restoreFile(e.outputPath);
-          std::cout << (ok ? "Restored: " : "No backup for: ")
-                    << qPrintable(e.outputPath) << "\n";
-          found = true;
+    QString targetApp = app;
+    if (app == "kitty_light" || app == "kitty_dark") targetApp = "kitty";
+    else if (app == "betterdiscord" || app == "vencord") targetApp = "discord";
+    else if (app == "zen" || app == "zen_browser" || app == "zen_browser_chrome" || app == "zen_browser_content") targetApp = "zen-browser";
+    else if (app == "millennium") targetApp = "steam";
+
+    bool restoredAny = false;
+    const auto *ca = CommunityTemplateCatalog::instance().findApp(targetApp);
+    if (ca) {
+      for (const auto &e : ca->entries) {
+        for (const QString &out : e.outputPaths) {
+          QString p = CommunityTemplateCatalog::expandPath(out);
+          if (UniversalThemeExporter::restoreFile(p)) {
+            std::cout << "Restored: " << qPrintable(p) << "\n";
+            restoredAny = true;
+          }
         }
       }
     }
-    if (!found)
-      std::cout << "No template entry found for: " << qPrintable(app) << "\n";
+
+    // Also check custom templates in config.toml
+    for (const auto &e : TemplateConfig::loadTemplates()) {
+      if (e.name.toLower() == app && !e.outputPath.isEmpty()) {
+        if (UniversalThemeExporter::restoreFile(e.outputPath)) {
+          std::cout << "Restored: " << qPrintable(e.outputPath) << "\n";
+          restoredAny = true;
+        }
+      }
+    }
+
+    if (!restoredAny) {
+      std::cout << "No backup (.bak) files were found for: " << qPrintable(app) << "\n";
+    }
     return 0;
   } else if (command == "clone-global") {
     if (args.size() < 2) {
@@ -915,6 +990,29 @@ int CLIHandler::handleCommand(const QString &command, const QStringList &args) {
       return 0;
     } else {
       std::cerr << "Failed to clone theme. Check logs for details.\n";
+      return 1;
+    }
+  } else if (command == "palette-list") {
+    PaletteCatalog::instance().reload();
+    const auto &pals = PaletteCatalog::instance().palettes();
+    std::cout << "Available Palettes (" << pals.size() << " total):\n";
+    for (const auto &p : pals) {
+      std::cout << "  " << (p.isUser ? "[User]    " : "[Bundled]  ")
+                << qPrintable(p.name) << " (" << qPrintable(p.id) << ")\n";
+    }
+    return 0;
+  } else if (command == "palette-apply") {
+    if (args.size() < 2) {
+      std::cerr << "Usage: plasma-theme-master palette-apply <name_or_id> [night|day|current]\n";
+      return 1;
+    }
+    QString mode = (args.size() >= 3) ? args.at(2) : "current";
+    PaletteCatalog::instance().reload();
+    if (PaletteCatalog::instance().applyPalette(args.at(1), mode)) {
+      std::cout << "Successfully applied palette: " << qPrintable(args.at(1)) << "\n";
+      return 0;
+    } else {
+      std::cerr << "Failed to apply palette: " << qPrintable(args.at(1)) << "\n";
       return 1;
     }
   }

@@ -1,0 +1,10 @@
+[catalog.gtk3]
+name = "GTK 3"
+category = "system"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.gtk3]
+input_path = "gtk3.css"
+output_path = "$XDG_CONFIG_HOME/gtk-3.0/ptm.css"
+post_hook = "bash '{{ config_dir }}/apply.sh' {{ mode }}"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

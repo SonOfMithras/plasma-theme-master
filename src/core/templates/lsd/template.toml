@@ -1,0 +1,8 @@
+[catalog.lsd]
+name = "lsd"
+category = "terminal"
+
+[templates.lsd]
+input_path = "colors.yaml"
+output_path = "$XDG_CONFIG_HOME/lsd/colors.yaml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

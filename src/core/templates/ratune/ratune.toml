@@ -1,0 +1,11 @@
+[theme]
+preset = "static"
+accent = "{{ colors.primary.default.hex }}"
+background = "{{ colors.surface.default.hex }}"
+tab_bar = "{{ colors.surface.default.hex }}"
+status_bar = "{{ colors.surface.default.hex }}"
+surface = "{{ colors.surface_container.default.hex }}"
+foreground = "{{ colors.on_surface.default.hex }}"
+dimmed = "{{ colors.outline.default.hex }}"
+border = "{{ colors.outline_variant.default.hex }}"
+border_active = "{{ colors.primary.default.hex }}"

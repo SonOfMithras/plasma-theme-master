@@ -1,0 +1,11 @@
+[catalog.fzf]
+name = "fzf"
+category = "terminal"
+
+[templates.fzf_bash]
+input_path = "fzf.sh"
+output_path = "$XDG_CONFIG_HOME/fzf/themes/ptm.sh"
+
+[templates.fzf_fish]
+input_path = "fzf.fish"
+output_path = "$XDG_CONFIG_HOME/fzf/themes/ptm.fish"

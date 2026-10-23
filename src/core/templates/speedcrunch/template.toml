@@ -1,0 +1,9 @@
+[catalog.speedcrunch]
+name = "SpeedCrunch"
+category = "misc"
+
+[templates.speedcrunch]
+pre_hook    = "mkdir -p ~/.local/share/SpeedCrunch/color-schemes"
+input_path  = "speedcrunch.json"
+output_path = "~/.local/share/SpeedCrunch/color-schemes/PTM.json"
+

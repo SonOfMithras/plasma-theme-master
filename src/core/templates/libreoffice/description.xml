@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description xmlns="http://openoffice.org/extensions/description/2006"
+             xmlns:d="http://openoffice.org/extensions/description/2006"
+             xmlns:xlink="http://www.w3.org/1999/xlink">
+    <identifier value="dev.noctalia.libreoffice.theme" />
+    <version value="1.0.0" />
+    <publisher>
+        <name xlink:href="https://github.com/noctalia-dev/community-templates" lang="en">Noctalia</name>
+    </publisher>
+    <display-name>
+        <name lang="en">Noctalia Theme</name>
+    </display-name>
+    <extension-description>
+        <src xlink:href="pkg-description.en" lang="en" />
+    </extension-description>
+</description>

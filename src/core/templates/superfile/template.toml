@@ -1,0 +1,8 @@
+[catalog.superfile]
+name = "superfile"
+category = "terminal"
+
+[templates.superfile]
+input_path = "superfile.toml"
+output_path = "$XDG_CONFIG_HOME/superfile/theme/ptm.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

@@ -74,6 +74,35 @@ public:
                         const QStringList &values);
 
     // -----------------------------------------------------------------------
+    // App Templates (Unified Built-in & Community Templates)
+    // -----------------------------------------------------------------------
+    /** Is this application template enabled? */
+    static bool isAppEnabled(const QString &appId);
+    static void setAppEnabled(const QString &appId, bool enabled);
+
+    /** Master toggle: Are built-in templates enabled globally? */
+    static bool isBuiltinTemplatesEnabled();
+    static void setBuiltinTemplatesEnabled(bool enabled);
+
+    /** Compatibility aliases */
+    static bool isBuiltinAppEnabled(const QString &appId) { return isAppEnabled(appId); }
+    static void setBuiltinAppEnabled(const QString &appId, bool enabled) { setAppEnabled(appId, enabled); }
+    static bool isCommunityAppEnabled(const QString &catalogId) { return isAppEnabled(catalogId); }
+    static void setCommunityAppEnabled(const QString &catalogId, bool enabled) { setAppEnabled(catalogId, enabled); }
+
+    /** Obsidian vaults list configured in config.toml */
+    static QStringList getObsidianVaults();
+
+    /** Set Obsidian vaults list in config.toml */
+    static void setObsidianVaults(const QStringList &vaults);
+
+    /** Is Obsidian auto-detection of vaults enabled? */
+    static bool isObsidianAutoDetectEnabled();
+
+    /** Set Obsidian auto-detection flag */
+    static void setObsidianAutoDetect(bool enabled);
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
     /** Expand ~ to the home directory in a path string. */

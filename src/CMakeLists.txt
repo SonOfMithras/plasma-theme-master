@@ -11,10 +11,19 @@ add_executable(plasma-theme-master
     core/UniversalThemeExporter.cpp
     core/TemplateEngine.cpp
     core/TemplateConfig.cpp
+    core/HookRunner.cpp
+    core/CommunityTemplateCatalog.cpp
+    core/TemplateApplyService.cpp
+    core/PaletteCatalog.cpp
     gui/MainWindow.cpp
     gui/GlobalThemeEditor.cpp
     gui/UniversalThemePage.cpp
+    gui/FlowLayout.cpp
+    gui/TemplateCardWidget.cpp
+    gui/TemplateSettingsDialog.cpp
     gui/ColorSwatchPicker.cpp
+    gui/PaletteCardWidget.cpp
+    gui/ColorSchemesPage.cpp
 )
 
 target_link_libraries(plasma-theme-master

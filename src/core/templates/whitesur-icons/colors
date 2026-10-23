@@ -1,0 +1,3 @@
+{{ colors.source_color.default.hex }}
+
+green:b3ee96 grey:8f8f8f orange:ffae70 pink:ff85bd purple:e791f3 red:ff8180 yellow:ffd485 blue:46a2d7

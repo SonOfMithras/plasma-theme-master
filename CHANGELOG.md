@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-10-23
+
+### Added
+- **Color Schemes Tab & Dynamic KColorScheme Sync**
+  - Dedicated **Color Schemes** tab featuring 120+ curated palettes (Catppuccin, Nord, Dracula, Tokyo Night, Gruvbox, etc.) and custom user palette support.
+  - Automatically generates and applies a native KDE Plasma color scheme (`ptm.colors`), synchronizes accent colors across the desktop, and supports an interactive Preview Sync Lock (`🔒`/`🔓`) linked to day/night schedules.
+- **Universal App Templates Revamp (70+ Applications)**
+  - Rebuilt the template engine with full Material Design 3 and Matugen token expressions (`colors.*`, `palettes.*`, pipeline filters like `| set_alpha`, `| lighten`, `| darken`, and mode variables).
+  - Multi-app catalog supporting 70+ applications (Neovim/LazyVim, Kitty, Foot, Ghostty, Alacritty, Helix, Starship, Zed, Firefox, Zen Browser, Discord, Btop, Steam, etc.), adapted from the Noctalia Community Templates project. **These are still in the testing phase, I do not use all these apps, but I will be going through them and testing them out. I intend to roll out a confirmed list of working templates.**
+  - Modernized Universal Theming page with category pills, a clean "Bundled" vs "User" source filter, and per-app settings dialogs.
+- **Native Extension Integration for VS Code & Derivatives**
+  - Replaced legacy `workbench.colorCustomizations` overrides with a native unpacked theme extension ("Plasma Theme Master" / "Plasma Theme Master Light") supporting live hot-reload across VS Code, Antigravity IDE, Cursor, Windsurf, and VSCodium.
+- **Template Cleanup & Restoration Tooling**
+  - Added `clean-templates.sh` and CLI command `plasma-theme-master clean-templates` to cleanly purge all generated templates, remove extension directories, and restore original configuration backups (`.ptm.bak`).
+
+### Changed
+- **Asynchronous Template Application & Performance**
+  - Migrated template rendering and hook execution to a non-blocking concurrent `HookRunner` with generation invalidation and task deduplication, eliminating UI freezes during theme transitions.
+  - Streamlined live reloading: Kitty terminals now receive live xterm OSC escape sequence broadcasts across active PTS sessions, and GTK4/Libadwaita applications use a debounced single-pass `"default"` portal refresh.
+
+### Breaking Changes & Migration (from 2.0.7)
+- **Template Format Deprecation**: Deprecated legacy `.tpl` files and `[templates.*]` syntax in `config.toml` in favor of declarative `template.toml` manifests. Custom templates should now be placed in `~/.local/share/plasma-theme-master/templates/<app>/template.toml`.
+- **VS Code Configuration Migration**: Legacy piggybacked color overrides in `settings.json` are automatically removed in favor of the native extension; a backup is preserved as `settings.json.ptm.bak`.
+- **Helper Binaries Deprecation**: Removed standalone helper binaries `plasma-theme-master-helper-kitty` and `plasma-theme-master-helper-konsole` in favor of native manifest hooks.
+
 ## [2.0.7] - 2026-06-09
 
 ### Added

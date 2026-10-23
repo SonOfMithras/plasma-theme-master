@@ -1,0 +1,10 @@
+[catalog.wezterm]
+name = "Wezterm"
+category = "terminal"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.wezterm]
+input_path = "wezterm.toml"
+output_path = "$XDG_CONFIG_HOME/wezterm/colors/PTM.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

@@ -1,5 +1,8 @@
 #include "ThemeWriter.h"
 #include <QCoreApplication>
+#include <QApplication>
+#include <KColorScheme>
+#include <KSharedConfig>
 #include "Config.h"
 #include "FlatpakManager.h"
 #include "GlobalThemeManager.h"
@@ -17,6 +20,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QDateTime>
 
 void ThemeWriter::setAutoLookAndFeel(bool enabled) {
   KConfig config(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
@@ -148,6 +152,8 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
     return true;
   }
 
+  bool wasAuto = ThemeReader::isAutoLookAndFeel();
+
   QString tool =
       QStandardPaths::findExecutable(QStringLiteral("lookandfeeltool"));
   if (tool.isEmpty()) {
@@ -180,10 +186,16 @@ bool ThemeWriter::applyGlobalTheme(const QString &themeName, bool force) {
 
   if (process.exitCode() == 0) {
     Logger::log("Applied global theme: \"" + themeName + "\"", Logger::Info);
+    if (wasAuto) {
+      setAutoLookAndFeel(true);
+    }
     return true;
   } else {
     Logger::log("Failed to apply global theme: \"" + themeName + "\"",
                 Logger::Error);
+    if (wasAuto) {
+      setAutoLookAndFeel(true);
+    }
     return false;
   }
 }
@@ -192,12 +204,6 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
   if (schemeName.isEmpty())
     return false;
 
-  if (!force && ThemeReader::currentColorScheme() == schemeName) {
-    Logger::log("Color scheme is already \"" + schemeName + "\", skipping.",
-                Logger::Info);
-    return true;
-  }
-
   QString tool = QStandardPaths::findExecutable(
       QStringLiteral("plasma-apply-colorscheme"));
   if (tool.isEmpty()) {
@@ -205,9 +211,38 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
     return false;
   }
 
+  bool wasAuto = ThemeReader::isAutoLookAndFeel();
+
+  bool isDark = true;
+  {
+      KConfig config(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+      KConfigGroup winGroup = config.group(QStringLiteral("Colors:Window"));
+      QString bg = winGroup.readEntry(QStringLiteral("BackgroundNormal"), QString());
+      if (!bg.isEmpty()) {
+          QStringList rgb = bg.split(',');
+          if (rgb.size() >= 3) {
+              QColor c(rgb[0].toInt(), rgb[1].toInt(), rgb[2].toInt());
+              isDark = (c.lightness() < 128);
+          }
+      }
+  }
+
+  // Plasma auto-update quirk: Plasma suppresses re-applying the same color scheme name.
+  // If schemeName is "ptm", or force is true, or current scheme is already schemeName:
+  // We force Plasma to fully reload and broadcast DBus changes by flipping to an opposite
+  // Breeze scheme (BreezeLight if target/current is dark, BreezeDark if light) and then applying schemeName.
+  QString currentScheme = ThemeReader::currentColorScheme();
+  if (force || currentScheme.compare(schemeName, Qt::CaseInsensitive) == 0 || schemeName == "ptm") {
+      QString intermediate = isDark ? QStringLiteral("BreezeLight") : QStringLiteral("BreezeDark");
+      Logger::log("Flipping to intermediate color scheme \"" + intermediate + "\" to force Plasma reload.", Logger::Info);
+      QProcess flipProcess;
+      flipProcess.start(tool, QStringList() << intermediate);
+      flipProcess.waitForFinished(5000);
+  }
+
   QProcess process;
   process.start(tool, QStringList() << schemeName);
-  process.waitForFinished();
+  process.waitForFinished(5000);
 
   QString stdoutStr =
       QString::fromUtf8(process.readAllStandardOutput()).trimmed();
@@ -224,12 +259,77 @@ bool ThemeWriter::applyColorScheme(const QString &schemeName, bool force) {
 
   if (process.exitCode() == 0) {
     Logger::log("Applied color scheme: \"" + schemeName + "\"", Logger::Info);
+
+    // Re-assert Inactive effects disabled and restore AutomaticLookAndFeel in kdeglobals
+    {
+        KConfig kdeglobals(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+        KConfigGroup inactGroup = kdeglobals.group(QStringLiteral("ColorEffects:Inactive"));
+        inactGroup.writeEntry(QStringLiteral("Enable"), false);
+        inactGroup.writeEntry(QStringLiteral("ChangeSelectionColor"), false);
+        inactGroup.writeEntry(QStringLiteral("ColorAmount"), 0);
+        inactGroup.writeEntry(QStringLiteral("ContrastAmount"), 0);
+        inactGroup.writeEntry(QStringLiteral("IntensityAmount"), 0);
+
+        if (wasAuto) {
+            KConfigGroup kdeGroup = kdeglobals.group(QStringLiteral("KDE"));
+            kdeGroup.writeEntry(QStringLiteral("AutomaticLookAndFeel"), true);
+        }
+        kdeglobals.sync();
+    }
+
+    // Ensure GNOME/XDG portal color-scheme matches the target darkness
+    QString gsettingsTool = QStandardPaths::findExecutable(QStringLiteral("gsettings"));
+    if (!gsettingsTool.isEmpty()) {
+        QString targetScheme = isDark ? QStringLiteral("prefer-dark") : QStringLiteral("prefer-light");
+        QProcess csProcess;
+        csProcess.start(gsettingsTool, QStringList() << QStringLiteral("set")
+                                                     << QStringLiteral("org.gnome.desktop.interface")
+                                                     << QStringLiteral("color-scheme")
+                                                     << targetScheme);
+        csProcess.waitForFinished(3000);
+    }
+
+    refreshApplicationPalette();
     return true;
   } else {
     Logger::log("Failed to apply color scheme: \"" + schemeName + "\"",
                 Logger::Error);
+    if (wasAuto) {
+      setAutoLookAndFeel(true);
+    }
     return false;
   }
+}
+
+void ThemeWriter::refreshApplicationPalette() {
+    auto *guiApp = qobject_cast<QApplication*>(qApp);
+    if (!guiApp) {
+        return;
+    }
+
+    KSharedConfigPtr kdeglobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::SimpleConfig);
+    kdeglobals->reparseConfiguration();
+    QPalette appPalette = KColorScheme::createApplicationPalette(kdeglobals);
+
+    // Ensure inactive palette roles mirror active roles exactly so unfocused windows never change color
+    for (int role = 0; role < QPalette::NColorRoles; ++role) {
+        auto r = static_cast<QPalette::ColorRole>(role);
+        appPalette.setColor(QPalette::Inactive, r, appPalette.color(QPalette::Active, r));
+    }
+
+    // Ensure Highlight and Accent roles explicitly pick up the palette selection/accent color
+    KColorScheme selScheme(QPalette::Active, KColorScheme::Selection, kdeglobals);
+    QColor accent = selScheme.background(KColorScheme::NormalBackground).color();
+    appPalette.setColor(QPalette::Active, QPalette::Highlight, accent);
+    appPalette.setColor(QPalette::Inactive, QPalette::Highlight, accent);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+    appPalette.setColor(QPalette::Active, QPalette::Accent, accent);
+    appPalette.setColor(QPalette::Inactive, QPalette::Accent, accent);
+#endif
+
+    QMetaObject::invokeMethod(guiApp, [guiApp, appPalette]() {
+        guiApp->setPalette(appPalette);
+    }, Qt::QueuedConnection);
 }
 
 void ThemeWriter::setSolarDayOffset(int minutes) {
@@ -363,6 +463,20 @@ bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
     } else {
       Logger::log("Failed to set gsettings GTK theme.", Logger::Warning);
     }
+
+    // Set GNOME portal color-scheme based on GTK theme variant
+    bool isDark = themeName.contains("dark", Qt::CaseInsensitive);
+    QString targetScheme = isDark ? QStringLiteral("prefer-dark") : QStringLiteral("prefer-light");
+    QProcess csProcess;
+    csProcess.start(gsettingsExe,
+                    QStringList() << QStringLiteral("set")
+                                  << QStringLiteral("org.gnome.desktop.interface")
+                                  << QStringLiteral("color-scheme") << targetScheme);
+    csProcess.waitForFinished();
+    if (csProcess.exitCode() == 0) {
+      Logger::log("Applied GNOME portal color-scheme via gsettings: \"" + targetScheme + "\"",
+                  Logger::Info);
+    }
   }
 
   Logger::log("Applied GTK theme: \"" + themeName + "\"", Logger::Info);
@@ -377,23 +491,28 @@ bool ThemeWriter::setGtkTheme(const QString &themeName, bool force) {
     FlatpakManager::setFlatpakGtkTheme(themeName);
   }
 
-  // Run GTK4 live refresh hook helper script
-  QString hookTool = QStandardPaths::findExecutable(QStringLiteral("plasma-theme-master-helper-gtk4-reload"));
-  if (hookTool.isEmpty()) {
-    // Local / development fallback
-    hookTool = QDir::homePath() + QStringLiteral("/.local/bin/plasma-theme-master-helper-gtk4-reload");
-    if (!QFile::exists(hookTool)) {
-      // Src directory development fallback
-      hookTool = QCoreApplication::applicationDirPath() + QStringLiteral("/plasma-theme-master-helper-gtk4-reload");
+  // Run GTK4 live refresh hook helper script (debounced)
+  static qint64 s_lastGtkSetThemeMs = 0;
+  qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+  if (nowMs - s_lastGtkSetThemeMs > 3500) {
+    s_lastGtkSetThemeMs = nowMs;
+    QString hookTool = QStandardPaths::findExecutable(QStringLiteral("plasma-theme-master-helper-gtk4-reload"));
+    if (hookTool.isEmpty()) {
+      // Local / development fallback
+      hookTool = QDir::homePath() + QStringLiteral("/.local/bin/plasma-theme-master-helper-gtk4-reload");
       if (!QFile::exists(hookTool)) {
-        hookTool.clear();
+        // Src directory development fallback
+        hookTool = QCoreApplication::applicationDirPath() + QStringLiteral("/plasma-theme-master-helper-gtk4-reload");
+        if (!QFile::exists(hookTool)) {
+          hookTool.clear();
+        }
       }
     }
-  }
 
-  if (!hookTool.isEmpty()) {
-    Logger::log("Running GTK4 live refresh hook: " + hookTool, Logger::Info);
-    QProcess::startDetached(hookTool);
+    if (!hookTool.isEmpty()) {
+      Logger::log("Running GTK4 live refresh hook: " + hookTool, Logger::Info);
+      QProcess::startDetached(hookTool);
+    }
   }
 
   return true;

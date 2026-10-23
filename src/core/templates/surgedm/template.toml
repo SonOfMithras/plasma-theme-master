@@ -1,0 +1,8 @@
+[catalog.surgedm]
+name = "surgedm"
+category = "terminal"
+
+[templates.surgedm]
+input_path = "surgedm.toml"
+output_path = "$XDG_CONFIG_HOME/surge/themes/ptm.toml"
+post_hook = ""

@@ -1,0 +1,20 @@
+{
+  "foreground": "{{colors.terminal_foreground.default.hex}}",
+  "background": "{{colors.terminal_background.default.hex}}",
+  "black": "{{colors.terminal_normal_black.default.hex}}",
+  "red": "{{colors.terminal_normal_red.default.hex}}",
+  "green": "{{colors.terminal_normal_green.default.hex}}",
+  "yellow": "{{colors.terminal_normal_yellow.default.hex}}",
+  "blue": "{{colors.terminal_normal_blue.default.hex}}",
+  "magenta": "{{colors.terminal_normal_magenta.default.hex}}",
+  "cyan": "{{colors.terminal_normal_cyan.default.hex}}",
+  "white": "{{colors.terminal_normal_white.default.hex}}",
+  "darkGray": "{{colors.terminal_bright_black.default.hex}}",
+  "lightRed": "{{colors.terminal_bright_red.default.hex}}",
+  "lightGreen": "{{colors.terminal_bright_green.default.hex}}",
+  "lightYellow": "{{colors.terminal_bright_yellow.default.hex}}",
+  "lightBlue": "{{colors.terminal_bright_blue.default.hex}}",
+  "lightMagenta": "{{colors.terminal_bright_magenta.default.hex}}",
+  "lightCyan": "{{colors.terminal_bright_cyan.default.hex}}",
+  "lightWhite": "{{colors.terminal_bright_white.default.hex}}"
+}

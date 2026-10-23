@@ -1,0 +1,17 @@
+[catalog.spicetify]
+name = "Spicetify"
+category = "audio"
+
+# Both entries run the same apply.sh, and `spicetify apply` patches one Spotify install:
+# concurrent runs corrupt the patched files.
+[templates.spicetify]
+input_path = "spicetify.ini"
+output_path = "$XDG_CONFIG_HOME/spicetify/Themes/Comfy/color.ini"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+hook_async = false
+
+[templates.spicetify_colorful]
+input_path = "spicetify_colorful.ini"
+output_path = "$XDG_CONFIG_HOME/spicetify/Themes/Colorful/color.ini"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+hook_async = false

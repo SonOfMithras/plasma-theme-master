@@ -1,0 +1,62 @@
+/* PTM Template for Yeet launcher */
+
+.yeet-window {
+    background-color: alpha({{ colors.surface.default.hex }}, 0.78);
+    color: {{ colors.on_surface.default.hex }};
+    border: 2px solid {{ colors.primary.default.hex }};
+    border-radius: 10px;
+}
+
+.yeet-container {
+    padding: 10px;
+}
+
+.yeet-entry {
+    background-color: {{ colors.surface_container.default.hex }};
+    color: {{ colors.on_surface.default.hex }};
+    caret-color: {{ colors.primary.default.hex }};
+
+    font-size: 20px;
+    padding: 12px 14px;
+
+    border-radius: 10px;
+}
+
+.yeet-list {
+    background-color: transparent;
+    margin-top: 10px;
+}
+
+.yeet-row {
+    background-color: transparent;
+    color: {{ colors.on_surface.default.hex }};
+
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.yeet-row:selected {
+    background-color: alpha({{ colors.primary.default.hex }}, 0.65);
+    color: {{ colors.on_primary.default.hex }};
+}
+
+.yeet-row-content {
+    background-color: transparent;
+}
+
+.yeet-icon {
+    margin-right: 10px;
+}
+
+.yeet-app-name {
+    color: inherit;
+    font-weight: 600;
+}
+
+.yeet-app-desc {
+    color: {{ colors.on_surface_variant.default.hex }};
+}
+
+.yeet-shortcut {
+    color: {{ colors.primary.default.hex }};
+}

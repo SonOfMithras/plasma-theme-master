@@ -1,0 +1,21 @@
+{
+  "logo": {
+    "color": {
+      "1": "{{colors.primary.default.hex}}",
+      "2": "{{colors.secondary.default.hex}}"
+    }
+  },
+  "display": {
+    "color": {
+      "keys": "{{colors.primary.default.hex}}",
+      "title": "{{colors.secondary.default.hex}}"
+    },
+    "percent": {
+      "color": {
+        "green": "{{colors.tertiary.default.hex}}",
+        "yellow": "{{colors.primary_fixed_dim.default.hex}}",
+        "red": "{{colors.error.default.hex}}"
+      }
+    }
+  }
+}

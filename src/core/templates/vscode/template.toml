@@ -1,0 +1,53 @@
+[catalog.vscode]
+name = "VSCode"
+category = "editor"
+
+[templates.vscode_code]
+input_path = "vscode.json"
+output_path = [
+	"~/.vscode/extensions/ptm.ptmtheme-0.0.5/themes/PTMTheme-color-theme.json",
+	"~/.vscode/extensions/plasma-theme-master.plasma-theme-master-1.0.0/themes/PTMTheme-color-theme.json",
+]
+requires_path = "~/.vscode"
+post_hook = "plasma-theme-master-helper-vscode"
+
+[templates.vscode_codium]
+input_path = "vscode.json"
+output_path = [
+	"~/.vscode-oss/extensions/ptm.ptmtheme-0.0.5-universal/themes/PTMTheme-color-theme.json",
+	"~/.vscode-oss/extensions/ptm.ptmtheme-0.0.5/themes/PTMTheme-color-theme.json",
+	"~/.vscode-oss/extensions/plasma-theme-master.plasma-theme-master-1.0.0-universal/themes/PTMTheme-color-theme.json",
+	"~/.vscode-oss/extensions/plasma-theme-master.plasma-theme-master-1.0.0/themes/PTMTheme-color-theme.json",
+]
+requires_path = "~/.vscode-oss"
+post_hook = "plasma-theme-master-helper-vscode"
+
+[templates.antigravity_ide]
+input_path = "vscode.json"
+output_path = [
+	"~/.antigravity-ide/extensions/ptm.ptmtheme-0.0.5-universal/themes/PTMTheme-color-theme.json",
+	"~/.antigravity-ide/extensions/ptm.ptmtheme-0.0.5/themes/PTMTheme-color-theme.json",
+	"~/.antigravity-ide/extensions/plasma-theme-master.plasma-theme-master-1.0.0-universal/themes/PTMTheme-color-theme.json",
+	"~/.antigravity-ide/extensions/plasma-theme-master.plasma-theme-master-1.0.0/themes/PTMTheme-color-theme.json",
+]
+requires_path = "~/.antigravity-ide"
+post_hook = "plasma-theme-master-helper-vscode"
+
+[templates.cursor]
+input_path = "vscode.json"
+output_path = [
+	"~/.cursor/extensions/ptm.ptmtheme-0.0.5/themes/PTMTheme-color-theme.json",
+	"~/.cursor/extensions/plasma-theme-master.plasma-theme-master-1.0.0/themes/PTMTheme-color-theme.json",
+]
+requires_path = "~/.cursor"
+post_hook = "plasma-theme-master-helper-vscode"
+
+[templates.windsurf]
+input_path = "vscode.json"
+output_path = [
+	"~/.windsurf/extensions/ptm.ptmtheme-0.0.5/themes/PTMTheme-color-theme.json",
+	"~/.windsurf/extensions/plasma-theme-master.plasma-theme-master-1.0.0/themes/PTMTheme-color-theme.json",
+]
+requires_path = "~/.windsurf"
+post_hook = "plasma-theme-master-helper-vscode"
+

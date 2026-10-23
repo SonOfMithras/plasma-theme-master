@@ -1,0 +1,8 @@
+[catalog.halloy]
+name = "halloy"
+category = "chat"
+
+[templates.halloy]
+input_path = "halloy.toml"
+output_path = "$XDG_CONFIG_HOME/halloy/themes/ptm.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

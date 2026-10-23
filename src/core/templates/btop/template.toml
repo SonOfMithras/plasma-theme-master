@@ -1,0 +1,10 @@
+[catalog.btop]
+name = "Btop"
+category = "misc"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.btop]
+input_path = "btop.theme"
+output_path = "$XDG_CONFIG_HOME/btop/themes/ptm.theme"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

@@ -1,0 +1,6 @@
+colors {
+	prompt "{{colors.primary.default.hex}}"
+	unread "{{colors.secondary.default.hex}}"
+	status "{{colors.tertiary.default.hex}}"
+	nicks extended
+}

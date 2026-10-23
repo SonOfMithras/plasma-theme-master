@@ -1,6 +1,6 @@
 # Plasma Theme Master
 
-**Version 2.0.7**
+**Version 2.1.0**
 
 Plasma Theme Master is a simple utility that unifies the native and non-native plasma theming tools in a single application, a functional gui with a cli backend supporting it. The daemon runs in the background to perform the scheduled changes in an unobtrusive manner.
 
@@ -18,7 +18,11 @@ Over time, Plasma Theme Master has added ways to integrate with other applicatio
 - **Material You Integration**: Automatically generate and apply Material You based color schemes on theme switch using `kde-material-you-colors`.
 - **Global Theme Editor**: Customize theme components (Plasma Style, Window Decorations, Icons, etc.) with ease.
 - **Backup & Restore**: Automatically backs up theme defaults and allows one-click restoration.
-- **Universal Theme Sync** (v2.0.0 — Template System): Syncs Plasma colors to other apps using a matugen-style template engine. Supports VS Code/Antigravity, Firefox/Zen, BetterDiscord, Vencord/Vesktop, Kitty, Konsole, Zed Editor, Btop, Vicinae, and Obsidian. Each app uses a standalone `.tpl` file — fully customizable. Custom template entries can be added freely to `config.toml`.
+- **Universal Theme Sync (70+ Apps & Community Catalog)**: Syncs Plasma and palette colors to external applications via an advanced Material Design 3 / Matugen-style template engine. Supports over 70+ applications categorized across Terminals (Kitty, Konsole, Alacritty, Foot, Ghostty, Wezterm), Editors (VS Code, Antigravity IDE, Cursor, Windsurf, Neovim/LazyVim, Zed, Helix, Micro), Browsers (Firefox, Zen Browser, Brave), Chat (Discord, BetterDiscord, Vencord, Vesktop, Telegram), System & Tools (Btop, Starship, Oh-My-Posh, Fastfetch, Pywalfox, SpeedCrunch, Tauon, Fzf, Bat, Obsidian), and Gaming (Steam/Millennium).
+- **Native VS Code & Antigravity Theme Extension**: Automatically installs and registers a first-class native VS Code theme extension ("Plasma Theme Master" / "Plasma Theme Master Light") with `_watch: true` for live hot-reloading without touching or corrupting user `workbench.colorCustomizations`. Supports VS Code, Antigravity IDE, VSCodium, Code-OSS, Cursor, and Windsurf.
+- **Palette Catalog & Color Schemes Browser**: Browse and activate official and community color palettes (Catppuccin, Nord, Dracula, Tokyo Night, Gruvbox, Breeze, Noctalia, etc.) with live preview swatches, syncing directly to Plasma, KColorScheme, accent colors, and universal application templates.
+- **Accurate Terminal Background Parity**: Terminal emulators like Kitty use the true UI window background rather than ANSI Black, maintaining perfect contrast and aesthetic parity with desktop windows.
+- **Complete Template Cleanup & Restore**: Standalone `plasma-theme-master clean-templates` and `clean-templates.sh` script to cleanly purge generated template files, remove native extensions, strip injected includes, and restore original configuration backups.
 - **Theme Sync**: Keeps Kvantum, GTK, Klassy, and Flatpak themes in sync with your Global Theme.
 - **Daemon Mode**: Runs efficiently in the background to monitor time changes and swap to the correct themes. Lightweight and resource efficient.
   - Daemon: ~2MB Memory Usage
@@ -118,14 +122,21 @@ The application provides a comprehensive Command Line Interface (CLI) for script
 | `sync-disable <app>` | Disable universal sync for an app. |
 | `sync-list` | List universal sync apps and their status. |
 | `sync-restore <app>` | Restore an app configuration from backup. |
+| `clean-templates` | Purge all generated templates, remove theme extensions, and restore original configs. |
 | `log [-n lines] [--errors]` | View application logs. |
 | `daemon` | Run the background daemon (handled by systemd usually). |
 | `uninstall` | Remove the application and service. |
 
-### Universal Theme Sync
-Plasma colors are injected into other apps via a template engine. Each app has a `.tpl` file and is configured in `~/.config/plasma-theme-master/config.toml`.
+### Universal Theme Sync & Community Catalog
+Plasma Theme Master injects Plasma and palette colors into 70+ applications using a fast Material Design 3 / Matugen-style template engine. Each application has a standalone template (`template.toml` or `.tpl`) and is managed via the **Universal Theming** GUI tab or `~/.config/plasma-theme-master/config.toml`.
 
-**Supported Apps**: `vscode` (Code/OSS/VSCodium/Antigravity), `firefox` (incl. Zen), `discord`/`betterdiscord`, `vencord`/`vesktop`, `kitty`, `konsole`, `btop`, `vicinae`, `obsidian`, `zed`, `millennium` (Steam Material-Theme).
+**Supported Application Categories**:
+- **Terminals**: Kitty, Konsole, Alacritty, Foot, Ghostty, Wezterm, Rio
+- **Editors**: VS Code, Antigravity IDE, Cursor, Windsurf, Neovim/LazyVim, Zed, Helix, Micro
+- **Browsers**: Firefox, Zen Browser, Brave, Ungoogled Chromium, Qutebrowser
+- **Chat & Social**: Discord, BetterDiscord, Vencord, Vesktop, Telegram, Mailspring, Halloy, Senpai, Nchat
+- **System & Tools**: Btop, Starship, Oh-My-Posh, Fastfetch, Pywalfox, SpeedCrunch, Tauon, Fzf, Micro, Bat, Obsidian, Yazi, Superfile, Zathura, Zellij, Tmux, Fuzzel, Rofi, Walker
+- **Gaming & Media**: Steam (Millennium Material-Theme), Heroic Launcher, Prism Launcher, Feishin, Supersonic, YTM Player, Blender, GIMP, Inkscape, OBS Studio
 
 **Setup**:
 1. Enable sync for an app (writes to `config.toml`):
@@ -138,6 +149,17 @@ Plasma colors are injected into other apps via a template engine. Each app has a
    ```
    Or click **Sync Now** in the Universal Theme tab.
 
+**VS Code, Antigravity, Cursor & Windsurf Native Themes**:
+Unlike legacy tools that pollute your `settings.json` with temporary `workbench.colorCustomizations`, Plasma Theme Master scaffolds and installs a real native theme extension (`Plasma Theme Master` / `Plasma Theme Master Light`) directly into your editors (`~/.vscode/extensions`, `~/.antigravity-ide/extensions`, `~/.vscode-oss/extensions`, `~/.cursor/extensions`, and `~/.windsurf/extensions`). Theme updates reload instantly via `_watch: true` without restarting the editor or conflicting with your personal workbench overrides.
+
+**Template Cleanup & System Reset**:
+To completely purge all generated theme files, remove installed editor extensions, strip injected include lines from configuration files, and restore all original `.bak` files:
+```bash
+plasma-theme-master clean-templates
+# or run the standalone script directly:
+clean-templates.sh
+```
+
 **Custom Templates**: Add your own app to `config.toml`:
 ```toml
 [templates.myapp]
@@ -149,8 +171,9 @@ post_hook = 'myapp --reload'
 ```
 
 **Troubleshooting**:
-- **VS Code**: Set WindowAutofdetect color scheme to 'enabled' in settings. Backups stored as `settings.json.bak`.
+- **VS Code / Antigravity**: Plasma Theme Master activates its native theme extension automatically. Backups of your previous `settings.json` are stored as `settings.json.ptm.bak`.
 - **Firefox/Zen Browser**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets` set to `true` in `about:config` for CSS themes to be loaded. Additionally, please note that browser restarts are required for color scheme changes to take full effect.
+- **Neovim / LazyVim**: The template automatically manages `lua/plugins/ptm.lua` and exports a complete color scheme to `colors/ptm.lua`, dynamically respecting `vim.o.background = 'dark'` or `'light'`.
 - **BetterDiscord/Vencord/Vesktop**: Enable the "PlasmaMaster" theme under client theme settings.
 - **Obsidian**: Enable the "Plasma Master" snippet in Appearance settings.
 - **Millennium (Steam)**: Overwrites `blue.css` to inject dynamic accent colors. Requires the Steam client modding framework [Millennium](https://steambrew.app/) and [Material-Theme](https://steambrew.app/theme?id=ipYjqODds05KMcvh7QJn) installed. In Steam's Material-Theme settings, the **Color** scheme must be set to **"Blue"**. Note: Live reloads are not automatically triggered by Steam, so a manual theme toggle or client refresh is required in Steam settings after synchronization to apply color changes.

@@ -1,0 +1,7 @@
+[catalog.yeet]
+name = "Yeet"
+category = "launcher"
+
+[templates.yeet]
+input_path = "yeet.css"
+output_path = "$XDG_CONFIG_HOME/yeet/style.css"

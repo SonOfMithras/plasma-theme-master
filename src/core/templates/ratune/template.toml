@@ -1,0 +1,8 @@
+[catalog.ratune]
+name = "Ratune"
+category = "audio"
+
+[templates.ratune]
+input_path = "ratune.toml"
+output_path = "$XDG_CONFIG_HOME/ratune/theme.generated.toml"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

@@ -1,0 +1,7 @@
+[catalog.sidra]
+name = "Sidra"
+category = "audio"
+
+[templates.sidra]
+input_path = "sidra-theme.json"
+output_path = "$XDG_CONFIG_HOME/Sidra/custom-theme.json"

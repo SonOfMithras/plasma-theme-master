@@ -1,0 +1,10 @@
+[catalog.emacs]
+name = "Emacs"
+category = "editor"
+documentation_url = "https://docs.ptm.dev/ptm/templates/official/emacs/"
+
+[templates.emacs]
+input_path = "emacs.el"
+output_path_dynamic = "bash '{{ config_dir }}/output-path.sh'"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

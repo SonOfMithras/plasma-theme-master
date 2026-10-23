@@ -1,0 +1,140 @@
+// Noctalia palette for Mailspring.
+//
+// Mailspring's own stylesheets (/static and /internal_packages) are LESS that reads the
+// variables declared in base/ui-variables.less, so reassigning them here recolors the whole
+// app. Rendered by Noctalia on every theme change; Mailspring compiles LESS at startup, so
+// restart it to pick up new colors.
+
+@import 'base/ui-variables';
+
+// Gray ladder -------------------------------------------------------------
+// base/ui-variables anchors the ladder on a dark @gray-base and lightens toward @white.
+// Anchoring on the palette text color and mixing toward the surface keeps the same intent
+// for both dark and light palettes.
+@black: {{ colors.on_surface.default.hex }};
+@white: {{ colors.surface.default.hex }};
+
+@gray-base:    {{ colors.on_surface.default.hex }};
+@gray-darker:  mix(@gray-base, @white, 86.5%);
+@gray-dark:    mix(@gray-base, @white, 80%);
+@gray:         mix(@gray-base, @white, 66.5%);
+@gray-light:   mix(@gray-base, @white, 53.3%);
+@gray-lighter: mix(@gray-base, @white, 7.5%);
+
+// Accent ------------------------------------------------------------------
+// A literal color, not var(--system-accent, ...) as base declares it, so the palette wins
+// over Mailspring's "use system accent color" setting.
+@accent-primary:      {{ colors.primary.default.hex }};
+@accent-primary-dark: darken({{ colors.primary.default.hex }}, 10%);
+
+@component-active-color: @accent-primary;
+@component-active-bg:    {{ colors.surface_container_high.default.hex }};
+
+// Backgrounds -------------------------------------------------------------
+@background-primary:     {{ colors.surface.default.hex }};
+@background-off-primary: {{ colors.surface_container_low.default.hex }};
+@background-secondary:   {{ colors.surface_container.default.hex }};
+@background-tertiary:    {{ colors.surface_container_high.default.hex }};
+
+@toolbar-background-color: {{ colors.surface_container.default.hex }};
+@panel-background-color:   {{ colors.surface_container.default.hex }};
+
+// Text --------------------------------------------------------------------
+@text-color:         {{ colors.on_surface.default.hex }};
+@text-color-heading: {{ colors.on_surface.default.hex }};
+@text-color-subtle:      fadeout({{ colors.on_surface_variant.default.hex }}, 10%);
+@text-color-very-subtle: fadeout({{ colors.on_surface_variant.default.hex }}, 40%);
+
+@text-color-inverse:             {{ colors.on_primary.default.hex }};
+@text-color-inverse-subtle:      fadeout({{ colors.on_primary.default.hex }}, 20%);
+@text-color-inverse-very-subtle: fadeout({{ colors.on_primary.default.hex }}, 50%);
+@text-color-selected:            {{ colors.on_primary.default.hex }};
+
+@text-color-link:        {{ colors.primary.default.hex }};
+@text-color-link-hover:  {{ colors.primary_container.default.hex }};
+@text-color-link-active: {{ colors.primary_container.default.hex }};
+
+// State colors ------------------------------------------------------------
+@color-info:    {{ colors.primary.default.hex }};
+@color-success: {{ colors.terminal_normal_green.default.hex }};
+@color-warning: {{ colors.terminal_normal_yellow.default.hex }};
+@color-error:   {{ colors.error.default.hex }};
+@color-danger:  {{ colors.error.default.hex }};
+
+// Borders -----------------------------------------------------------------
+@border-color-primary:   {{ colors.outline_variant.default.hex }};
+@border-color-secondary: {{ colors.outline_variant.default.hex }};
+@border-color-tertiary:  {{ colors.outline.default.hex }};
+@border-color-divider:   {{ colors.outline_variant.default.hex }};
+
+// Lists (thread list, sidebar) --------------------------------------------
+@list-bg:              {{ colors.surface.default.hex }};
+@list-border:          {{ colors.outline_variant.default.hex }};
+@list-hover-bg:        {{ colors.surface_container_high.default.hex }};
+@list-focused-bg:      {{ colors.primary.default.hex }};
+@list-focused-color:   {{ colors.on_primary.default.hex }};
+@list-focused-border:  {{ colors.primary.default.hex }};
+
+@source-list-bg:           {{ colors.surface_container.default.hex }};
+@source-list-active-bg:    {{ colors.surface_container.default.hex }};
+@source-list-active-color: {{ colors.primary.default.hex }};
+
+// Inputs ------------------------------------------------------------------
+@input-bg:            {{ colors.surface_container_lowest.default.hex }};
+@input-bg-disabled:   {{ colors.surface_container.default.hex }};
+@input-border-color:  {{ colors.outline_variant.default.hex }};
+
+// Buttons and dropdowns ---------------------------------------------------
+@btn-default-bg-color:   {{ colors.surface_container_high.default.hex }};
+@btn-default-text-color: {{ colors.on_surface.default.hex }};
+@btn-border-color:       {{ colors.outline_variant.default.hex }};
+@btn-icon-color:         {{ colors.on_surface_variant.default.hex }};
+
+@btn-emphasis-bg-color:   {{ colors.primary.default.hex }};
+@btn-emphasis-text-color: {{ colors.on_primary.default.hex }};
+@btn-action-bg-color:     {{ colors.tertiary.default.hex }};
+@btn-action-text-color:   {{ colors.on_tertiary.default.hex }};
+@btn-danger-bg-color:     {{ colors.error.default.hex }};
+@btn-danger-text-color:   {{ colors.on_error.default.hex }};
+
+@dropdown-default-bg-color:     {{ colors.surface_container_high.default.hex }};
+@dropdown-default-text-color:   {{ colors.on_surface.default.hex }};
+@dropdown-default-border-color: {{ colors.outline_variant.default.hex }};
+
+// Menus -------------------------------------------------------------------
+@menu-item-color-hover:    fade({{ colors.primary.default.hex }}, 10%);
+@menu-item-color-selected: {{ colors.primary.default.hex }};
+@menu-text-color-selected: {{ colors.on_primary.default.hex }};
+
+// Native form controls --------------------------------------------------
+// Radio buttons, checkboxes and range sliders are drawn by Chromium, not by
+// Mailspring's stylesheets, so they ignore the variables above and fall back to
+// the browser accent. accent-color hands them the palette.
+:root {
+  accent-color: @accent-primary;
+}
+
+// Dark-palette fixups -----------------------------------------------------
+// A handful of things variables cannot reach: Mailspring ships dark-on-light PNG icons, mail
+// labels with baked-in colors, and shadows drawn for a white page. Mailspring's own ui-dark
+// theme carries the same rules. Guarded on the palette, so light palettes are untouched.
+.noctalia-dark-fixups() when (lightness(@background-primary) < 50%) {
+  .thread-icon:not(.thread-icon-unread):not(.thread-icon-star) {
+    filter: invert(100%);
+  }
+  img.content-dark,
+  img.content-light {
+    filter: invert(100%);
+  }
+  .mail-label {
+    filter: contrast(110%) brightness(85%);
+  }
+  #message-list .message-item-wrap .message-item-white-wrap {
+    box-shadow: 0 0 0.5px fade(@text-color, 28%), 0 1px 1.5px fade(@text-color, 8%);
+  }
+  .sheet-toolbar {
+    box-shadow: none;
+    border-bottom: none;
+  }
+}
+.noctalia-dark-fixups();

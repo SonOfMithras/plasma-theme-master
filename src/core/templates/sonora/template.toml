@@ -1,0 +1,15 @@
+[catalog.sonora]
+name = "Sonora"
+category = "audio"
+
+[templates.sonora]
+input_path = "sonora.json"
+output_path = "$XDG_CONFIG_HOME/sonora/themes/ptm.json"
+post_hook = "bash '{{ config_dir }}/apply.sh' native"
+requires_path = "$XDG_CONFIG_HOME/sonora"
+
+[templates.sonora-flatpak]
+input_path = "sonora.json"
+output_path = "~/.var/app/io.github.nolight132.sonora/config/sonora/themes/ptm.json"
+post_hook = "bash '{{ config_dir }}/apply.sh' flatpak"
+requires_path = "~/.var/app/io.github.nolight132.sonora/config/sonora"

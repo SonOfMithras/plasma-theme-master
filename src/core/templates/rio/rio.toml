@@ -1,0 +1,53 @@
+[colors]
+background       = '{{ colors.terminal_background.default.hex }}'
+foreground       = '{{ colors.terminal_foreground.default.hex }}'
+cursor           = '{{ colors.terminal_cursor.default.hex }}'
+vi-cursor        = '{{ colors.terminal_normal_green.default.hex }}'
+
+black            = '{{ colors.terminal_normal_black.default.hex }}'
+red              = '{{ colors.terminal_normal_red.default.hex }}'
+green            = '{{ colors.terminal_normal_green.default.hex }}'
+yellow           = '{{ colors.terminal_normal_yellow.default.hex }}'
+blue             = '{{ colors.terminal_normal_blue.default.hex }}'
+magenta          = '{{ colors.terminal_normal_magenta.default.hex }}'
+cyan             = '{{ colors.terminal_normal_cyan.default.hex }}'
+white            = '{{ colors.terminal_normal_white.default.hex }}'
+
+dim-foreground   = '{{ colors.terminal_foreground.default.hex }}'
+dim-black        = '{{ colors.terminal_normal_black.default.hex }}'
+dim-red          = '{{ colors.terminal_normal_red.default.hex }}'
+dim-green        = '{{ colors.terminal_normal_green.default.hex }}'
+dim-yellow       = '{{ colors.terminal_normal_yellow.default.hex }}'
+dim-blue         = '{{ colors.terminal_normal_blue.default.hex }}'
+dim-magenta      = '{{ colors.terminal_normal_magenta.default.hex }}'
+dim-cyan         = '{{ colors.terminal_normal_cyan.default.hex }}'
+dim-white        = '{{ colors.terminal_normal_white.default.hex }}'
+
+light-foreground = '{{ colors.terminal_foreground.default.hex }}'
+light-black      = '{{ colors.terminal_bright_black.default.hex }}'
+light-red        = '{{ colors.terminal_bright_red.default.hex }}'
+light-green      = '{{ colors.terminal_bright_green.default.hex }}'
+light-yellow     = '{{ colors.terminal_bright_yellow.default.hex }}'
+light-blue       = '{{ colors.terminal_bright_blue.default.hex }}'
+light-magenta    = '{{ colors.terminal_bright_magenta.default.hex }}'
+light-cyan       = '{{ colors.terminal_bright_cyan.default.hex }}'
+light-white      = '{{ colors.terminal_bright_white.default.hex }}'
+
+tabs             = '{{ colors.terminal_normal_black.default.hex }}'
+tabs-active      = '{{ colors.terminal_normal_green.default.hex }}'
+bar              = '{{ colors.terminal_foreground.default.hex }}'
+split            = '{{ colors.terminal_normal_black.default.hex }}'
+
+# Search
+search-match-background          = '{{ colors.terminal_normal_blue.default.hex }}'
+search-match-foreground          = '{{ colors.terminal_normal_black.default.hex }}'
+search-focused-match-background  = '{{ colors.terminal_normal_green.default.hex }}'
+search-focused-match-foreground  = '{{ colors.terminal_normal_black.default.hex }}'
+
+# Hints
+hint-foreground  = '{{ colors.terminal_normal_black.default.hex }}'
+hint-background  = '{{ colors.terminal_normal_yellow.default.hex }}'
+
+# Selection
+selection-foreground = '{{ colors.terminal_selection_fg.default.hex }}'
+selection-background = '{{ colors.terminal_selection_bg.default.hex }}'

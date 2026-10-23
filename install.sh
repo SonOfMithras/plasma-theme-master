@@ -153,6 +153,150 @@ check_dependencies() {
     fi
 }
 
+# Function to detect installed version <= 2.0.7 and clean/migrate legacy templates & config
+migrate_legacy_install() {
+    local installed_ver=""
+    if command -v "$APP_NAME" >/dev/null 2>&1; then
+        installed_ver=$("$APP_NAME" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n1 || true)
+    fi
+
+    local is_legacy=false
+
+    if [ -n "$installed_ver" ]; then
+        local major=$(echo "$installed_ver" | cut -d. -f1)
+        local minor=$(echo "$installed_ver" | cut -d. -f2)
+        local patch=$(echo "$installed_ver" | cut -d. -f3)
+        patch=${patch:-0}
+        # If version <= 2.0.7
+        if [ "$major" -lt 2 ] 2>/dev/null || { [ "$major" -eq 2 ] && [ "$minor" -eq 0 ] && [ "$patch" -le 7 ]; } 2>/dev/null; then
+            is_legacy=true
+        fi
+    fi
+
+    local user_cfg="$HOME/.config/plasma-theme-master/config.toml"
+    # Also detect filesystem markers from <= 2.0.7 even if binary was uninstalled or version was unknown
+    if [ -d "$HOME/.config/plasma-theme-master/zen-browser" ] || \
+       [ -f "/usr/share/plasma-theme-master/templates/kitty_dark.tpl" ] || \
+       [ -f "/usr/share/plasma-theme-master/templates/btop.tpl" ] || \
+       ( [ -f "$user_cfg" ] && grep -qE '^\[templates\.(kitty|btop|konsole|obsidian|zed|zen_browser|vicinae|millennium|palette)' "$user_cfg" 2>/dev/null ); then
+        is_legacy=true
+    fi
+
+    if [ "$is_legacy" = true ]; then
+        print_header "Legacy Installation Detected (Version <= 2.0.7)"
+        if [ -n "$installed_ver" ]; then
+            print_info "Installed version: $installed_ver"
+        fi
+        print_info "Cleaning legacy template files, cache, and conflicting configuration entries..."
+
+        # 1. Clean generated application templates & cache
+        local script_dir
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        if [ -f "$script_dir/clean-templates.sh" ]; then
+            bash "$script_dir/clean-templates.sh" || print_warning "Template cleanup completed with warnings."
+        fi
+
+        # 2. Clean obsolete root template files from system directory
+        if [ -d "/usr/share/plasma-theme-master/templates" ]; then
+            print_info "Removing obsolete legacy template files from /usr/share/plasma-theme-master/templates..."
+            sudo rm -f /usr/share/plasma-theme-master/templates/*.tpl 2>/dev/null || true
+            sudo rm -f /usr/share/plasma-theme-master/templates/README.md 2>/dev/null || true
+            sudo rm -rf /usr/share/plasma-theme-master/templates/betterdiscord 2>/dev/null || true
+            sudo rm -rf /usr/share/plasma-theme-master/templates/vencord 2>/dev/null || true
+            sudo rm -rf /usr/share/plasma-theme-master/templates/builtin 2>/dev/null || true
+        fi
+
+        # 3. Clean legacy zen-browser config directory
+        if [ -d "$HOME/.config/plasma-theme-master/zen-browser" ]; then
+            rm -rf "$HOME/.config/plasma-theme-master/zen-browser"
+            print_info "Removed legacy zen-browser directory."
+        fi
+
+        # 4. Backup & migrate ~/.config/plasma-theme-master/config.toml
+        if [ -f "$user_cfg" ]; then
+            print_info "Backing up user config to $user_cfg.2.0.7.bak..."
+            cp "$user_cfg" "$user_cfg.2.0.7.bak"
+
+            python3 -c "
+import re, sys
+
+cfg_file = '''$user_cfg'''
+try:
+    with open(cfg_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    legacy_sections = {
+        'kitty_light', 'kitty_dark', 'btop', 'vicinae', 'firefox',
+        'zen_browser_chrome', 'zen_browser_content', 'obsidian',
+        'betterdiscord', 'vencord', 'zed', 'vscode', 'konsole', 'millennium', 'palette'
+    }
+    section_app_map = {
+        'kitty_light': 'kitty', 'kitty_dark': 'kitty', 'btop': 'btop',
+        'vicinae': 'vicinae', 'firefox': 'firefox',
+        'zen_browser_chrome': 'zen-browser', 'zen_browser_content': 'zen-browser',
+        'obsidian': 'obsidian', 'betterdiscord': 'discord', 'vencord': 'discord',
+        'zed': 'zed', 'vscode': 'vscode', 'konsole': 'konsole', 'millennium': 'steam'
+    }
+
+    lines = content.splitlines(keepends=True)
+    new_lines = []
+    in_legacy = False
+    cur_legacy = ''
+    enabled_legacy_apps = set()
+    found_palette_current = ''
+
+    for line in lines:
+        m_sec = re.match(r'^\s*\[templates\.([a-zA-Z0-9_\-]+)\]', line)
+        m_any = re.match(r'^\s*\[', line)
+        if m_sec:
+            name = m_sec.group(1)
+            if name in legacy_sections:
+                in_legacy = True
+                cur_legacy = name
+                continue
+            else:
+                in_legacy = False
+                cur_legacy = ''
+        elif m_any:
+            in_legacy = False
+            cur_legacy = ''
+
+        if in_legacy:
+            if cur_legacy == 'palette':
+                m_pal = re.search(r'current\s*=\s*[\x27\"]([^\x27\"]+)[\x27\"]', line)
+                if m_pal:
+                    found_palette_current = m_pal.group(1)
+            elif re.search(r'enabled\s*=\s*true', line, re.IGNORECASE):
+                app = section_app_map.get(cur_legacy)
+                if app:
+                    enabled_legacy_apps.add(app)
+            continue
+
+        new_lines.append(line)
+
+    cleaned = ''.join(new_lines)
+
+    # Ensure [palette] section exists if found in legacy [templates.palette]
+    if found_palette_current and not re.search(r'^\s*\[palette\]', cleaned, re.MULTILINE):
+        cleaned += f'\n[palette]\ncurrent = \"{found_palette_current}\"\n'
+
+    # Ensure enabled apps are recorded under [app_templates.<app>]
+    for app in sorted(enabled_legacy_apps):
+        pattern = rf'^\s*\[app_templates\.{re.escape(app)}\]'
+        if not re.search(pattern, cleaned, re.MULTILINE):
+            cleaned += f'\n[app_templates.{app}]\nenabled = true\n'
+
+    with open(cfg_file, 'w', encoding='utf-8') as f:
+        f.write(cleaned)
+    print('✔ Successfully pruned legacy [templates.*] sections from config.toml.')
+except Exception as e:
+    print(f'⚠ Error during config migration: {e}', file=sys.stderr)
+" 2>/dev/null || true
+            print_success "Config migration and cleanup completed."
+        fi
+    fi
+}
+
 check_dependencies
 
 print_header "Installing $APP_NAME"
@@ -160,6 +304,9 @@ print_header "Installing $APP_NAME"
 # 1. Stop existing service if running
 print_info "Stopping existing service..."
 systemctl --user disable --now $SERVICE_NAME 2>/dev/null || true
+
+# 1b. Check for version <= 2.0.7 and clean/migrate legacy templates and config
+migrate_legacy_install
 
 # 2. Configure Build
 if [ -d "build" ]; then

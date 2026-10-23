@@ -1,0 +1,8 @@
+[catalog.fcitx5]
+name = "Fcitx5"
+category = "system"
+
+[templates.fcitx5]
+input_path = "theme.conf"
+output_path = "$XDG_DATA_HOME/fcitx5/themes/ptm/theme.conf"
+post_hook = "bash '{{ config_dir }}/apply.sh'"

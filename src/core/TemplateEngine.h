@@ -25,6 +25,13 @@ public:
                           const QMap<QString, QString> &extra = {});
 
     /**
+     * Render template string directly.
+     */
+    static QString renderString(const QString &templateContent,
+                                const UniversalPalette &palette,
+                                const QMap<QString, QString> &extra = {});
+
+    /**
      * Build the full variable map from a palette.
      * Useful externally (e.g. for helpers that need the same var set).
      */
@@ -32,7 +39,14 @@ public:
 
 private:
     static QString substitute(const QString &tmpl,
+                              const UniversalPalette &palette,
                               const QMap<QString, QString> &vars);
+    static QString evaluateExpression(const QString &expr,
+                                      const UniversalPalette &palette,
+                                      const QMap<QString, QString> &vars);
+    static QColor resolveColorToken(const QString &tokenName,
+                                    const QString &mode,
+                                    const UniversalPalette &palette);
     static QString colorHex(const QColor &c);
     static QString colorRgb(const QColor &c);
     static QString colorRgbSpace(const QColor &c);

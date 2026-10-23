@@ -1,0 +1,9 @@
+[catalog.brave-origin]
+name = "Brave Origin"
+category = "browser"
+
+[templates.brave-origin]
+input_path = "manifest.json"
+output_path = "$XDG_CACHE_HOME/ptm/brave-origin-theme/manifest.json"
+post_hook = "bash '{{ config_dir }}/apply.sh' {{ mode }}"
+requires_path = "~/.config/BraveSoftware/Brave-Origin"

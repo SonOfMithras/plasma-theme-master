@@ -1,0 +1,7 @@
+[catalog.pandora-launcher]
+name = "Pandora Launcher"
+category = "gaming"
+
+[templates.pandora-launcher]
+input_path  = "pandora-launcher.json"
+output_path = "$XDG_DATA_HOME/PandoraLauncher/themes/ptm.json"

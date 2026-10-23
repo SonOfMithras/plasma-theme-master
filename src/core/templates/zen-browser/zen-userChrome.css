@@ -1,0 +1,546 @@
+:root, * {
+  --base:             {{colors.background.default.hex}};
+  --surface:          {{colors.surface_container_low.default.hex}};
+  --overlay:          {{colors.surface_container.default.hex}};
+  --hl_low:           {{colors.surface_container_high.default.hex}};
+  --hl_med:           {{colors.surface_container_highest.default.hex}};
+  --hl_high:          {{colors.surface_bright.default.hex}};
+  --outline:          {{colors.outline_variant.default.hex}};
+  --muted:            {{colors.outline.default.hex}};
+  --subtle:           {{colors.on_surface_variant.default.hex}};
+  --text:             {{colors.on_surface.default.hex}};
+  --primary:          {{colors.primary.default.hex}};
+  --secondary:        {{colors.secondary.default.hex}};
+  --tertiary:         {{colors.tertiary.default.hex}};
+  --error:            {{colors.error.default.hex}};
+}
+
+@media (prefers-color-scheme: dark) {
+  * {
+    --base:             {{colors.background.dark.hex}};
+    --surface:          {{colors.surface_container_low.dark.hex}};
+    --overlay:          {{colors.surface_container.dark.hex}};
+    --hl_low:           {{colors.surface_container_high.dark.hex}};
+    --hl_med:           {{colors.surface_container_highest.dark.hex}};
+    --hl_high:          {{colors.surface_bright.dark.hex}};
+    --outline:          {{colors.outline_variant.dark.hex}};
+    --muted:            {{colors.outline.dark.hex}};
+    --subtle:           {{colors.on_surface_variant.dark.hex}};
+    --text:             {{colors.on_surface.dark.hex}};
+    --primary:          {{colors.primary.dark.hex}};
+    --secondary:        {{colors.secondary.dark.hex}};
+    --tertiary:         {{colors.tertiary.dark.hex}};
+    --error:            {{colors.error.dark.hex}};
+  }
+}
+@media (prefers-color-scheme: light) {
+  * {
+    --base:             {{colors.background.light.hex}};
+    --surface:          {{colors.surface_container_low.light.hex}};
+    --overlay:          {{colors.surface_container.light.hex}};
+    --hl_low:           {{colors.surface_container_high.light.hex}};
+    --hl_med:           {{colors.surface_container_highest.light.hex}};
+    --hl_high:          {{colors.surface_bright.light.hex}};
+    --outline:          {{colors.outline_variant.light.hex}};
+    --muted:            {{colors.outline.light.hex}};
+    --subtle:           {{colors.on_surface_variant.light.hex}};
+    --text:             {{colors.on_surface.light.hex}};
+    --primary:          {{colors.primary.light.hex}};
+    --secondary:        {{colors.secondary.light.hex}};
+    --tertiary:         {{colors.tertiary.light.hex}};
+    --error:            {{colors.error.light.hex}};
+  }
+}
+
+:root {
+  /* --- Zen Color Variables --- */
+  --zen-primary-color: var(--primary) !important;
+  --zen-colors-primary: var(--base) !important;
+  --zen-colors-secondary: var(--surface) !important;
+  --zen-colors-tertiary: var(--base) !important;
+  --zen-colors-border: var(--outline) !important;
+
+  /* --- Backgrounds --- */
+  --toolbar-bgcolor: var(--base) !important;
+  /* --newtab-background-color: var(--overlay) !important; */
+  --zen-themed-toolbar-bg: var(--base) !important;
+  --zen-main-browser-background: var(--base) !important;
+  --toolbox-bgcolor-inactive: var(--base) !important;
+  --zen-urlbar-background: var(--surface) !important;
+  --zen-colors-input-bg: var(--surface) !important;
+  --zen-themed-toolbar-bg-transparent: transparent !important;
+
+  /* --- Text & Icons --- */
+  --lwt-text-color: var(--text) !important;
+  --toolbarbutton-icon-fill: var(--primary) !important;
+  --toolbar-field-color: var(--text) !important;
+  --toolbar-field-focus-color: var(--text) !important;
+  --toolbar-color: var(--text) !important;
+  --toolbox-textcolor: var(--text) !important;
+  --toolbox-textcolor-inactive: var(--text) !important;
+  --tab-selected-textcolor: var(--primary) !important;
+  --newtab-text-primary-color: var(--text) !important;
+
+  /* --- Popups, Menus & Sidebars --- */
+  --arrowpanel-color: var(--text) !important;
+  --arrowpanel-background: var(--overlay) !important;
+  --sidebar-text-color: var(--text) !important;
+  --lwt-sidebar-text-color: var(--text) !important;
+  --lwt-sidebar-background-color: var(--base) !important;
+}
+
+#zen-browser-background {
+  --zen-main-browser-background: var(--base) !important;
+  --zen-main-browser-background-old: var(--base) !important;
+}
+
+/* --- Sidebar & Layout --- */
+
+#navigator-toolbox,
+#zen-tabbox-wrapper,
+.sidebar-panel {
+  background-color: var(--base) !important;
+}
+
+#zen-sidebar-splitter {
+  background-color: var(--base) !important;
+  opacity: 1 !important;
+}
+
+.sidebar-placesTree {
+  background-color: var(--surface) !important;
+}
+
+#zen-workspaces-button {
+  background-color: var(--surface) !important;
+}
+
+#zen-appcontent-navbar-container {
+  background-color: var(--base) !important;
+}
+
+/* --- Navigation Controls --- */
+
+#back-button .toolbarbutton-icon,
+#forward-button .toolbarbutton-icon,
+#reload-button .toolbarbutton-icon,
+#stop-button .toolbarbutton-icon,
+#PanelUI-menu-button .toolbarbutton-icon,
+#unified-extensions-button .toolbarbutton-icon,
+#nav-bar-overflow-button .toolbarbutton-icon,
+#zen-toggle-compact-mode .toolbarbutton-icon {
+  fill: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+#back-button[disabled] .toolbarbutton-icon,
+#forward-button[disabled] .toolbarbutton-icon {
+  opacity: 0.3 !important;
+}
+
+/* Cover standard buttons added through Customize toolbar. */
+toolbar .toolbarbutton-1:not([disabled]):not([aria-disabled="true"]) {
+  --toolbarbutton-icon-fill: var(--primary) !important;
+}
+
+toolbar .toolbarbutton-1:not([disabled]):not([aria-disabled="true"]) > .toolbarbutton-icon,
+toolbar .toolbarbutton-1:not([disabled]):not([aria-disabled="true"]) > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+  -moz-context-properties: fill, fill-opacity !important;
+  fill: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+toolbar .toolbarbutton-1:not([disabled]):not([aria-disabled="true"]):is([open], [checked]) > :is(
+  .toolbarbutton-icon,
+  .toolbarbutton-text,
+  .toolbarbutton-badge-stack
+),
+toolbar .toolbarbutton-1:not([disabled]):not([aria-disabled="true"]):is([open], [checked]) > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+  fill: color-mix(in srgb, var(--text) 40%, transparent) !important;
+  color: color-mix(in srgb, var(--text) 40%, transparent) !important;
+}
+
+.tab-text {
+  color: var(--text);
+}
+
+toolbarbutton#tabs-newtab-button {
+  color: var(--text) !important;
+}
+/* --- URL Bar --- */
+
+#urlbar-input::selection {
+  background-color: var(--primary) !important;
+  color: var(--base) !important;
+}
+
+.urlbar-background {
+  background-color: var(--surface) !important;
+}
+
+.urlbarView-url {
+  color: var(--primary) !important;
+}
+
+.urlbarView-favicon {
+  background-color: transparent !important;
+}
+
+#urlbar-results {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.urlbarView-row:not([selected]) :is(.urlbarView-title, .urlbarView-action) {
+  color: var(--text) !important;
+}
+
+/* --- UI Components --- */
+
+#zen-toast-container {
+  color: var(--primary) !important;
+}
+
+  #zen-toast-container .zen-toast,
+  #zen-toast-container > .zen-toast,
+  .zen-toast {
+    background-color: color-mix(in srgb, var(--overlay) 85%, transparent) !important;
+    backdrop-filter: blur(8px) !important;
+    --zen-primary-color: var(--overlay) !important;
+    --zen-dialog-background: var(--overlay) !important;
+  }
+
+
+#permissions-granted-icon {
+  color: var(--base) !important;
+}
+
+.tab-background[selected=""] {
+  background: var(--hl_low) !important;
+}
+
+.tabbrowser-tab:hover > .tab-stack > .tab-background {
+  background-color: var(--hl_med) !important;
+}
+
+#zenEditBookmarkPanelFaviconContainer {
+  background: var(--base) !important;
+}
+
+/* --- Bookmark Panel Spacing --- */
+.zenEditBMPanel_fieldContainer > label {
+  margin-right: 12px !important;
+}
+
+#TabsToolbar, hbox#titlebar {
+  background-color: var(--base) !important;
+}
+
+.zen-current-workspace-indicator-name {
+  color: var(--text);
+}
+
+.zen-current-workspace-indicator-icon {	
+	fill: var(--text) !important;
+}
+
+/* --- Fixing Select Dropdowns colors on Webpages --- */
+
+#ContentSelectDropdown,
+#ContentSelectDropdown > menupopup {
+  --arrowpanel-background: var(--overlay) !important;
+  --arrowpanel-color: var(--text) !important;
+  --arrowpanel-border-color: transparent !important;
+  --panel-border-color: transparent !important;
+  background-color: var(--overlay) !important;
+  color: var(--text) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+#ContentSelectDropdown menupopup menuitem {
+  color: var(--text) !important;
+  background-color: transparent !important;
+}
+
+#ContentSelectDropdown menupopup menuitem[_moz-menuactive="true"] {
+  background-color: var(--hl_low) !important;
+}
+
+#ContentSelectDropdown menupopup menuitem[selected="true"] {
+  background-color: var(--hl_med) !important;
+}
+
+/* Force inner text elements to inherit the primary color */
+#ContentSelectDropdown menupopup menuitem[_moz-menuactive="true"] *,
+#ContentSelectDropdown menupopup menuitem[selected="true"] * {
+  color: var(--primary) !important;
+}
+
+
+/* Color for dialogs */
+dialog {
+	background: var(--base) !important;
+	color: var(--text) !important;
+}
+
+/* Style standard dialog buttons (Cancel, Disable, etc.) */
+dialog button,
+panel button,
+window[role="dialog"] button,
+window[windowtype="alert:alert"] button {
+  appearance: none !important;
+  background-color: var(--overlay) !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent) !important;
+}
+
+/* Download panel buttons - keep them transparent/ghost style */
+.downloadButton {
+  background-color: transparent !important;
+  color: var(--text) !important;
+  border: 1px solid transparent !important;
+}
+
+.downloadButton:hover:not(:active) {
+  background-color: var(--hl_low) !important;
+  color: var(--text) !important;
+}
+
+.downloadButton:hover:active {
+  background-color: var(--hl_low) !important;
+  color: var(--text) !important;
+}
+
+/* Keep download item background consistent on hover */
+#downloadsListBox > richlistitem[state="1"][exists].hoveringMainArea:hover,
+#downloadsListBox > richlistitem.openWhenFinished.hoveringMainArea:hover,
+#downloadsListBox > richlistitem[verdict]:hover,
+#downloadsListBox > richlistitem.openWhenFinished:hover {
+  background-color: transparent !important;
+  color: var(--text) !important;
+}
+
+dialog button:hover:not(.downloadButton),
+panel button:hover:not(.downloadButton),
+window[role="dialog"] button:hover:not(.downloadButton),
+window[windowtype="alert:alert"] button:hover:not(.downloadButton) {
+  background-color: var(--hl_low) !important;
+}
+/* Style the Primary/Accept/OK button */
+.dialog-button.primary,
+dialog button.primary,
+dialog button[default="true"],
+panel button.primary,
+panel button[default="true"],
+window[role="dialog"] button[default="true"],
+window[windowtype="alert:alert"] button[default="true"] {
+  background-color: var(--secondary) !important;
+  color: var(--base) !important;
+}
+.dialog-button.primary:hover,
+dialog button.primary:hover,
+dialog button[default="true"]:hover,
+panel button.primary:hover,
+panel button[default="true"]:hover,
+window[role="dialog"] button[default="true"]:hover,
+window[windowtype="alert:alert"] button[default="true"]:hover {
+  background-color: color-mix(in srgb, var(--secondary) 90%, black) !important;
+}
+
+/* Style dialog text links */
+.text-link {
+  color: var(--secondary) !important;
+}
+.text-link:hover {
+  color: color-mix(in srgb, var(--secondary) 70%, transparent) !important;
+}
+
+/* Style checkboxes and radio buttons globally in UI */
+*|input[type="checkbox"],
+[type="checkbox"],
+*|input[type="radio"],
+[type="radio"] {
+  accent-color: var(--primary) !important;
+}
+
+/* Custom text selection styling */
+::selection {
+  background-color: var(--primary) !important;
+  color: var(--base) !important;
+}
+
+/* Style context menus hover */
+menu:where([_moz-menuactive="true"]:not([disabled="true"])), 
+menuitem:where([_moz-menuactive="true"]:not([disabled="true"])) {
+  background-color: var(--primary) !important;
+  color: var(--base) !important;
+}
+menu:where([_moz-menuactive="true"]:not([disabled="true"])) :is(.menu-text, .menu-iconic-text, .menu-accel):not(menupopup *), 
+menuitem:where([_moz-menuactive="true"]:not([disabled="true"])) :is(.menu-text, .menu-iconic-text, .menu-accel) {
+  color: var(--base) !important;
+}
+
+toolbarbutton.zen-glance-sidebar-close.toolbarbutton-1,
+toolbarbutton.zen-glance-sidebar-open.toolbarbutton-1,
+toolbarbutton.zen-glance-sidebar-split.toolbarbutton-1 {
+	background-color: var(--overlay) !important;
+}
+
+toolbarbutton.zen-glance-sidebar-close.toolbarbutton-1:hover,
+toolbarbutton.zen-glance-sidebar-open.toolbarbutton-1:hover,
+toolbarbutton.zen-glance-sidebar-split.toolbarbutton-1:hover {
+	background-color: var(--hl_low) !important;
+}
+
+/* --- Extensions Hover Style --- */
+.subviewbutton:hover,
+.unified-extensions-item:hover,
+.unified-extensions-item-action-button:hover,
+#zen-site-data-addons .unified-extensions-list > *:hover,
+#zen-site-data-addons #unified-extensions-area > *:hover,
+#zen-site-data-addons #overflowed-extensions-list > *:hover {
+  background-color: var(--hl_med) !important;
+}
+
+/* --- Autocomplete Popup (Login/Password Dropdown) --- */
+#PopupAutoComplete {
+  --panel-background: var(--overlay) !important;
+  --panel-color: var(--text) !important;
+  --panel-border-color: transparent !important;
+  --panel-padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#PopupAutoComplete > richlistbox,
+panel[type="autocomplete-richlistbox"],
+.autocomplete-richlistbox {
+  background-color: transparent !important;
+  color: var(--text) !important;
+  border: none !important;
+  overflow-y: auto !important;
+  padding: 8px 8px !important;
+}
+
+.autocomplete-richlistbox richlistitem,
+.autocomplete-richlistitem {
+  background-color: var(--overlay) !important;
+  color: var(--text) !important;
+  border: none !important;
+}
+.autocomplete-richlistbox richlistitem:hover,
+.autocomplete-richlistitem:hover {
+  background-color: var(--hl_high) !important;
+  color: var(--text) !important;
+}
+.autocomplete-richlistbox richlistitem[selected],
+.autocomplete-richlistitem[selected] {
+  background-color: var(--primary) !important;
+  color: var(--base) !important;
+}
+.autocomplete-richlistbox richlistitem[selected] *,
+.autocomplete-richlistitem[selected] * {
+  color: var(--base) !important;
+  fill: var(--base) !important;
+}
+.autocomplete-richlistbox richlistitem[selected] .ac-secondary-action,
+.autocomplete-richlistitem[selected] .ac-secondary-action {
+  background-color: transparent !important;
+  fill: var(--base) !important;
+  color: var(--base) !important;
+  -moz-context-properties: fill, fill-opacity !important;
+}
+
+/* Footer and warning areas in the popup */
+#PopupAutoComplete .autocomplete-richlistbox-popup,
+#PopupAutoComplete .popup-notification-body {
+  background-color: var(--overlay) !important;
+  color: var(--text) !important;
+}
+
+/* --- Identity/Site Data Panel Icons --- */
+/* Bookmark, Send Notifications, Tracking Protection backgrounds */
+#zen-site-data-header toolbarbutton.active::before,
+.permission-popup-permission-icon::before,
+.permission-popup-boost-icon::before,
+.identity-popup-protections-icon::before,
+#tracking-protection-icon-container::before {
+  background-color: var(--primary) !important;
+  opacity: 0.2 !important; /* using a translucent background to match Zen's design */
+}
+
+/* Update the icon fill color to match the primary color for a consistent theme */
+#zen-site-data-header toolbarbutton.active,
+.permission-popup-permission-icon,
+.permission-popup-boost-icon,
+.identity-popup-protections-icon,
+#tracking-protection-icon-container {
+  color: var(--primary) !important;
+  fill: var(--primary) !important;
+}
+
+/* Hover states for Identity/Site Data panel icons */
+#zen-site-data-header toolbarbutton:hover::before,
+.permission-popup-permission-item:hover .permission-popup-permission-icon::before,
+.permission-popup-boost-item:hover .permission-popup-boost-icon::before,
+.identity-popup-protections-icon:hover::before,
+#tracking-protection-icon-container:hover::before,
+#identity-popup-security-button:hover::before {
+  background-color: var(--subtle) !important;
+  opacity: 1 !important;
+}
+
+/* --- Bookmark Panel Folder Tree Styling --- */
+#editBMPanel_folderTree {
+  background-color: var(--base) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-row {
+  background-color: transparent !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-row(selected) {
+  background-color: var(--primary) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-cell-text {
+  color: var(--text) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-cell-text(selected) {
+  color: var(--base) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-image {
+  fill: var(--text) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-image(selected) {
+  fill: var(--base) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-twisty {
+  fill: var(--text) !important;
+}
+
+#editBMPanel_folderTree treechildren::-moz-tree-twisty(selected) {
+  fill: var(--base) !important;
+}
+
+/* Style the About Zen Browser Dialog background */
+@-moz-document url("chrome://browser/content/aboutDialog.xhtml") {
+  #aboutDialogContainer,
+  #clientBox {
+    background-color: var(--base) !important;
+  }
+
+  #bottomBox {
+    background-color: var(--overlay) !important;
+  }
+}

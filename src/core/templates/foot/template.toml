@@ -1,0 +1,10 @@
+[catalog.foot]
+name = "Foot"
+category = "terminal"
+documentation_url = "https://docs.ptm.dev/ptm/theming/app-theming/#built-in-templates"
+
+[templates.foot]
+input_path = "foot.ini"
+output_path = "$XDG_CONFIG_HOME/foot/themes/ptm"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+undo_hook = "bash '{{ config_dir }}/undo.sh'"

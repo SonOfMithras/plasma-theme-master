@@ -27,15 +27,42 @@ int main(int argc, char *argv[]) {
     if (!QFile::exists(backupPath) && QFile::exists(settingsPath))
         QFile::copy(settingsPath, backupPath);
 
+    // Check for transparent or opaque option from argv or config.toml
+    bool isTransparent = false;
+    for (int i = 1; i < argc; ++i) {
+        QString arg = QString::fromLocal8Bit(argv[i]).trimmed().toLower();
+        if (arg == "--transparent" || arg == "-t" || arg == "transparent") {
+            isTransparent = true;
+        } else if (arg == "--opaque" || arg == "-o" || arg == "opaque") {
+            isTransparent = false;
+        }
+    }
+
+    if (!isTransparent) {
+        QString cfgPath = QDir::homePath() + "/.config/plasma-theme-master/config.toml";
+        QFile cfg(cfgPath);
+        if (cfg.exists() && cfg.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString cfgContent = QTextStream(&cfg).readAll();
+            QRegularExpression re(R"(\[(?:templates|app_templates)\.zed\][^\[]*)");
+            auto match = re.match(cfgContent);
+            if (match.hasMatch() && match.captured(0).contains("transparent", Qt::CaseInsensitive)) {
+                isTransparent = true;
+            }
+        }
+    }
+
     QRegularExpression themeRegex(
         R"("theme"\s*:\s*(?:"[^"]*"|\{[^{}]*\}))",
         QRegularExpression::DotMatchesEverythingOption);
 
-    QString newThemeBlock = R"("theme": {
+    QString lightTheme = isTransparent ? "PTM Light Transparent" : "PTM Light";
+    QString darkTheme  = isTransparent ? "PTM Dark Transparent"  : "PTM Dark";
+
+    QString newThemeBlock = QString(R"("theme": {
     "mode": "system",
-    "light": "Plasma Master Light",
-    "dark": "Plasma Master Dark"
-  })";
+    "light": "%1",
+    "dark": "%2"
+  })").arg(lightTheme, darkTheme);
 
     if (content.contains(themeRegex)) {
         content.replace(themeRegex, newThemeBlock);

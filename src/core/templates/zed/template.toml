@@ -1,0 +1,12 @@
+[catalog.zed]
+name = "Zed"
+category = "editor"
+
+[templates.zed]
+input_path = "zed.json"
+output_path = "$XDG_CONFIG_HOME/zed/themes/ptm.json"
+post_hook = "plasma-theme-master-helper-zed"
+
+[templates.gram]
+input_path = "zed.json"
+output_path = "$XDG_CONFIG_HOME/gram/themes/ptm.json"

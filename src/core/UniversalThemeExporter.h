@@ -53,22 +53,17 @@ public:
 
     // Main sync entry point — drives all template rendering
     static void syncAll();
-    static void syncTemplates();
 
     // Backup / restore utilities (still used for legacy cleanup on restore btn)
     static bool backupFile(const QString &path);
     static bool restoreFile(const QString &path);
+    static UniversalPalette paletteForEntry(const QString &paletteMode);
 
 private:
     static UniversalPalette extractColorsFromConfig(KSharedConfig::Ptr config);
 
     // Environment variable injection for helper binaries
     static void injectPaletteEnv(const UniversalPalette &palette);
-
-    // Helpers for syncTemplates
-    static QString buildImports(const QString &appName);
-    static QMap<QString, QString> buildZedExtras(const UniversalPalette &palette);
-    static UniversalPalette paletteForEntry(const QString &paletteMode);
 };
 
 #endif // UNIVERSALTHEMEEXPORTER_H

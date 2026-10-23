@@ -1,0 +1,9 @@
+[catalog.lazyvim]
+name = "LazyVim"
+category = "editor"
+
+[templates.lazyvim]
+input_path = "ptm.lua"
+output_path = "$XDG_CONFIG_HOME/nvim/colors/ptm.lua"
+post_hook = "bash '{{ config_dir }}/apply.sh'"
+requires_path = "$XDG_CONFIG_HOME/nvim/lazyvim.json"

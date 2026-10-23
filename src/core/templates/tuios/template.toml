@@ -1,0 +1,8 @@
+[catalog.tuios]
+name = "tuios"
+category = "terminal"
+
+[templates.tuios]
+input_path = "tuios.json"
+output_path = "$XDG_CONFIG_HOME/tuios/themes/ptm.json"
+requires_path = "$XDG_CONFIG_HOME/tuios"

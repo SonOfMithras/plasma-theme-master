@@ -1,0 +1,9 @@
+[catalog.oh-my-posh]
+name = "Oh My Posh"
+category = "terminal"
+
+[templates.oh-my-posh]
+input_path = "palette.json"
+output_path = "$XDG_CONFIG_HOME/oh-my-posh/ptm-palette.json"
+post_hook = "python3 '{{ config_dir }}/apply.py' apply"
+hook_async = false
